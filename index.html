@@ -694,7 +694,31 @@ const FireDB={
  async deleteUser(id){try{await this.db.doc('users/'+id).delete()}catch(e){throw new Error(errMsg(e))}},
  canSetOthersPassword:false
 };
-const DB=FIREBASE_CONFIG?FireDB:LocalDB;
+
+/* Banco Neon via API segura */
+const NeonDB={
+ mode:'neon',cb:null,authCb:null,user:null,timer:null,canSetOthersPassword:true,
+ async req(action,data={}){const r=await fetch('/api/db',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify({action,...data})});const j=await r.json().catch(()=>({error:'Resposta inválida do servidor'}));if(!r.ok)throw new Error(j.error||'Erro ao acessar o servidor');return j},
+ async init(){await this.req('health')},
+ onAuth(cb){this.authCb=cb;this.req('me').then(r=>{this.user=r.user;cb(r.user?{id:r.user.id}:null)}).catch(()=>cb(null))},
+ async login(usr,p,keep){const r=await this.req('login',{usuario:usr,senha:p,keep});this.user=r.user;this.authCb({id:r.user.id})},
+ async logout(){clearInterval(this.timer);this.timer=null;await this.req('logout');this.user=null;this.cb=null;this.authCb(null)},
+ watch(cb){this.cb=cb;this.refresh();clearInterval(this.timer);this.timer=setInterval(()=>{if(this.cb&&document.visibilityState==='visible')this.refresh()},10000)},
+ async refresh(){try{const d=await this.req('snapshot');if(this.cb)this.cb(d)}catch(e){console.error(e);toast(e.message,true)}},
+ isAdm(){return !!this.user?.admin},
+ async mutate(action,data){await this.req(action,data);await this.refresh()},
+ async update(id,patch){await this.mutate('update',{id,patch})},
+ async createWeek(id,data){await this.mutate('createWeek',{id,data})},
+ async deleteWeek(id){await this.mutate('deleteWeek',{id})},
+ async saveSettings(s){await this.mutate('saveSettings',{settings:s})},
+ async restore(b){await this.mutate('restore',{backup:b})},
+ async addUser(user){await this.mutate('addUser',{user})},
+ async updateUser(id,data){await this.mutate('updateUser',{id,data})},
+ async setPassword(id,senha,atual){await this.mutate('setPassword',{id,senha,atual})},
+ async deleteUser(id){await this.mutate('deleteUser',{id})}
+};
+
+const DB=NeonDB;
 
 /* ---------------- estado ---------------- */
 let S={settings:null,weeks:{},users:[]},meId=null,sel=null,page='inicio',chartSel={q:'qualidade',o:'trat'},wordEdit=false,pIdx=0,cfgView=null,booted=false,pickY=null,pickM=null,cfgYear=null,ED=null,openPl=new Set(),migrating=false;
