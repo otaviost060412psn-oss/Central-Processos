@@ -478,6 +478,10 @@ button.plc.miss:hover{background:var(--card2)}
 .li{display:flex;align-items:center;gap:8px;border:1px solid var(--bd);border-radius:12px;padding:6px 6px 6px 14px;background:var(--bg)}
 .li input{flex:1;min-width:0;background:none;border:0;padding:8px 0;font-weight:500;outline:0}
 .li:focus-within{border-color:var(--pri)}
+.li .frs{display:inline-flex;gap:4px;flex:none}
+.li .frs button{border:1px solid var(--bd);background:none;border-radius:99px;padding:5px 11px;font-size:12px;font-weight:500;color:var(--mu)}
+.li .frs button[aria-pressed="true"]{background:rgba(61,220,106,.13);border-color:transparent;color:var(--ok)}
+@media (max-width:640px){.li{flex-wrap:wrap}.li input{flex-basis:100%}}
 .btn.dang{background:var(--er);border-color:var(--er);color:#2A0705}
 .btn.dang:hover{background:#ff7d72}
 .loading{display:grid;place-items:center;min-height:60vh;color:var(--mu)}
@@ -724,6 +728,10 @@ const DB=NeonDB;
 let S={settings:null,weeks:{},users:[]},meId=null,sel=null,page='inicio',chartSel={q:'qualidade',o:'trat'},wordEdit=false,pIdx=0,cfgView=null,booted=false,pickY=null,pickM=null,cfgYear=null,ED=null,openPl=new Set(),migrating=false;
 const ST=()=>Object.assign(clone(DEFAULTS),S.settings||{});
 const SET=()=>ST().setores;
+/* setor sem "frentes" (cadastrado antes da escolha existir) vale para as duas */
+const temFrente=(s,f)=>!Array.isArray(s.frentes)||s.frentes.includes(f);
+const SETF=f=>SET().filter(s=>temFrente(s,f));
+const frBtns=fr=>`<span class="frs" role="group" aria-label="Onde o setor aparece">${['q','o'].map(k=>`<button type="button" data-frt="${k}" aria-pressed="${!Array.isArray(fr)||fr.includes(k)}">${FR[k]}</button>`).join('')}</span>`;
 const setorNome=id=>(SET().find(s=>s.id===id)||{}).nome||'Setor removido';
 const ids=()=>Object.keys(S.weeks).sort();
 const Wk=()=>S.weeks[sel];
@@ -734,10 +742,10 @@ const nAdm=()=>S.users.filter(u=>u.admin).length;
 const canEdit=w=>!!w&&(!w.fechada||isAdmin());
 const curWeek=()=>{const c=mondayOf(new Date());return S.weeks[c]?c:(ids().filter(x=>x<=c).at(-1)||ids().at(-1))};
 
-function calcQ(w){const rows=SET().map(s=>({...s,...((w&&w.q&&w.q[s.id])||{})}));const val=rows.filter(r=>isN(r.monitorias)&&r.monitorias>0&&isN(r.qualidade));const sm=(a,k)=>a.reduce((t,x)=>t+(isN(x[k])?x[k]:0),0);
+function calcQ(w){const rows=SETF('q').map(s=>({...s,...((w&&w.q&&w.q[s.id])||{})}));const val=rows.filter(r=>isN(r.monitorias)&&r.monitorias>0&&isN(r.qualidade));const sm=(a,k)=>a.reduce((t,x)=>t+(isN(x[k])?x[k]:0),0);
  let q=null;if(val.length)q=val.reduce((t,e)=>t+e.qualidade,0)/val.length;
  const any=rows.some(r=>isN(r.monitorias));return{rows,q,mon:any?sm(rows,'monitorias'):null,zer:any?sm(rows,'zeradas'):null,ag:any?sm(rows,'agentes'):null,sem:rows.filter(r=>r.monitorias===0)}}
-function calcO(w){const rows=SET().map(s=>({...s,...((w&&w.o&&w.o[s.id])||{})}));const sm=(a,k)=>a.reduce((t,x)=>t+(isN(x[k])?x[k]:0),0);const t=rows.filter(r=>isN(r.tempo)&&isN(r.backlog)&&r.backlog>0),tb=sm(t,'backlog');const any=rows.some(r=>isN(r.tratados)||isN(r.backlog));
+function calcO(w){const rows=SETF('o').map(s=>({...s,...((w&&w.o&&w.o[s.id])||{})}));const sm=(a,k)=>a.reduce((t,x)=>t+(isN(x[k])?x[k]:0),0);const t=rows.filter(r=>isN(r.tempo)&&isN(r.backlog)&&r.backlog>0),tb=sm(t,'backlog');const any=rows.some(r=>isN(r.tratados)||isN(r.backlog));
  return{rows,trat:any?sm(rows,'tratados'):null,back:any?sm(rows,'backlog'):null,tempo:tb?t.reduce((x,s)=>x+s.tempo*s.backlog,0)/tb:null,sla:w?w.sla:null}}
 const HORAS_DIA=9;
 const dias=m=>isN(m)?Math.floor(m/60/HORAS_DIA):null;
@@ -752,7 +760,7 @@ const kpi=(l,v,cls,d)=>`<div class="kpi"><div class="l">${l}</div><div class="v 
 function kQ(w){const Q=calcQ(w),p=prevOf(w.inicio),P=p&&calcQ(p);return kpi('Qualidade total',pct(Q.q),qCls(Q.q),deltaChip(Q.q,P&&P.q,'up','pct'))+kpi('Monitorias realizadas',nf(Q.mon),'',deltaChip(Q.mon,P&&P.mon,'up'))+kpi('Monitorias zeradas',nf(Q.zer),Q.zer>0?'er':'',deltaChip(Q.zer,P&&P.zer,'down'))+kpi('Quantidade de agentes',nf(Q.ag),'',deltaChip(Q.ag,P&&P.ag,'up'))}
 function kO(w){const O=calcO(w),p=prevOf(w.inicio),P=p&&calcO(p),lim=ST().limiteDias;return kpi('Tickets tratados',nf(O.trat),'',deltaChip(O.trat,P&&P.trat,'up'))+kpi('Backlog atual',nf(O.back),isN(O.back)&&O.back>O.trat?'er':'',deltaChip(O.back,P&&P.back,'down'))+kpi('SLA de resolução',dur(O.sla),'',deltaChip(O.sla,P&&P.sla,'down','dur'))+kpi('Tempo médio de backlog',dur(O.tempo),'',isN(O.tempo)?`<span>${diasTxt(O.tempo)} · ponderado pelo backlog</span>`:'<span>Sem dados</span>')}
 function plansOf(w,f){return Object.entries((w&&w.planos)||{}).map(([id,p])=>({id,...p})).filter(p=>p.frente===f).sort((a,b)=>{const o=SET().map(s=>s.id);return (o.indexOf(a.setor)-o.indexOf(b.setor))||((a.criado||0)-(b.criado||0))})}
-const missingOf=(w,f)=>SET().filter(s=>!plansOf(w,f).some(p=>p.setor===s.id));
+const missingOf=(w,f)=>SETF(f).filter(s=>!plansOf(w,f).some(p=>p.setor===s.id));
 
 /* ---------------- interface geral ---------------- */
 function toast(m,err){const t=$('toast');t.textContent=m;t.classList.toggle('err',!!err);t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),3200)}
@@ -854,9 +862,9 @@ function rConfig(){const el=$('p-config'),s=ST();
  const T=CFGT.find(t=>t[0]===cfgView)||CFGT[0];let h='',sub=T[3];
  if(cfgView==='usuarios'){sub=`Administradores têm acesso total: Configurações, semanas fechadas e backup. ${nAdm()} ${nAdm()===1?'administrador':'administradores'} hoje.`;
   h=`<div class="ucards">${S.users.slice().sort((a,b)=>(b.admin-a.admin)||String(a.nome).localeCompare(b.nome)).map(u=>`<button class="uc" data-uopen="${u.id}"><span class="av">${esc((u.nome||'?')[0])}</span><span><b>${esc(u.nome)}</b><small>${esc(u.usuario)}</small></span><span class="chip ${u.admin?'ok':'ln'}">${u.admin?'Administrador':'Comum'}</span>${u.id===meId?'<span class="me">Você está conectado com este usuário</span>':''}</button>`).join('')}<button class="uc add" data-uopen="">${ICO.plus} Adicionar usuário</button></div>`}
- if(cfgView==='setores')h=`<div class="panel cfgp"><p class="muted">A mesma lista vale para Qualidade e Operações. Renomear não apaga os dados já lançados. Um setor removido some das próximas telas, mas os números antigos continuam guardados.</p>
-  <div class="list" id="setList">${s.setores.map((x,i)=>`<div class="li" data-id="${x.id}"><input value="${esc(x.nome)}" aria-label="Nome do setor"><button class="ico" data-mv="-1" aria-label="Subir">${ICO.up}</button><button class="ico" data-mv="1" aria-label="Descer">${ICO.down}</button><button class="ico" data-rmli aria-label="Remover">${ICO.del}</button></div>`).join('')}</div>
-  <div class="li"><input id="newSet" placeholder="Nome do novo setor" aria-label="Nome do novo setor"><button class="btn sm" data-act="addSet">${ICO.plus}Adicionar</button></div>
+ if(cfgView==='setores')h=`<div class="panel cfgp"><p class="muted">Em cada setor, marque onde ele aparece: Qualidade, Operações ou nas duas. Renomear não apaga os dados já lançados. Um setor removido, ou desmarcado de uma frente, some das próximas telas, mas os números antigos continuam guardados.</p>
+  <div class="list" id="setList">${s.setores.map((x,i)=>`<div class="li" data-id="${x.id}"><input value="${esc(x.nome)}" aria-label="Nome do setor">${frBtns(x.frentes)}<button class="ico" data-mv="-1" aria-label="Subir">${ICO.up}</button><button class="ico" data-mv="1" aria-label="Descer">${ICO.down}</button><button class="ico" data-rmli aria-label="Remover">${ICO.del}</button></div>`).join('')}</div>
+  <div class="li"><input id="newSet" placeholder="Nome do novo setor" aria-label="Nome do novo setor">${frBtns()}<button class="btn sm" data-act="addSet">${ICO.plus}Adicionar</button></div>
   <div><button class="btn pri" data-act="saveSet">Salvar setores</button></div></div>`;
  if(cfgView==='semanas'){const ys=[...new Set(ids().map(x=>+x.slice(0,4)))];if(!cfgYear||!ys.includes(cfgYear))cfgYear=+sel.slice(0,4);
   const list=ids().filter(id=>+id.slice(0,4)===cfgYear).reverse();
@@ -872,8 +880,8 @@ function rConfig(){const el=$('p-config'),s=ST();
  el.innerHTML=`<div class="cfg"><header class="phead"><div><button class="btn ghost sm" data-cfg="" style="margin:0 0 10px -10px">${ICO.l}Configurações</button><h1>${T[1]}</h1><p class="sub">${sub}</p></div></header>${h}</div>`}
 async function saveSettings(mut,msg){const s=ST();mut(s);try{await DB.saveSettings(s);S.settings=s;render();toast(msg||'Configurações salvas')}catch(e){toast(e.message||errMsg(e),true)}}
 async function act(a){try{
- if(a==='addSet'){const n=$('newSet').value.trim();if(!n)return;const div=document.createElement('div');div.className='li';div.dataset.id='s'+uid();div.innerHTML=`<input value="${esc(n)}" aria-label="Nome do setor"><button class="ico" data-mv="-1" aria-label="Subir">${ICO.up}</button><button class="ico" data-mv="1" aria-label="Descer">${ICO.down}</button><button class="ico" data-rmli aria-label="Remover">${ICO.del}</button>`;$('setList').appendChild(div);$('newSet').value=''}
- if(a==='saveSet'){const L=[...document.querySelectorAll('#setList .li')].map(li=>({id:li.dataset.id,nome:li.querySelector('input').value.trim()})).filter(x=>x.nome);if(!L.length)return toast('Mantenha pelo menos um setor.',true);await saveSettings(s=>{s.setores=L},'Setores salvos')}
+ if(a==='addSet'){const n=$('newSet').value.trim();if(!n)return;const fr=[...$('newSet').closest('.li').querySelectorAll('[data-frt][aria-pressed="true"]')].map(b=>b.dataset.frt);if(!fr.length)return toast('Escolha Qualidade, Operações ou as duas.',true);const div=document.createElement('div');div.className='li';div.dataset.id='s'+uid();div.innerHTML=`<input value="${esc(n)}" aria-label="Nome do setor">${frBtns(fr)}<button class="ico" data-mv="-1" aria-label="Subir">${ICO.up}</button><button class="ico" data-mv="1" aria-label="Descer">${ICO.down}</button><button class="ico" data-rmli aria-label="Remover">${ICO.del}</button>`;$('setList').appendChild(div);$('newSet').value=''}
+ if(a==='saveSet'){const L=[...document.querySelectorAll('#setList .li')].map(li=>({id:li.dataset.id,nome:li.querySelector('input').value.trim(),frentes:[...li.querySelectorAll('[data-frt][aria-pressed="true"]')].map(b=>b.dataset.frt)})).filter(x=>x.nome);if(!L.length)return toast('Mantenha pelo menos um setor.',true);if(L.some(x=>!x.frentes.length))return toast('Cada setor precisa aparecer em Qualidade, Operações ou nas duas.',true);await saveSettings(s=>{s.setores=L},'Setores salvos')}
  if(a==='newWeek'){const v=$('nW').value;if(!v)return toast('Escolha uma data.',true);const id=mondayOf(pdate(v));if(S.weeks[id])return toast('Essa semana já existe.',true);await DB.createWeek(id,emptyWeek(id));S.weeks[id]=S.weeks[id]||emptyWeek(id);cfgYear=+id.slice(0,4);render();toast('Semana criada')}
  if(a==='exportJson'){const b=new Blob([JSON.stringify({app:'central-igreen',versao:2,exportadoEm:new Date().toISOString(),settings:ST(),weeks:S.weeks},null,2)],{type:'application/json'});const l=document.createElement('a');l.href=URL.createObjectURL(b);l.download=`backup-central-igreen-${today()}.json`;document.body.appendChild(l);l.click();l.remove();setTimeout(()=>URL.revokeObjectURL(l.href),1500)}
  if(a==='importJson')$('impf').click();
@@ -886,7 +894,7 @@ const withWho=(w,fn)=>fn();
 /* ---------- painel lateral ---------- */
 const FIELDS={q:[['monitorias','Monitorias','num'],['qualidade','Qualidade (%)','pct'],['zeradas','Zeradas','num'],['agentes','Agentes','num']],o:[['tratados','Tickets tratados','num'],['backlog','Backlog atual','num'],['tempo','Tempo médio de backlog','dur']]};
 const raw=(t,v)=>v===null||v===undefined?'':t==='pct'?String(v).replace('.',','):t==='dur'?dur(v):String(v);
-const steps=f=>f==='q'?SET().map(s=>s.id):[...SET().map(s=>s.id),'sla'];
+const steps=f=>f==='q'?SETF('q').map(s=>s.id):[...SETF('o').map(s=>s.id),'sla'];
 const showEd=()=>{$('ed').classList.add('on');$('edScrim').classList.add('on');setTimeout(()=>{const x=$('ed').querySelector('input:not([readonly]),textarea:not([readonly])');x&&x.focus()},320)};
 function closeEd(){if(document.activeElement&&$('ed').contains(document.activeElement))document.activeElement.blur();$('ed').classList.remove('on');$('edScrim').classList.remove('on');ED=null}
 function openEd(f,i){const w=Wk();withWho(w,()=>{if(i===undefined){const st=steps(f);i=st.findIndex(id=>id==='sla'?!isN(w.sla):!rowDone(f,(f==='q'?w.q:w.o)[id]||{}));if(i<0)i=0}ED={kind:'row',f,i};rEd();showEd()})}
@@ -914,7 +922,7 @@ function rEd(){if(!ED)return;if(ED.kind==='plan')return rEdPlan();if(ED.kind==='
  const last=i===st.length-1;
  $('ed').innerHTML=`<div class="edh"><div class="row"><span>${ro?'Semana fechada · somente leitura':`Lançando ${FR[f]} · <b>Semana de ${wkTxt(w)} ${w.inicio.slice(0,4)}</b>`}</span><button class="ico" data-edclose aria-label="Fechar">${ICO.x}</button></div>
  <div class="prog">${st.map((k,j)=>`<button class="${j===i?'cur':done(k)?'done':''}" data-edgo="${j}" aria-label="${k==='sla'?'SLA da semana':esc(setorNome(k))}"></button>`).join('')}</div>
- <div><div class="k">${isS?'Último passo':`${f==='q'?'Equipe':'Setor'} ${i+1} de ${SET().length}`}${!isS&&!done(id)?' · <span style="color:var(--wa)">pendente</span>':''}</div><h3>${isS?'SLA de resolução da semana':esc(setorNome(id))}</h3></div></div>
+ <div><div class="k">${isS?'Último passo':`${f==='q'?'Equipe':'Setor'} ${i+1} de ${SETF(f).length}`}${!isS&&!done(id)?' · <span style="color:var(--wa)">pendente</span>':''}</div><h3>${isS?'SLA de resolução da semana':esc(setorNome(id))}</h3></div></div>
  <div class="edb">${ro?'<div class="banner" style="margin:0"><span class="dot wa"></span>Esta semana está fechada e não aceita alterações.</div>':w.fechada?'<div class="banner" style="margin:0"><span class="dot wa"></span>Semana fechada. Como administrador, você pode editar mesmo assim.</div>':''}${body}<div class="eda">${ro?`<button class="btn pri" data-edstep="1" ${last?'aria-disabled="true"':''}>Próxima${ICO.r}</button>`:`<button class="btn pri" data-edsave="1">${last?'Salvar e concluir':'Salvar e próxima'}</button><button class="btn" data-edsave="0">Salvar</button>`}${i?`<button class="btn ghost" data-edstep="-1">${ICO.l}Anterior</button>`:''}</div></div>`}
 function edPatch(){const w=Wk(),{f,i}=ED,id=steps(f)[i];let ok=true;const vals={};
  $('ed').querySelectorAll('input[data-k]').forEach(inp=>{const t=inp.dataset.t,val=inp.value,box=inp.closest('.f'),m=box.querySelector('.msg');let v=t==='text'?(val.trim()||null):t==='dur'?parseDur(val):parseNum(val);
@@ -934,7 +942,7 @@ function rEdPlan(){const w=Wk(),{id,p}=ED,ro=!canEdit(w);
  $('ed').innerHTML=`<div class="edh"><div class="row"><span>${ro?'Semana fechada · somente leitura':`${FR[p.frente]} · <b>Semana de ${wkTxt(w)} ${w.inicio.slice(0,4)}</b>`}</span><button class="ico" data-edclose aria-label="Fechar">${ICO.x}</button></div>
  <div><div class="k">${id?'Plano de ação':'Novo plano de ação'}</div><h3 id="plh">${esc(setorNome(p.setor))}</h3></div></div>
  <div class="edb">${ro?'<div class="banner" style="margin:0"><span class="dot wa"></span>Esta semana está fechada e não aceita alterações.</div>':''}
- <div class="f"><label for="pl_setor">${p.frente==='q'?'Equipe':'Setor'}</label><select id="pl_setor" data-plk="setor" ${ro?'disabled':''}>${SET().map(s=>`<option value="${s.id}" ${s.id===p.setor?'selected':''}>${esc(s.nome)}</option>`).join('')}</select></div>
+ <div class="f"><label for="pl_setor">${p.frente==='q'?'Equipe':'Setor'}</label><select id="pl_setor" data-plk="setor" ${ro?'disabled':''}>${SET().filter(s=>temFrente(s,p.frente)||s.id===p.setor).map(s=>`<option value="${s.id}" ${s.id===p.setor?'selected':''}>${esc(s.nome)}</option>`).join('')}</select></div>
  ${ta('erro','Erro identificado')}${ta('acao','Ação proposta')}${ta('objetivo','Objetivo')}
  <div class="f"><label for="pl_prazo">Prazo</label><input id="pl_prazo" type="date" data-plk="prazo" value="${esc(p.prazo||'')}" ${ro?'readonly':''}></div>
  ${p.by?`<div class="last">Último lançamento: ${esc(p.by)} em ${tsTxt(p.at)}</div>`:''}<div class="eda">${ro?'':`<button class="btn pri" data-plsave>${id?'Salvar plano':'Criar plano'}</button>`}<button class="btn" data-edclose>${ro?'Fechar':'Cancelar'}</button>${!ro&&id?`<button class="btn dan" data-pldel>${ICO.del}Excluir</button>`:''}</div></div>`}
@@ -977,7 +985,7 @@ document.addEventListener('click',async e=>{
  const t=e.target.closest('button,[data-edrow]');if(!t)return;const d=t.dataset;
  if(t.getAttribute('aria-disabled')==='true')return;
  if(t.closest('#pres'))return;
- if(d.edrow){const[f,i]=d.edrow.split('|');openEd(f,i==='sla'?SET().length:+i);return}
+ if(d.edrow){const[f,i]=d.edrow.split('|');openEd(f,i==='sla'?SETF(f).length:+i);return}
  if(d.p){page=d.p;cfgView=null;render.cfgShown=null;wordEdit=false;closeMenu();closeEd();render();scrollTo({top:0});return}
  if(d.go){page=d.go;render();scrollTo({top:0});return}
  if('present' in d){closeMenu();openPres();return}
@@ -1018,6 +1026,7 @@ document.addEventListener('click',async e=>{
  if('udel' in d){const u=S.users.find(x=>x.id===ED.id);if(await confirmBox(`Excluir o usuário ${u.usuario}?`,'Ele não poderá mais entrar no sistema.','Excluir usuário',true)){try{await DB.deleteUser(u.id);closeEd();render();toast('Usuário excluído')}catch(err){toast(err.message||errMsg(err),true)}}return}
  if(d.mv){const li=t.closest('.li'),list=li.parentElement;if(d.mv==='-1'&&li.previousElementSibling)list.insertBefore(li,li.previousElementSibling);else if(d.mv==='1'&&li.nextElementSibling)list.insertBefore(li.nextElementSibling,li);return}
  if('rmli' in d){t.closest('.li').remove();return}
+ if(d.frt){t.setAttribute('aria-pressed',t.getAttribute('aria-pressed')==='true'?'false':'true');return}
  if(d.act){act(d.act);return}
 });
 document.addEventListener('keydown',e=>{
@@ -1057,12 +1066,12 @@ let slides=[],si=0,PWL=[],pFrom=null,pTo=null,pShort=null;
 const avg=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:null;
 const lastWith=(L,fn)=>{for(let i=L.length-1;i>=0;i--){const v=fn(L[i]);if(isN(v))return{v,w:L[i]}}return{v:null,w:null}};
 function aggQ(L){if(L.length===1)return{...calcQ(L[0]),fb:{}};
- const rows=SET().map(s=>{const rs=L.map(w=>(w.q&&w.q[s.id])||{}),has=rs.filter(r=>isN(r.monitorias)),qs=rs.filter(r=>r.monitorias>0&&isN(r.qualidade)).map(r=>r.qualidade),ag=lastWith(rs,r=>r.agentes),resp=[...rs].reverse().find(r=>r.responsavel);
+ const rows=SETF('q').map(s=>{const rs=L.map(w=>(w.q&&w.q[s.id])||{}),has=rs.filter(r=>isN(r.monitorias)),qs=rs.filter(r=>r.monitorias>0&&isN(r.qualidade)).map(r=>r.qualidade),ag=lastWith(rs,r=>r.agentes),resp=[...rs].reverse().find(r=>r.responsavel);
   return{...s,monitorias:has.length?has.reduce((t,r)=>t+r.monitorias,0):null,zeradas:rs.some(r=>isN(r.zeradas))?rs.reduce((t,r)=>t+(isN(r.zeradas)?r.zeradas:0),0):null,qualidade:avg(qs),agentes:ag.v,responsavel:resp?resp.responsavel:''}});
  const sum=k=>rows.some(r=>isN(r[k]))?rows.reduce((t,r)=>t+(isN(r[k])?r[k]:0),0):null,ag=lastWith(L,w=>calcQ(w).ag);
  return{rows,q:avg(L.map(w=>calcQ(w).q).filter(isN)),mon:sum('monitorias'),zer:sum('zeradas'),ag:ag.v,sem:rows.filter(r=>r.monitorias===0),fb:{ag:ag.w&&ag.w!==L.at(-1)?ag.w.inicio:null}}}
 function aggO(L){if(L.length===1)return{...calcO(L[0]),fb:{}};
- const rows=SET().map(s=>{const rs=L.map(w=>(w.o&&w.o[s.id])||{});return{...s,tratados:rs.some(r=>isN(r.tratados))?rs.reduce((t,r)=>t+(isN(r.tratados)?r.tratados:0),0):null,backlog:lastWith(rs,r=>r.backlog).v,tempo:lastWith(rs,r=>r.tempo).v}});
+ const rows=SETF('o').map(s=>{const rs=L.map(w=>(w.o&&w.o[s.id])||{});return{...s,tratados:rs.some(r=>isN(r.tratados))?rs.reduce((t,r)=>t+(isN(r.tratados)?r.tratados:0),0):null,backlog:lastWith(rs,r=>r.backlog).v,tempo:lastWith(rs,r=>r.tempo).v}});
  const back=lastWith(L,w=>calcO(w).back),tempo=lastWith(L,w=>calcO(w).tempo);
  return{rows,trat:rows.some(r=>isN(r.tratados))?rows.reduce((t,r)=>t+(isN(r.tratados)?r.tratados:0),0):null,back:back.v,tempo:tempo.v,sla:avg(L.map(w=>w.sla).filter(isN)),fb:{back:back.w&&back.w!==L.at(-1)?back.w.inicio:null,tempo:tempo.w&&tempo.w!==L.at(-1)?tempo.w.inicio:null}}}
 const periodWeeks=(a,b)=>{if(a>b)[a,b]=[b,a];return ids().filter(x=>x>=a&&x<=b).map(x=>S.weeks[x])};
@@ -1134,7 +1143,7 @@ function buildSlides(L){
   <div><div class="l">Monitorias zeradas</div><div class="v ${Q.zer>0?'bad':''}">${nf(Q.zer)}</div><div class="d">${odelta(Q.zer,PQ&&PQ.zer,'down','',lab)}</div></div>
   <div><div class="l">Quantidade de agentes</div><div class="v">${nf(Q.ag)}</div><div class="d">${odelta(Q.ag,PQ&&PQ.ag,'up','',lab)}${fbn(Q.fb.ag)}</div></div></div></div>`});
  s.push({t:'Qualidade · Por equipe',h:side('Qualidade','Resultado por equipe',n>1?'Monitorias e zeradas somadas; qualidade pela média das semanas; agentes da última semana.':'')+`<div class="body"><table class="stbl"><thead><tr><th>Equipe</th><th class="n">Monitorias</th><th class="n">Qualidade</th><th class="n">Zeradas</th><th class="n">Agentes</th><th>Responsável</th></tr></thead><tbody>${Q.rows.map(r=>`<tr><td><span class="nm">${esc(r.nome)}</span></td>${r.monitorias===0?`<td colspan="4" class="n"><span class="chip s">Sem monitoria ${n>1?'no período':'na semana'}</span></td>`:`<td class="n">${nf(r.monitorias)}</td><td class="n">${pct(r.qualidade)}</td><td class="n">${r.zeradas>0?`<span class="chip w">${r.zeradas}</span>`:nf(r.zeradas)}</td><td class="n">${nf(r.agentes)}</td>`}<td>${esc(r.responsavel||'—')}</td></tr>`).join('')}</tbody><tfoot><tr><td>Total</td><td class="n">${nf(Q.mon)}</td><td class="n">${pct(Q.q)}</td><td class="n">${nf(Q.zer)}</td><td class="n">${nf(Q.ag)}</td><td></td></tr></tfoot></table></div>`});
- const plSlide=f=>{const P=plansPeriod(L,f),M=SET().filter(s=>!P.some(p=>p.setor===s.id)),z=P.length<=3?1:P.length===4?.84:P.length<=6?.68:.55;
+ const plSlide=f=>{const P=plansPeriod(L,f),M=SETF(f).filter(s=>!P.some(p=>p.setor===s.id)),z=P.length<=3?1:P.length===4?.84:P.length<=6?.68:.55;
   return side(FR[f],'Planos de ação',`${P.length} ${P.length===1?'plano registrado':'planos registrados'}${n>1?' no período':''}.`)+`<div class="body" style="justify-content:flex-start;padding-top:90px;gap:18px"><div class="spl">${P.map(p=>`<div class="spi" style="zoom:${z}"><div><h4>${esc(setorNome(p.setor))}</h4>${n>1?`<div class="lab" style="margin-top:8px">${p.sem.length>1?'Semanas':'Semana'} ${p.sem.map(dshort).join(', ')}</div>`:''}</div><div><div class="lab">Erro identificado</div>${esc(p.erro)||'—'}</div><div><div class="lab">Ação proposta</div>${esc(p.acao)||'—'}${p.objetivo?`<div class="lab" style="margin-top:10px">Objetivo</div>${esc(p.objetivo)}`:''}</div><div class="pz"><div class="lab">Prazo</div>${p.prazo?`<span class="chip s">${dshort(p.prazo)}</span>`:'<span style="color:rgba(232,244,234,.5)">Sem prazo</span>'}</div></div>`).join('')}</div>${M.length?`<div class="smiss"><b>Sem plano registrado:</b> ${M.map(m=>esc(m.nome)).join(', ')}</div>`:''}${!P.length&&!M.length?'<div class="smiss">Nenhum plano no período.</div>':''}</div>`};
  s.push({t:'Qualidade · Planos de ação',h:plSlide('q')});
  s.push({t:'Operações · Números',h:side('Operações',n>1?'Números do período':'Números da semana',isN(O.back)&&O.back>O.trat?`O backlog (<b>${nf(O.back)}</b>) está maior que o volume tratado (<b>${nf(O.trat)}</b>).`:isN(O.trat)?`<b>${nf(O.trat)}</b> tickets tratados ${n>1?'no período':'na semana'}.`:'')+`<div class="body"><div class="sfx">
