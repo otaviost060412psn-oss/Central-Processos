@@ -519,6 +519,14 @@ button.plc.miss:hover{background:var(--card2)}
 .agc.fim{opacity:.7}
 .agenc{margin-top:var(--gap);display:grid;gap:var(--gap);justify-items:start}
 .agenc .agfut{width:100%}
+.agquadro{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--gap);align-items:start}
+.agcol{background:var(--bg);border:1px solid var(--bd);border-radius:12px;padding:12px;display:grid;gap:10px;align-content:start;min-height:140px;transition:border-color .15s,background .15s}
+.agcol.alvo{border-color:var(--pri);border-style:dashed;background:rgba(0,204,29,.06)}
+.agcol h2{font-size:16px;display:flex;align-items:baseline;gap:6px}
+.agcol h2 .muted{font-size:13px;font-weight:400}
+.agc[draggable="true"]{cursor:grab}
+.agc.arr{opacity:.5}
+@media (max-width:720px){.agquadro{grid-template-columns:1fr}}
 .agload{margin-top:10px}
 .agdia{display:grid;gap:12px}
 .agdia .sech{margin:0}
@@ -844,8 +852,9 @@ function render(){
    'demanda': o que a pessoa está fazendo (status obrigatório, prazo opcional) */
 const AG_ST={planejada:['Planejada',''],andamento:['Em andamento','wa'],concluida:['Concluída','ok'],cancelada:['Cancelada','cx']};
 const AG_ORD={andamento:0,planejada:1,concluida:2,cancelada:3};
+const AG_MOV={planejada:[['andamento','Iniciar'],['concluida','Concluir'],['cancelada','Cancelar']],andamento:[['concluida','Concluir'],['planejada','Voltar para planejada'],['cancelada','Cancelar']],concluida:[['planejada','Reabrir']],cancelada:[['planejada','Reabrir']]};
 const DSEM=['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'],DSEML=['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
-const agVazio=dono=>({aba:'cal',mes:null,dia:null,itens:[],dem:[],limitado:false,encerradas:false,pedido:null,chave:null,dono,seq:0,html:null});
+const agVazio=dono=>({aba:'cal',mes:null,dia:null,itens:[],dem:[],limitado:false,encerradas:false,movendo:new Set(),pedido:null,chave:null,dono,seq:0,html:null});
 let AG=agVazio(null);
 /* atrasada é calculado, nunca gravado: só demanda com prazo vencido e ainda aberta */
 const agAtrasada=x=>x.tipo==='demanda'&&!!x.dia&&x.dia<today()&&(x.status==='planejada'||x.status==='andamento');
@@ -885,12 +894,31 @@ function agDem(pronto){
  const T=AG.dem.slice().sort((a,b)=>(AG_ORD[a.status]??9)-(AG_ORD[b.status]??9)||(a.dia||'9999').localeCompare(b.dia||'9999')||a.criado-b.criado);
  /* abertas sempre visíveis; concluídas e canceladas só quando a pessoa pede */
  const A=T.filter(agAberta),F=T.filter(x=>!agAberta(x));if(!F.length)AG.encerradas=false;
- const card=x=>`<div class="panel agc${agAberta(x)?'':' fim'}"><div class="agch">${agChip(x)}${agAtrasada(x)?'<span class="chip er">Atrasada</span>':''}<span class="chip ln">${x.dia?'Prazo '+esc(dfmt(x.dia)):'Sem prazo'}</span></div><h3>${esc(x.titulo)}</h3>${x.descricao?`<p>${esc(x.descricao)}</p>`:''}<small class="muted">Criado em ${tsTxt(x.criado)}</small>
- <div class="agca"><button class="btn sm" data-agabrir="${esc(x.id)}">${ICO.edit}Editar</button><button class="btn sm ghost dan" data-agexcluir="${esc(x.id)}">${ICO.del}Excluir</button></div></div>`;
+ /* cartões abertos podem ser arrastados entre as colunas; os botões fazem o mesmo no celular e no teclado */
+ /* demanda sendo gravada: botões travados e sem arrastar até a resposta (o estado faz parte do HTML, então o cache funciona) */
+ const card=x=>{const mov=AG.movendo.has(x.id),trava=mov?' aria-disabled="true"':'';return `<div class="panel agc${agAberta(x)?'':' fim'}"${agAberta(x)&&!mov?` draggable="true" data-agcard="${esc(x.id)}"`:''}><div class="agch">${agChip(x)}${agAtrasada(x)?'<span class="chip er">Atrasada</span>':''}<span class="chip ln">${x.dia?'Prazo '+esc(dfmt(x.dia)):'Sem prazo'}</span></div><h3>${esc(x.titulo)}</h3>${x.descricao?`<p>${esc(x.descricao)}</p>`:''}<small class="muted">Criado em ${tsTxt(x.criado)}</small>
+ <div class="agca">${(AG_MOV[x.status]||[]).map(([st,l])=>`<button class="btn sm${st==='concluida'?' pri':''}" data-agmover="${esc(x.id)}" data-agpara="${st}"${trava}>${l}</button>`).join('')}</div>
+ <div class="agca"><button class="btn sm ghost" data-agabrir="${esc(x.id)}"${trava}>${ICO.edit}Editar</button><button class="btn sm ghost dan" data-agexcluir="${esc(x.id)}"${trava}>${ICO.del}Excluir</button></div></div>`};
+ const col=(st,titulo)=>{const L=A.filter(x=>x.status===st);return `<section class="agcol" data-agcol="${st}" aria-label="${titulo}"><h2>${titulo} <span class="muted">(${L.length})</span></h2>${L.length?L.map(card).join(''):'<p class="muted">Nenhuma demanda aqui.</p>'}</section>`};
  const enc=F.length?`<div class="agenc"><button class="btn sm ghost" data-agenc aria-expanded="${AG.encerradas}">${AG.encerradas?'Ocultar encerradas':`Mostrar encerradas (${F.length})`}</button>${AG.encerradas?`<div class="agfut">${F.map(card).join('')}</div>`:''}</div>`:'';
  if(!T.length)return pronto?`<div class="panel agvazio"><b>Nenhuma demanda ainda.</b><p class="muted">Registre aqui o que você está fazendo, como preparar um treinamento ou desenvolver uma melhoria, e acompanhe pelo status.</p><button class="btn" data-agnovo="demanda">${ICO.plus}Nova demanda</button></div>`:'<div class="panel"><p class="muted" role="status">Carregando…</p></div>';
- const abertas=A.length?`<div class="agfut">${A.map(card).join('')}</div>`:`<div class="panel agvazio"><b>Nenhuma demanda aberta.</b><button class="btn" data-agnovo="demanda">${ICO.plus}Nova demanda</button></div>`;
- return abertas+enc;
+ return `<div class="agquadro">${col('planejada','Planejada')}${col('andamento','Em andamento')}</div>`+enc;
+}
+/* mudança rápida de status (botão ou arrastar); usa a mesma gravação da edição, com controle de versão */
+async function moverAg(id,status){const x=agAchar(id),mv=AG.movendo;
+ if(!x||x.tipo!=='demanda'||x.status===status||!Object.hasOwn(AG_ST,status)||mv.has(id))return;
+ /* uma mudança por demanda de cada vez: evita o 409 enganoso de dois cliques seguidos */
+ mv.add(id);rAgenda();
+ try{const r=await DB.agendaSave({id,versao:x.atualizado,data:{tipo:'demanda',titulo:x.titulo,descricao:x.descricao,status,dia:x.dia,hora_ini:null,hora_fim:null}});
+  /* aplica na hora a versão gravada, para o cartão já aparecer na coluna nova com a versão certa */
+  if(r&&r.item)['dem','itens'].forEach(k=>{const i=AG[k].findIndex(y=>y.id===id);if(i>=0)AG[k][i]=r.item});
+  if(ED&&ED.kind==='agenda'&&ED.id===id)closeEd();
+  toast(status==='andamento'?'Demanda iniciada':status==='planejada'?(agAberta(x)?'Demanda de volta para planejada':'Demanda reaberta'):status==='concluida'?'Demanda concluída':'Demanda cancelada');
+ }catch(e){toast(agConflito(e)||e.message,true)}
+ finally{mv.delete(id)}
+ AG.pedido=null;render();
+ /* devolve o foco ao cartão movido, para quem usa o teclado */
+ const b=document.querySelector(`[data-agmover="${CSS.escape(id)}"]`);b&&b.focus();
 }
 function rAgenda(){
  if(AG.dono!==meId)AG=agVazio(meId);
@@ -932,7 +960,7 @@ async function saveAg(btn){const ed=ED,{id,x}=ed,dem=x.tipo==='demanda',v=k=>$('
  /* botão travado durante o envio: evita registro duplicado por duplo clique ou Enter */
  const lbl=btn.innerHTML;btn.textContent='Salvando…';btn.setAttribute('aria-disabled','true');
  try{await DB.agendaSave(id?{id,versao:x.atualizado,data}:{data});
-  if(ED===ed)closeEd();toast(dem&&!agAberta(data)?'Demanda encerrada':id?(dem?'Demanda salva':'Atividade salva'):(dem?'Demanda adicionada':'Atividade adicionada'));
+  if(ED===ed)closeEd();toast(dem&&!agAberta(data)?(data.status==='concluida'?'Demanda concluída':'Demanda cancelada'):id?(dem?'Demanda salva':'Atividade salva'):(dem?'Demanda adicionada':'Atividade adicionada'));
   if(!dem){AG.dia=dia;AG.mes=dia.slice(0,7)}
   AG.pedido=null;render();
  }catch(e){btn.innerHTML=lbl;btn.removeAttribute('aria-disabled');const c=agConflito(e);toast(c||e.message,true);if(c){if(ED===ed)closeEd();AG.pedido=null;render()}}
@@ -953,6 +981,7 @@ document.addEventListener('click',e=>{
  if(t.getAttribute('aria-disabled')==='true')return;const d=t.dataset;let foco=null;
  if(d.agaba){AG.aba=d.agaba;foco=`[data-agaba="${d.agaba}"]`}
  else if('agenc' in d){AG.encerradas=!AG.encerradas;foco='[data-agenc]'}
+ else if(d.agmover)return moverAg(d.agmover,d.agpara);
  else if(d.agmes){const[y,m]=AG.mes.split('-').map(Number),n=new Date(y,m-1+(+d.agmes),1,12);AG.mes=ymd(n).slice(0,7);AG.dia=today().slice(0,7)===AG.mes?today():AG.mes+'-01';foco=`[data-agmes="${d.agmes}"]`}
  else if('aghoje' in d){AG.dia=today();AG.mes=AG.dia.slice(0,7);foco=`[data-agdia="${AG.dia}"]`}
  else if(d.agdia){AG.dia=d.agdia;AG.mes=d.agdia.slice(0,7);foco=`[data-agdia="${AG.dia}"]`}
@@ -964,6 +993,14 @@ document.addEventListener('click',e=>{
  rAgenda();const f=foco&&document.querySelector(foco);f&&f.focus();
  if(d.agdia&&innerWidth<=900){const p=document.querySelector('.agdia');p&&p.scrollIntoView({behavior:'smooth',block:'start'})}
 });
+/* arrastar e soltar entre as colunas de demandas (computador); só aceita cartões desta página, com tipo próprio */
+const AG_DND='application/x-cp-demanda';
+const agColDe=e=>e.dataTransfer&&[...e.dataTransfer.types].includes(AG_DND)&&e.target.closest&&e.target.closest('[data-agcol]');
+const agLimparAlvo=()=>document.querySelectorAll('.agcol.alvo').forEach(c=>c.classList.remove('alvo'));
+document.addEventListener('dragstart',e=>{const c=e.target.closest&&e.target.closest('[data-agcard]');if(!c)return;e.dataTransfer.setData(AG_DND,c.dataset.agcard);e.dataTransfer.effectAllowed='move';c.classList.add('arr')});
+document.addEventListener('dragend',e=>{const c=e.target.closest&&e.target.closest('[data-agcard]');c&&c.classList.remove('arr');agLimparAlvo()});
+document.addEventListener('dragover',e=>{const col=agColDe(e);if(!col)return;e.preventDefault();e.dataTransfer.dropEffect='move';if(!col.classList.contains('alvo')){agLimparAlvo();col.classList.add('alvo')}});
+document.addEventListener('drop',e=>{const col=agColDe(e);if(!col)return;e.preventDefault();agLimparAlvo();const id=e.dataTransfer.getData(AG_DND);if(id)moverAg(id,col.dataset.agcol)});
 $('ed').addEventListener('keydown',e=>{if(e.key==='Enter'&&ED&&ED.kind==='agenda'&&e.target.matches('input')){const b=$('ed').querySelector('[data-agsalvar]');b&&b.click()}});
 
 /* ---------- seletor de ano, mês e semana ---------- */
