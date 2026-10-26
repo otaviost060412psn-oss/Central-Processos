@@ -177,6 +177,16 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 .nav .st{margin-left:auto;display:flex;align-items:center;gap:6px;font-size:12px;color:var(--mu)}
 #menu .btn.pri{height:44px}
 #menu .foot{margin-top:auto;border-top:1px solid var(--bd);padding-top:12px}
+/* categorias do menu (abrem e fecham) e áreas só de administrador */
+.nav .cat .chev{margin-left:auto;transition:transform .2s}
+.nav .cat[aria-expanded="true"] .chev{transform:rotate(180deg)}
+.nav .cat[aria-expanded="true"],.nav .cat.tem{color:var(--tx)}
+.nav .cat.tem:not([aria-expanded="true"]){box-shadow:inset 3px 0 0 var(--bd2)}
+.nav .sub{display:grid;gap:2px;padding-left:30px}
+.nav .sub button{padding:9px 12px;font-size:13.5px}
+.nav .sub .eb{margin-left:auto;font-size:11px;color:var(--mu2);border:1px solid var(--bd);border-radius:99px;padding:1px 8px;white-space:nowrap}
+.nao-adm .so-adm{display:none!important}
+.embreve{display:grid;gap:10px;justify-items:start;max-width:640px}
 
 /* ===== páginas ===== */
 .main{padding:0 var(--pad) 96px}
@@ -578,7 +588,7 @@ button.plc.miss:hover{background:var(--card2)}
   <div class="lg-foot">© 2026 iGreen</div>
 </section>
 
-<div id="app" hidden>
+<div id="app" class="nao-adm" hidden>
   <header class="top">
     <button class="burger" id="burger" aria-label="Abrir menu"><svg class="i" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
     <span class="ttl" id="pageTitle">Início</span>
@@ -588,19 +598,34 @@ button.plc.miss:hover{background:var(--card2)}
       <button class="wbtn" id="wBtn" aria-haspopup="dialog" aria-expanded="false"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg><span id="wTxt"></span><span class="ch"></span></button>
       <div id="wp" hidden role="dialog" aria-label="Escolher semana"></div>
     </div>
-    <button class="btn" id="expBtn"><svg class="i" viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg><span class="hide-s">Exportar Excel</span></button>
+    <button class="btn so-adm" id="expBtn"><svg class="i" viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg><span class="hide-s">Exportar Excel</span></button>
   </header>
   <div id="scrim"></div>
   <nav id="menu" aria-label="Menu principal">
     <div><div class="mh"><span data-brand class="mn"></span><button class="ico" id="menuClose" aria-label="Fechar menu"><svg class="i" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div><small style="display:block;font-size:12px;color:var(--mu);margin-top:12px;padding:0 6px">Central de Qualidade e Operações</small></div>
     <div class="nav" id="nav">
-      <button data-p="inicio"><svg class="i" viewBox="0 0 24 24"><path d="M4 11l8-7 8 7v9a1 1 0 0 1-1 1h-5v-6h-4v6H5a1 1 0 0 1-1-1z"/></svg>Início</button>
-      <button data-p="qualidade"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.6 2.6L16 9.7"/></svg>Qualidade<span class="st" id="stq"></span></button>
-      <button data-p="operacoes"><svg class="i" viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Operações<span class="st" id="sto"></span></button>
-      <button data-p="palavra"><svg class="i" viewBox="0 0 24 24"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg>Palavra da Semana</button>
+      <button data-p="inicio" class="so-adm"><svg class="i" viewBox="0 0 24 24"><path d="M4 11l8-7 8 7v9a1 1 0 0 1-1 1h-5v-6h-4v6H5a1 1 0 0 1-1-1z"/></svg>Visão Geral</button>
+      <button class="cat" data-cat="cal" aria-expanded="false" aria-controls="cat-cal"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.6 2.6L16 9.7"/></svg>Calibragem Semanal<svg class="i chev" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>
+      <div class="sub" id="cat-cal" hidden>
+        <button data-p="qualidade">Qualidade<span class="st" id="stq"></span></button>
+        <button data-p="operacoes">Operações<span class="st" id="sto"></span></button>
+        <button data-p="palavra">Palavra da Semana</button>
+      </div>
       <button data-p="agenda"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Agenda e Demandas</button>
+      <button class="cat so-adm" data-cat="an" aria-expanded="false" aria-controls="cat-an"><svg class="i" viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Análises<svg class="i chev" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>
+      <div class="sub so-adm" id="cat-an" hidden>
+        <button data-p="an-jornada">Jornada do Cliente<span class="eb">Em breve</span></button>
+        <button data-p="an-diag">Diagnósticos<span class="eb">Em breve</span></button>
+        <button data-p="an-perg">Perguntas-chave<span class="eb">Em breve</span></button>
+        <button data-p="an-setor">Por setor<span class="eb">Em breve</span></button>
+      </div>
+      <button class="cat so-adm" data-cat="pm" aria-expanded="false" aria-controls="cat-pm"><svg class="i" viewBox="0 0 24 24"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5c.8.8 1 1.5 1 2.5h6c0-1 .2-1.7 1-2.5A6 6 0 0 0 12 3z"/></svg>Projetos e Melhorias<svg class="i chev" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>
+      <div class="sub so-adm" id="cat-pm" hidden>
+        <button data-p="pm-proj">Projetos e Iniciativas<span class="eb">Em breve</span></button>
+        <button data-p="pm-fut">Planejamento Futuro<span class="eb">Em breve</span></button>
+      </div>
     </div>
-    <button class="btn pri" data-present><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M8 5.5v13l11-6.5z"/></svg>Apresentar</button>
+    <button class="btn pri so-adm" data-present><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M8 5.5v13l11-6.5z"/></svg>Apresentar</button>
     <div class="foot nav">
       <div id="who" style="font-size:12px;color:var(--mu2);padding:4px 12px 8px"></div>
       <button data-p="config" id="navCfg"><svg class="i" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0"/></svg>Configurações</button>
@@ -614,6 +639,7 @@ button.plc.miss:hover{background:var(--card2)}
     <section class="page" id="p-operacoes"></section>
     <section class="page" id="p-palavra"></section>
     <section class="page" id="p-agenda"></section>
+    <section class="page" id="p-embreve"></section>
     <section class="page" id="p-config"></section>
   </main>
 </div>
@@ -843,14 +869,38 @@ function render(){
  render.pending=false;$('loading').hidden=true;
  rWsel();
  ['q','o'].forEach(f=>{const s=status(w,f);$('st'+f).innerHTML=`<span class="dot ${s.cls}"></span>${s.label}`});
- const m=me();$('navCfg').hidden=!isAdmin();$('who').textContent=m?`Conectado como ${m.usuario}${m.admin?' · administrador':''}`:'';if(page==='config'&&!isAdmin())page='inicio';
- document.querySelectorAll('#nav button[data-p]').forEach(b=>b.classList.toggle('on',b.dataset.p===page));
- $('pageTitle').textContent={inicio:'Início',qualidade:'Qualidade',operacoes:'Operações',palavra:'Palavra da Semana',agenda:'Agenda e Demandas',config:'Configurações'}[page];
- document.querySelectorAll('.page').forEach(p=>p.classList.toggle('on',p.id==='p-'+page));
- document.querySelector('.wsel').hidden=page==='agenda';
- if(page==='inicio')rInicio(w);else if(page==='palavra')rPalavra(w);else if(page==='agenda')rAgenda();else if(page==='config'){if(!(['setores'].includes(cfgView)&&render.cfgShown===cfgView&&!render.force))rConfig();render.cfgShown=cfgView}else rFrente(w,page==='qualidade'?'q':'o');
+ /* colaborador: só Calibragem Semanal e Agenda e Demandas; qualquer outra página volta para Qualidade */
+ const m=me();$('navCfg').hidden=!isAdmin();$('who').textContent=m?`Conectado como ${m.usuario}${m.admin?' · administrador':''}`:'';if(!isAdmin()&&!PAG_COLAB.includes(page))page='qualidade';
+ $('app').classList.toggle('nao-adm',!isAdmin());
+ document.querySelectorAll('#nav button[data-p]').forEach(b=>{const on=b.dataset.p===page;b.classList.toggle('on',on);on?b.setAttribute('aria-current','page'):b.removeAttribute('aria-current')});
+ rMenuCat();
+ $('pageTitle').textContent=({inicio:'Visão Geral',qualidade:'Qualidade',operacoes:'Operações',palavra:'Palavra da Semana',agenda:'Agenda e Demandas',config:'Configurações'})[page]||(EMB[page]||[])[0]||'';
+ document.querySelectorAll('.page').forEach(p=>p.classList.toggle('on',p.id==='p-'+(EMB[page]?'embreve':page)));
+ document.querySelector('.wsel').hidden=page==='agenda'||!!EMB[page];
+ if(EMB[page])rEmBreve();else if(page==='inicio')rInicio(w);else if(page==='palavra')rPalavra(w);else if(page==='agenda')rAgenda();else if(page==='config'){if(!(['setores'].includes(cfgView)&&render.cfgShown===cfgView&&!render.force))rConfig();render.cfgShown=cfgView}else rFrente(w,page==='qualidade'?'q':'o');
  if(ED)rEd();
 }
+
+/* ---------- menu lateral: categorias e páginas "Em breve" ---------- */
+const PAG_COLAB=['qualidade','operacoes','palavra','agenda'];
+/* áreas ainda não construídas: [título, categoria, o que a área vai fazer] */
+const EMB={
+ 'an-jornada':['Jornada do Cliente','Análises','Etapas da jornada do cliente, com os setores envolvidos, os motivos de contato e os pontos onde a experiência quebra.'],
+ 'an-diag':['Diagnósticos','Análises','Registro dos problemas da experiência: o que acontece, onde acontece, impacto, gravidade, causa e evidências.'],
+ 'an-perg':['Perguntas-chave','Análises','Respostas calculadas a partir dos dados reais, como onde estão os pontos de ruptura e quais problemas ainda não têm plano de ação.'],
+ 'an-setor':['Análises por setor','Análises','Evolução de Qualidade e Operações por setor, comparação entre setores e problemas recorrentes, com filtro de período.'],
+ 'pm-proj':['Projetos e Iniciativas','Projetos e Melhorias','Acompanhamento dos projetos: status, prioridade, responsável, setores, prazos e resultados.'],
+ 'pm-fut':['Planejamento Futuro','Projetos e Melhorias','Ideias e iniciativas para depois, com previsão de atuação, justificativa e data para reavaliar.']};
+function rEmBreve(){const[t,c,d]=EMB[page];
+ $('p-embreve').innerHTML=`<header class="phead"><div><p class="kick">${c}</p><h1>${t}</h1><p class="sub">${d}</p></div></header><div class="panel embreve"><span class="chip ln">Em breve</span><p class="muted">Esta área ainda está em construção. Nenhum dado é exibido aqui até ela ficar pronta.</p></div>`}
+/* só uma categoria aberta por vez; abrir ou fechar não muda de página */
+let catAberta=null;
+function rMenuCat(){document.querySelectorAll('#nav .cat').forEach(c=>{const k=c.dataset.cat,sub=$(c.getAttribute('aria-controls')),aberta=catAberta===k;
+ c.setAttribute('aria-expanded',aberta);sub.hidden=!aberta;c.classList.toggle('tem',!!sub.querySelector(`[data-p="${page}"]`))})}
+document.addEventListener('click',e=>{
+ /* ao sair, o menu volta ao estado inicial: categorias fechadas e itens de administrador escondidos até o próximo login confirmar o perfil */
+ if(e.target.closest&&e.target.closest('#logout')){catAberta=null;$('app').classList.add('nao-adm');rMenuCat();return}
+ const c=e.target.closest&&e.target.closest('#nav .cat');if(!c)return;catAberta=catAberta===c.dataset.cat?null:c.dataset.cat;rMenuCat()});
 
 /* ---------- agenda ----------
    'agenda': item do calendário (data obrigatória, horário opcional, sem status);
@@ -1054,7 +1104,7 @@ function rInicio(w){
  const sq=status(w,'q'),so=status(w,'o'),pend=[['Qualidade',sq],['Operações',so]].map(([n,s])=>s.complete?`${n} preenchida`:`${n} com ${s.sub}`).join(' · ');
  const card=`<div class="wst"><span class="dot ${w.fechada?'wa':'ok'}"></span><div class="tx"><b>${w.fechada?'Semana fechada':'Semana aberta para lançamentos'}</b><small>${w.fechada?(isAdmin()?'Só administradores podem alterar os números desta semana.':'Os números desta semana não podem mais ser alterados.'):pend}</small></div>${isAdmin()?(w.fechada?`<button class="btn sm" data-wlock="${w.inicio}">${ICO.unlock}Reabrir semana</button>`:`<button class="btn sm lk" data-wlock="${w.inicio}">${ICO.lock}Fechar semana</button>`):''}</div>`;
  const col=f=>{const s=f==='q'?sq:so,pg=f==='q'?'qualidade':'operacoes';return `<div><div class="colh"><h2>${FR[f]}</h2><span class="chip ${s.cls}"><span class="dot ${s.cls}"></span>${s.label}${s.sub?' · '+s.sub:''}</span></div><div class="kpis">${f==='q'?kQ(w):kO(w)}</div><div class="mini"><span>${s.last?`Último lançamento: ${esc(s.by||'')} em ${tsTxt(s.last)}`:'Nenhum dado lançado nesta semana'}</span><span class="tools"><button class="btn sm ghost" data-go="${pg}">Abrir ${FR[f]}</button>${canEdit(w)?`<button class="btn sm" data-goedit="${f}">${ICO.edit}Ir para edição</button>`:''}</span></div></div>`};
- $('p-inicio').innerHTML=`<header class="phead"><div><p class="kick">Semana de ${periodo(w)}</p><h1>Início</h1></div><div class="tools"><button class="btn pri" data-present><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M8 5.5v13l11-6.5z"/></svg>Apresentar esta semana</button></div></header>${card}<div class="cols">${col('q')}${col('o')}</div>`}
+ $('p-inicio').innerHTML=`<header class="phead"><div><p class="kick">Semana de ${periodo(w)}</p><h1>Visão Geral</h1></div><div class="tools"><button class="btn pri" data-present><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M8 5.5v13l11-6.5z"/></svg>Apresentar esta semana</button></div></header>${card}<div class="cols">${col('q')}${col('o')}</div>`}
 
 /* ---------- frentes ---------- */
 const COLS={q:[['monitorias','Monitorias','num'],['qualidade','Qualidade','pct'],['zeradas','Zeradas','num'],['agentes','Agentes','num'],['responsavel','Responsável pela monitoria','text']],o:[['tratados','Tickets tratados','num'],['backlog','Backlog atual','num'],['tempo','Tempo médio de backlog','dur']]};
@@ -1101,7 +1151,7 @@ function rPalavra(w){const L=pessoasDaSemana(w);
  <div class="pwl">${L.map((x,i)=>`<button data-pwi="${i}" class="${i===pIdx?'on':''}"><span class="k">${i+1}</span>${esc(x.nome)}${x.palavra?'':' <span class="none" style="margin-left:auto;font-size:12px">sem palavra</span>'}</button>`).join('')}</div></div>`}
 
 /* ---------- configurações ---------- */
-const CFGT=[['usuarios','Usuários','users','Quem acessa o sistema e quem é administrador'],['setores','Setores','build','Equipes e setores do sistema'],['semanas','Semanas','cal','Criar, fechar, reabrir e excluir semanas'],['colaboradores','Colaboradores','person','Cadastro permanente para a Palavra da Semana'],['backup','Backup','save','Baixar ou restaurar uma cópia dos dados']];
+const CFGT=[['usuarios','Usuários','users','Quem acessa o sistema e quem é administrador'],['setores','Setores','build','Equipes e setores do sistema'],['semanas','Semanas','cal','Criar, fechar, reabrir e excluir semanas'],['colaboradores','Colaboradores','person','Cadastro permanente para a Palavra da Semana'],['backup','Backup','save','Baixar ou restaurar uma cópia dos dados'],['exportacao','Exportação Geral','save','Em breve: exportar os dados do sistema em Excel e CSV']];
 function rConfig(){const el=$('p-config'),s=ST();
  if(!cfgView){el.innerHTML=`<header class="phead"><div><p class="kick">Área do administrador</p><h1>Configurações</h1><p class="sub">Escolha o que você quer alterar.</p></div></header><div class="tiles">${CFGT.map(([k,n,i,d])=>`<button class="tile" data-cfg="${k}"><span class="ti">${ICO[i]}</span><b>${n}</b><span>${d}</span></button>`).join('')}</div>`;return}
  const T=CFGT.find(t=>t[0]===cfgView)||CFGT[0];let h='',sub=T[3];
@@ -1122,6 +1172,7 @@ function rConfig(){const el=$('p-config'),s=ST();
   h=`<div class="ucards">${C.slice().sort((a,b)=>((b.ativo!==false)-(a.ativo!==false))||String(a.nome).localeCompare(b.nome)).map(c=>`<button class="uc ${c.ativo===false?'off':''}" data-copen="${c.id}"><span class="av">${esc((c.nome||'?')[0])}</span><span><b>${esc(c.nome)}</b><small>${nPal(c.id)} ${nPal(c.id)===1?'palavra registrada':'palavras registradas'}</small></span><span class="chip ${c.ativo===false?'ln':'ok'}">${c.ativo===false?'Inativo':'Ativo'}</span></button>`).join('')}<button class="uc add" data-copen="">${ICO.plus} Adicionar colaborador</button></div>`}
  if(cfgView==='backup')h=`<div class="panel cfgp"><h3>Baixar uma cópia</h3><p class="muted">Um arquivo com as configurações e todas as semanas. Os usuários e as senhas não entram no arquivo.</p><div><button class="btn pri" data-act="exportJson">${ICO.save}Baixar backup</button></div></div>
   <div class="panel cfgp sec"><h3>Restaurar</h3><p class="muted">As semanas e configurações do arquivo substituem as que existem com o mesmo período. Semanas que não estão no arquivo continuam como estão. Também aceita o backup do sistema anterior.</p><div><button class="btn" data-act="importJson">Escolher arquivo de backup</button><input type="file" id="impf" accept=".json,application/json" hidden></div></div>`;
+ if(cfgView==='exportacao')h=`<div class="panel embreve"><span class="chip ln">Em breve</span><p class="muted">Aqui você vai poder exportar, de uma vez, os dados reais de todos os módulos (Calibragem Semanal, Agenda e Demandas e as próximas áreas) em Excel ou CSV, escolhendo módulos e período. Enquanto isso, o Excel da semana continua no botão do topo e o backup completo em Configurações › Backup.</p></div>`;
  el.innerHTML=`<div class="cfg"><header class="phead"><div><button class="btn ghost sm" data-cfg="" style="margin:0 0 10px -10px">${ICO.l}Configurações</button><h1>${T[1]}</h1><p class="sub">${sub}</p></div></header>${h}</div>`}
 async function saveSettings(mut,msg){const s=ST();mut(s);try{await DB.saveSettings(s);S.settings=s;render();toast(msg||'Configurações salvas')}catch(e){toast(e.message||errMsg(e),true)}}
 async function act(a){try{
@@ -1296,7 +1347,7 @@ $('loginForm').onsubmit=async e=>{e.preventDefault();loginErr('');const b=$('lbt
  try{if(!$('lu').value.trim()||!$('lp').value)throw new Error('Digite o usuário e a senha.');await DB.login($('lu').value,$('lp').value,$('keep').checked)}catch(err){loginErr(err.message)}finally{b.textContent='Entrar';b.removeAttribute('aria-disabled')}};
 
 /* ---------- Excel ---------- */
-async function exportXlsx(){
+async function exportXlsx(){if(!isAdmin())return;
  try{if(!window.XLSX)await loadScript('https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js')}catch(e){toast('Não foi possível gerar o Excel sem internet.',true);return}
  const w=Wk(),Q=calcQ(w),O=calcO(w),wb=XLSX.utils.book_new(),add=(n,rows)=>XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows),n);
  add('Qualidade',[['Equipe','Monitorias','Qualidade (%)','Zeradas','Agentes','Responsável','Preenchido por'],...Q.rows.map(r=>[r.nome,r.monitorias??'',r.qualidade??'',r.zeradas??'',r.agentes??'',r.responsavel||'',r.by||'']),['Total',Q.mon??'',Q.q!==null?+Q.q.toFixed(2):'',Q.zer??'',Q.ag??'','','']]);
@@ -1338,7 +1389,7 @@ function rPcfg(){const all=ids().slice().reverse(),L=periodWeeks(pFrom,pTo),pend
   <div class="pc-r"><div class="k">Resumo do período</div><div class="big">${L.length} ${L.length===1?'semana':'semanas'}</div><div>${dfmt(L[0].inicio)} a ${dfmt(L.at(-1).fim)}</div>
   ${pend.length?`<div class="wa">${pend.length} ${pend.length===1?'semana com dados pendentes':'semanas com dados pendentes'}: ${pend.map(w=>wkTxt(w)).join(', ')}</div>`:'<div class="okk">Todas as semanas preenchidas</div>'}
   <div class="mu">${nf(Q.mon)} monitorias · ${PL} ${PL===1?'plano':'planos'} · ${PW} ${PW===1?'palavra':'palavras'}</div></div>`}
-function openPres(){if(!Wk())return;closeMenu();pFrom=pTo=sel;pShort=null;rPcfg();$('pcfgMb').classList.add('show');setTimeout(()=>$('pcfgGo').focus(),30)}
+function openPres(){if(!Wk()||!isAdmin())return;closeMenu();pFrom=pTo=sel;pShort=null;rPcfg();$('pcfgMb').classList.add('show');setTimeout(()=>$('pcfgGo').focus(),30)}
 function closePcfg(){$('pcfgMb').classList.remove('show')}
 $('pcfgMb').addEventListener('click',e=>{const b=e.target.closest('[data-pshort]');if(!b)return;const r=shortRange(b.dataset.pshort);if(!r)return;[pFrom,pTo]=r;pShort=b.dataset.pshort;rPcfg()});
 $('pcfgMb').addEventListener('change',e=>{if(e.target.id==='pFrom')pFrom=e.target.value;if(e.target.id==='pTo')pTo=e.target.value;if(pFrom>pTo)[pFrom,pTo]=[pTo,pFrom];pShort=null;rPcfg()});
