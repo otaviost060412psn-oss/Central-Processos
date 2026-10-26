@@ -18,7 +18,7 @@ const init=async()=>{
    sem chave estrangeira para cp_users, para preservar os registros de contas excluídas */
 let agPronto=null;
 const initAgenda=()=>agPronto||(agPronto=(async()=>{
- await pool.query(`CREATE TABLE IF NOT EXISTS cp_agenda(id text PRIMARY KEY,user_id text NOT NULL,resp_nome text NOT NULL,resp_usuario text NOT NULL,titulo text NOT NULL,descricao text NOT NULL DEFAULT '',tipo text NOT NULL CHECK(tipo IN ('atividade','compromisso')),status text NOT NULL CHECK(status IN ('planejada','andamento','concluida','cancelada')),dia text CHECK(dia ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}$'),hora_ini text CHECK(hora_ini ~ '^[0-9]{2}:[0-9]{2}$'),hora_fim text CHECK(hora_fim ~ '^[0-9]{2}:[0-9]{2}$'),criado bigint NOT NULL,criado_por text NOT NULL,atualizado bigint NOT NULL,atualizado_por text NOT NULL,CHECK(dia IS NOT NULL OR (hora_ini IS NULL AND hora_fim IS NULL)))`);
+ await pool.query(`CREATE TABLE IF NOT EXISTS cp_agenda(id text PRIMARY KEY,user_id text NOT NULL,resp_nome text NOT NULL,resp_usuario text NOT NULL,titulo text NOT NULL,descricao text NOT NULL DEFAULT '',tipo text NOT NULL CHECK(tipo IN ('agenda','demanda')),status text CHECK(status IN ('planejada','andamento','concluida','cancelada')),dia text CHECK(dia ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}$'),hora_ini text CHECK(hora_ini ~ '^[0-9]{2}:[0-9]{2}$'),hora_fim text CHECK(hora_fim ~ '^[0-9]{2}:[0-9]{2}$'),criado bigint NOT NULL,criado_por text NOT NULL,atualizado bigint NOT NULL,atualizado_por text NOT NULL,CHECK(dia IS NOT NULL OR (hora_ini IS NULL AND hora_fim IS NULL)),CHECK((tipo='agenda' AND dia IS NOT NULL AND status IS NULL) OR (tipo='demanda' AND status IS NOT NULL AND hora_ini IS NULL AND hora_fim IS NULL)))`);
  await pool.query('CREATE INDEX IF NOT EXISTS cp_agenda_user_dia ON cp_agenda(user_id,dia)');
  await pool.query('CREATE INDEX IF NOT EXISTS cp_agenda_dia ON cp_agenda(dia)');
 })().catch(e=>{agPronto=null;if(e.code!=='23505'&&e.code!=='42P07')throw e}));
@@ -26,8 +26,10 @@ const fail=(s,m)=>{throw Object.assign(new Error(m),{status:s})};
 const requireAdmin=u=>{if(!u.admin)fail(403,'Apenas administradores podem realizar essa ação.')};
 const publicUser=u=>({id:u.id,nome:u.nome,usuario:u.usuario,admin:u.admin,criado:Number(u.criado)});
 const pathSet=(o,path,value)=>{const parts=path.split('.');if(parts.some(x=>!x||x==='__proto__'||x==='constructor'||x==='prototype'))fail(400,'Campo inválido');let t=o;for(const p of parts.slice(0,-1)){if(!t[p]||typeof t[p]!=='object'||Array.isArray(t[p]))t[p]={};t=t[p]}if(value===null)delete t[parts.at(-1)];else t[parts.at(-1)]=value};
-/* ---------- agenda ---------- */
-const AG_TIPOS=['atividade','compromisso'],AG_STATUS=['planejada','andamento','concluida','cancelada'];
+/* ---------- agenda ----------
+   tipo 'agenda': item do calendário, data obrigatória, horário opcional, sem status;
+   tipo 'demanda': o que a pessoa está fazendo, status obrigatório, prazo (dia) opcional, sem horário */
+const AG_TIPOS=['agenda','demanda'],AG_STATUS=['planejada','andamento','concluida','cancelada'];
 const AG_COLS=['id','user_id','resp_nome','resp_usuario','titulo','descricao','tipo','status','dia','hora_ini','hora_fim','criado','criado_por','atualizado','atualizado_por'];
 /* leitura com o nome atual do responsável; conta excluída mantém o nome gravado no registro */
 const AG_SEL=`SELECT ${AG_COLS.map(c=>c==='resp_nome'?'COALESCE(u.nome,a.resp_nome) AS resp_nome':c==='resp_usuario'?'COALESCE(u.usuario,a.resp_usuario) AS resp_usuario':'a.'+c).join(',')},(u.id IS NULL) AS conta_excluida FROM cp_agenda a LEFT JOIN cp_users u ON u.id=a.user_id`;
@@ -44,14 +46,15 @@ const agCampos=x=>{
  if(!titulo||titulo.length>120)fail(400,'Informe um título de até 120 caracteres.');
  if(typeof descricao!=='string'||descricao.length>2000)fail(400,'A descrição pode ter até 2000 caracteres.');
  if(!AG_TIPOS.includes(x.tipo))fail(400,'Tipo inválido.');
- if(!AG_STATUS.includes(x.status))fail(400,'Status inválido.');
- const dia=vazio(x.dia)?null:x.dia,hora_ini=vazio(x.hora_ini)?null:x.hora_ini,hora_fim=vazio(x.hora_fim)?null:x.hora_fim;
+ const status=vazio(x.status)?null:x.status,dia=vazio(x.dia)?null:x.dia,hora_ini=vazio(x.hora_ini)?null:x.hora_ini,hora_fim=vazio(x.hora_fim)?null:x.hora_fim;
+ if(x.tipo==='agenda'){if(status!==null)fail(400,'Itens da agenda não têm status.');if(dia===null)fail(400,'Informe a data.')}
+ else{if(!AG_STATUS.includes(status))fail(400,'Status inválido.');if(hora_ini!==null||hora_fim!==null)fail(400,'Demandas não têm horário.')}
  if(dia!==null&&!isDia(dia))fail(400,'Data inválida.');
  if((hora_ini!==null&&!isHora(hora_ini))||(hora_fim!==null&&!isHora(hora_fim)))fail(400,'Horário inválido.');
  if(dia===null&&(hora_ini!==null||hora_fim!==null))fail(400,'Horários só podem ser informados junto com uma data.');
  if(hora_fim!==null&&hora_ini===null)fail(400,'Informe o horário de início.');
  if(hora_ini!==null&&hora_fim!==null&&hora_fim<hora_ini)fail(400,'O horário de fim não pode ser antes do início.');
- return {titulo,descricao,tipo:x.tipo,status:x.status,dia,hora_ini,hora_fim};
+ return {titulo,descricao,tipo:x.tipo,status,dia,hora_ini,hora_fim};
 };
 /* registro completo vindo de um backup */
 const agRegistro=r=>{
@@ -103,9 +106,12 @@ export default async function handler(req,res){
   if(action==='agendaList'){
    const p=[],w=[],pessoa=u.admin?(b.pessoa??u.id):u.id;
    if(pessoa!=='*'){p.push(String(pessoa));w.push(`a.user_id=$${p.length}`)}
-   if(b.semData===true)w.push('a.dia IS NULL');
+   /* demandas: todas, com ou sem prazo; senão, tudo (agenda e prazos de demandas) no período */
+   if(b.demandas===true)w.push("a.tipo='demanda'");
    else{if(!isDia(b.de)||!isDia(b.ate)||b.de>b.ate)fail(400,'Período inválido.');if((Date.parse(b.ate)-Date.parse(b.de))/864e5>400)fail(400,'Consulte no máximo 400 dias por vez.');p.push(b.de,b.ate);w.push(`a.dia BETWEEN $${p.length-1} AND $${p.length}`)}
-   const q=await pool.query(`${AG_SEL}${w.length?' WHERE '+w.join(' AND '):''} ORDER BY a.dia NULLS LAST,a.hora_ini NULLS FIRST,a.criado LIMIT ${AG_LIMITE+1}`,p);
+   /* demandas abertas primeiro, para não ficarem de fora do limite */
+   const ordem=b.demandas===true?"CASE a.status WHEN 'andamento' THEN 0 WHEN 'planejada' THEN 1 ELSE 2 END,a.dia NULLS LAST,a.criado":'a.dia NULLS LAST,a.hora_ini NULLS FIRST,a.criado';
+   const q=await pool.query(`${AG_SEL}${w.length?' WHERE '+w.join(' AND '):''} ORDER BY ${ordem} LIMIT ${AG_LIMITE+1}`,p);
    return res.json({itens:q.rows.slice(0,AG_LIMITE).map(agRow),limitado:q.rows.length>AG_LIMITE});
   }
   if(action==='agendaSave'){
@@ -119,9 +125,11 @@ export default async function handler(req,res){
     return res.json({item:await agGet(id)});
    }
    const client=await pool.connect();try{await client.query('BEGIN');
-    const q=await client.query('SELECT user_id,atualizado FROM cp_agenda WHERE id=$1 FOR UPDATE',[String(b.id)]),r=q.rows[0];
+    const q=await client.query('SELECT user_id,tipo,atualizado FROM cp_agenda WHERE id=$1 FOR UPDATE',[String(b.id)]),r=q.rows[0];
     if(!r||(!u.admin&&r.user_id!==u.id))fail(404,'Registro não encontrado.');
     if(b.versao!=null&&b.versao!==Number(r.atualizado))fail(409,'Este registro foi alterado por outra pessoa. Recarregue.');
+    /* o tipo é fixo depois de criado: atividade continua atividade, demanda continua demanda */
+    if(x.tipo!==r.tipo)fail(400,'O tipo do registro não pode ser alterado.');
     /* responsável não muda na edição; nome e login são atualizados se a conta ainda existir */
     await client.query('UPDATE cp_agenda SET titulo=$2,descricao=$3,tipo=$4,status=$5,dia=$6,hora_ini=$7,hora_fim=$8,atualizado=$9,atualizado_por=$10,resp_nome=COALESCE((SELECT nome FROM cp_users WHERE id=cp_agenda.user_id),resp_nome),resp_usuario=COALESCE((SELECT usuario FROM cp_users WHERE id=cp_agenda.user_id),resp_usuario) WHERE id=$1',[String(b.id),x.titulo,x.descricao,x.tipo,x.status,x.dia,x.hora_ini,x.hora_fim,Math.max(agora,Number(r.atualizado)+1),u.id]);
     await client.query('COMMIT')}catch(e){await client.query('ROLLBACK');throw e}finally{client.release()}
