@@ -560,6 +560,12 @@ button.plc.miss:hover{background:var(--card2)}
 .agca{margin-top:4px}
 .agvazio{display:grid;gap:8px;justify-items:start}
 @media (max-width:900px){.agwrap{grid-template-columns:1fr}}
+/* administrador: lista suspensa de quem ver; na equipe toda, faixa fina com a cor da pessoa no alto de cada cartão */
+.agver{height:38px;max-width:260px;background:var(--card);border:1px solid var(--bd2);border-radius:99px;padding:0 36px 0 16px;font-size:14px;appearance:none;background-image:linear-gradient(45deg,transparent 50%,var(--mu) 50%),linear-gradient(135deg,var(--mu) 50%,transparent 50%);background-position:calc(100% - 20px) 16px,calc(100% - 15px) 16px;background-size:5px 5px;background-repeat:no-repeat}
+.pc{box-shadow:inset 0 3px 0 var(--pc)}
+.agp{display:block;font-size:12px;font-weight:500;color:var(--mu);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.agleg{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:12px;font-size:12px;color:var(--mu)}
+.agleg span{display:inline-flex;align-items:center;gap:6px}
 @media (max-width:640px){.agd{min-height:48px;padding:4px;align-items:center}.agd .pts{display:none}.agd .qt{display:block;font-size:11px;color:var(--mu)}.agd .qt.er{color:var(--er)}.agi{grid-template-columns:minmax(0,1fr) auto}.agi .h{grid-column:1/-1}.agnav b{min-width:0;flex:1}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
@@ -805,7 +811,8 @@ const NeonDB={
  /* agenda: fora do snapshot; carregada só na tela da Agenda */
  async agendaList(p){return this.req('agendaList',p)},
  async agendaSave(p){return this.req('agendaSave',p)},
- async agendaDelete(id){return this.req('agendaDelete',{id})}
+ async agendaDelete(id){return this.req('agendaDelete',{id})},
+ async agendaPessoas(){return this.req('agendaPessoas')}
 };
 
 const DB=NeonDB;
@@ -910,8 +917,29 @@ const AG_ORD={andamento:0,planejada:1,concluida:2,cancelada:3};
 /* cancelar uma demanda = excluí-la de vez (decisão do responsável); por isso não há botão para "cancelada" */
 const AG_MOV={planejada:[['andamento','Iniciar'],['concluida','Concluir']],andamento:[['concluida','Concluir'],['planejada','Voltar para planejada']],concluida:[['planejada','Reabrir']]};
 const DSEM=['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'],DSEML=['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
-const agVazio=dono=>({aba:'cal',mes:null,dia:null,itens:[],dem:[],enc:[],encDesloc:0,busca:'',buscaRes:null,limitado:false,encerradas:false,movendo:new Set(),pedido:null,chave:null,dono,seq:0,html:null,adiado:false});
+const agVazio=dono=>({aba:'cal',mes:null,dia:null,itens:[],dem:[],enc:[],encDesloc:0,busca:'',buscaRes:null,limitado:false,encerradas:false,movendo:new Set(),pedido:null,chave:null,dono,ver:dono,excluidas:null,pesPedido:false,seq:0,html:null,adiado:false});
 let AG=agVazio(null);
+/* administrador escolhe de quem ver: a própria conta, outra pessoa (inclusive conta excluída) ou '*' = equipe toda */
+const AG_CORES=['#4F9DFF','#B98CFF','#FF8FB1','#33C7C7','#FFB86B','#E6D45A','#8AA4FF','#FF7A59','#D98CE0','#7BD88F'];
+const agEquipe=()=>AG.ver==='*';
+/* cor pela ordem de cadastro das contas: quem entra depois não muda a cor de ninguém (excluir uma conta desloca as cadastradas depois dela);
+   com mais de 10 contas as cores se repetem, por isso o nome sempre aparece junto; conta excluída fica cinza */
+const agNomeOrd=(a,b)=>String(a.nome||a.usuario||'').localeCompare(String(b.nome||b.usuario||''));
+const agCor=id=>{const i=S.users.findIndex(u=>u.id===id);return i<0?'var(--mu2)':AG_CORES[i%AG_CORES.length]};
+const agNomeDe=x=>{const u=S.users.find(u=>u.id===x.user_id);return u?u.nome||u.usuario:`${x.resp_nome||x.resp_usuario||'Sem nome'} (conta excluída)`};
+/* na equipe toda: faixa fina com a cor da pessoa e o nome dela no alto do cartão */
+const agPc=x=>agEquipe()?{c:' pc',s:` style="--pc:${agCor(x.user_id)}"`,n:`<span class="agp">${esc(agNomeDe(x))}</span>`}:{c:'',s:'',n:''};
+const agVerTxt=()=>{if(AG.ver===meId)return 'Sua agenda e suas demandas';if(agEquipe())return 'Agenda e demandas da equipe toda';
+ const u=S.users.find(u=>u.id===AG.ver)||(AG.excluidas||[]).find(p=>p.id===AG.ver);return u?`Agenda e demandas de ${u.nome||u.usuario||'Sem nome'}`:'Agenda e demandas de uma conta excluída'};
+/* as contas ativas vêm da lista de usuários; as excluídas que ainda têm registros, do servidor (uma vez por login) */
+async function agExcluidas(){if(AG.pesPedido)return;AG.pesPedido=true;const dono=AG.dono;
+ /* se falhar, segue sem a lista, sem tentar de novo a cada redesenho */
+ try{const r=await DB.agendaPessoas();if(dono!==AG.dono)return;AG.excluidas=(r.pessoas||[]).filter(p=>p.contaExcluida);if(page==='agenda')rAgenda()}catch(e){if(dono===AG.dono)AG.excluidas=[]}}
+const agSeletor=()=>{const opt=(v,t)=>`<option value="${esc(v)}"${AG.ver===v?' selected':''}>${esc(t)}</option>`;
+ const at=S.users.filter(u=>u.id!==meId).sort(agNomeOrd),ex=(AG.excluidas||[]).slice().sort(agNomeOrd);
+ /* pessoa vista que não está em nenhuma lista (conta excluída agora há pouco): continua aparecendo como escolhida */
+ const solta=AG.ver!==meId&&!agEquipe()&&!at.some(u=>u.id===AG.ver)&&!ex.some(p=>p.id===AG.ver)?opt(AG.ver,'Conta excluída'):'';
+ return `<select id="agver" class="agver" aria-label="De quem ver a agenda">${opt(meId,'Minha agenda')}${opt('*','Equipe toda')}${solta}${at.length?`<optgroup label="Pessoas">${at.map(u=>opt(u.id,u.nome||u.usuario)).join('')}</optgroup>`:''}${ex.length?`<optgroup label="Contas excluídas">${ex.map(p=>opt(p.id,`${p.nome||p.usuario||'Sem nome'} (excluída)`)).join('')}</optgroup>`:''}</select>`};
 /* atrasada é calculado, nunca gravado: só demanda com prazo vencido e ainda aberta */
 const agAtrasada=x=>x.tipo==='demanda'&&!!x.dia&&x.dia<today()&&(x.status==='planejada'||x.status==='andamento');
 const agAberta=x=>x.status==='planejada'||x.status==='andamento';
@@ -919,7 +947,7 @@ const agGrade=mes=>{const ini=mondayOf(pdate(mes+'-01'));return Array.from({leng
 const agAchar=id=>[AG.itens,AG.dem,AG.enc,AG.buscaRes||[]].reduce((r,L)=>r||L.find(x=>x.id===id),undefined);
 /* mês das concluídas exibidas: o mês atual deslocado pelas setas; vira sozinho quando o mês muda */
 const agEncMes=()=>{const h=new Date(),d=new Date(h.getFullYear(),h.getMonth()+AG.encDesloc,1),f=new Date(d.getFullYear(),d.getMonth()+1,1);return{mes:ymd(d).slice(0,7),desde:d.getTime(),ate:f.getTime()-1,nome:`${MESL[d.getMonth()].toLowerCase()} de ${d.getFullYear()}`}};
-const agChave=()=>`${AG.mes}|${agEncMes().mes}|${AG.busca}`;
+const agChave=()=>`${AG.ver}|${AG.mes}|${agEncMes().mes}|${AG.busca}`;
 const agDataEnc=x=>x.encerrado?dfmt(ymd(new Date(x.encerrado))):'';
 const agChip=x=>{const s=AG_ST[x.status]||AG_ST.planejada;return `<span class="chip ${s[1]==='cx'?'ln':s[1]}">${s[0]}</span>`};
 async function agCarregar(quieto){
@@ -928,7 +956,9 @@ async function agCarregar(quieto){
  /* calendário, abertas e concluídas do mês escolhido; a busca só quando houver uma ativa */
  /* a busca roda quando o termo muda, não a cada atualização automática */
  const g=agGrade(AG.mes),chave=agChave(),em=agEncMes(),busca=AG.busca,nova=busca&&(AG.buscaFeita!==busca||!AG.buscaRes),dono=AG.dono,seq=++AG.seq;
- try{const[c,f,e,b]=await Promise.all([DB.agendaList({de:g[0],ate:g[41]}),DB.agendaList({demandas:'abertas'}),DB.agendaList({encerradas:true,desde:em.desde,ate:em.ate}),nova?DB.agendaList({busca}):null]);
+ /* só o administrador envia de quem quer ver; o servidor ignora esse campo para as demais contas */
+ const pes=isAdmin()?{pessoa:AG.ver}:{};
+ try{const[c,f,e,b]=await Promise.all([DB.agendaList({...pes,de:g[0],ate:g[41]}),DB.agendaList({...pes,demandas:'abertas'}),DB.agendaList({...pes,encerradas:true,desde:em.desde,ate:em.ate}),nova?DB.agendaList({...pes,busca}):null]);
   if(seq!==AG.seq||chave!==agChave()||dono!==AG.dono||dono!==meId)return;
   /* demanda cancelada não aparece em lugar nenhum (registros antigos com esse status) */
   const novo={itens:(c.itens||[]).filter(x=>x.status!=='cancelada'),dem:f.itens||[],enc:e.itens||[],buscaRes:!busca?null:b?b.itens||[]:AG.buscaRes,buscaLim:b?!!b.limitado:AG.buscaLim,buscaFeita:busca,limitado:!!(c.limitado||f.limitado)};
@@ -938,26 +968,30 @@ async function agCarregar(quieto){
  }catch(e){if(!quieto)toast(e.message,true)}
 }
 /* linha do painel do dia: item da agenda (horário) ou prazo de demanda (status) */
-const agItem=x=>{const dem=x.tipo==='demanda';
- return `<button class="agi" data-agabrir="${esc(x.id)}"><span class="h">${dem?'📌 Prazo':x.hora_ini?esc(x.hora_ini)+(x.hora_fim?'–'+esc(x.hora_fim):''):'Sem horário'}</span><span class="t"><b>${esc(x.titulo)}</b>${x.descricao?`<small>${esc(x.descricao)}</small>`:''}</span>${dem?(agAtrasada(x)?'<span class="chip er">Atrasada</span>':agChip(x)):''}</button>`};
+const agItem=x=>{const dem=x.tipo==='demanda',p=agPc(x);
+ return `<button class="agi${p.c}"${p.s} data-agabrir="${esc(x.id)}"><span class="h">${dem?'📌 Prazo':x.hora_ini?esc(x.hora_ini)+(x.hora_fim?'–'+esc(x.hora_fim):''):'Sem horário'}</span><span class="t">${p.n}<b>${esc(x.titulo)}</b>${x.descricao?`<small>${esc(x.descricao)}</small>`:''}</span>${dem?(agAtrasada(x)?'<span class="chip er">Atrasada</span>':agChip(x)):''}</button>`};
 function agCal(pronto){
  const[y,m]=AG.mes.split('-').map(Number),g=agGrade(AG.mes),hj=today(),por={};
  AG.itens.forEach(x=>(por[x.dia]=por[x.dia]||[]).push(x));
  /* agenda primeiro (por horário), depois os prazos de demandas */
  Object.values(por).forEach(L=>L.sort((a,b)=>(a.tipo===b.tipo?0:a.tipo==='agenda'?-1:1)||(a.hora_ini||'').localeCompare(b.hora_ini||'')));
  const cel=d=>{const L=por[d]||[],atr=L.some(agAtrasada),n=+d.slice(8);
-  const pts=L.slice(0,3).map(x=>`<i class="dot ${x.tipo==='agenda'?'ag':agAtrasada(x)?'er':(AG_ST[x.status]||AG_ST.planejada)[1]}"></i>`).join('')+(L.length>3?`<small>+${L.length-3}</small>`:'');
+  /* na equipe toda, o pontinho mostra a cor da pessoa; o status continua nas etiquetas do painel do dia */
+  const pts=L.slice(0,3).map(x=>agEquipe()?`<i class="dot" style="background:${agCor(x.user_id)}"></i>`:`<i class="dot ${x.tipo==='agenda'?'ag':agAtrasada(x)?'er':(AG_ST[x.status]||AG_ST.planejada)[1]}"></i>`).join('')+(L.length>3?`<small>+${L.length-3}</small>`:'');
   return `<button class="agd${d.slice(0,7)!==AG.mes?' fora':''}${d===hj?' hoje':''}${d===AG.dia?' sel':''}" data-agdia="${d}" aria-pressed="${d===AG.dia}" aria-label="${n} de ${MESL[+d.slice(5,7)-1].toLowerCase()} de ${d.slice(0,4)}${d===hj?', hoje':''}${L.length?`, ${L.length} ${L.length===1?'item':'itens'}${atr?', com demanda atrasada':''}`:''}"><span class="n">${n}</span><span class="pts">${pts}</span>${L.length?`<span class="qt${atr?' er':''}">${L.length}</span>`:''}</button>`};
  const L=por[AG.dia]||[],dd=pdate(AG.dia);
+ /* legenda de cores: só as pessoas que têm algo neste mês */
+ const P=agEquipe()?[...new Map(AG.itens.filter(x=>x.dia.slice(0,7)===AG.mes).map(x=>[x.user_id,x])).values()].sort((a,b)=>agNomeDe(a).localeCompare(agNomeDe(b))):[];
+ const leg=P.length?`<div class="agleg" role="list" aria-label="Cores por pessoa">${P.map(x=>`<span role="listitem"><i class="dot" style="background:${agCor(x.user_id)}"></i>${esc(agNomeDe(x))}</span>`).join('')}</div>`:'';
  return `<div class="agwrap"><div class="panel agcal"><div class="agnav"><button class="ico" data-agmes="-1" aria-label="Mês anterior">${ICO.l}</button><b>${MESL[m-1]} ${y}</b><button class="ico" data-agmes="1" aria-label="Próximo mês">${ICO.r}</button><button class="btn sm ghost" data-aghoje ${AG.dia===hj?'aria-disabled="true"':''}>Hoje</button></div>
- <div class="agsem">${DSEM.map(s=>`<span>${s}</span>`).join('')}</div><div class="aggrid">${g.map(cel).join('')}</div>${pronto?'':'<p class="muted agload" role="status">Carregando…</p>'}</div>
+ <div class="agsem">${DSEM.map(s=>`<span>${s}</span>`).join('')}</div><div class="aggrid">${g.map(cel).join('')}</div>${leg}${pronto?'':'<p class="muted agload" role="status">Carregando…</p>'}</div>
  <div class="panel agdia"><div class="sech"><div><h2>${DSEML[dd.getDay()]}, ${+AG.dia.slice(8)} de ${MESL[dd.getMonth()].toLowerCase()}</h2><p>${L.length?`${L.length} ${L.length===1?'item':'itens'}`:'Nada programado para este dia.'}</p></div></div>${L.length?`<div class="aglist">${L.map(agItem).join('')}</div>`:''}<button class="btn" data-agnovo="agenda">${ICO.plus}Nova atividade neste dia</button></div></div>`;
 }
 function agDem(pronto){
  const A=AG.dem.filter(agAberta).sort((a,b)=>(AG_ORD[a.status]??9)-(AG_ORD[b.status]??9)||(a.dia||'9999').localeCompare(b.dia||'9999')||a.criado-b.criado);
  /* cartões abertos podem ser arrastados entre as colunas; os botões fazem o mesmo no celular e no teclado */
  /* demanda sendo gravada: botões travados e sem arrastar até a resposta (o estado faz parte do HTML, então o cache funciona) */
- const card=x=>{const mov=AG.movendo.has(x.id),trava=mov?' aria-disabled="true"':'',ab=agAberta(x);return `<div class="panel agc${ab?'':' fim'}"${ab&&!mov?` draggable="true" data-agcard="${esc(x.id)}"`:''}><div class="agch">${agChip(x)}${agAtrasada(x)?'<span class="chip er">Atrasada</span>':''}<span class="chip ln">${x.dia?'Prazo '+esc(dfmt(x.dia)):'Sem prazo'}</span></div><h3>${esc(x.titulo)}</h3>${x.descricao?`<p>${esc(x.descricao)}</p>`:''}<small class="muted">${ab?`Criado em ${tsTxt(x.criado)}`:x.encerrado?`Concluída em ${esc(agDataEnc(x))}`:'Concluída'}</small>
+ const card=x=>{const mov=AG.movendo.has(x.id),trava=mov?' aria-disabled="true"':'',ab=agAberta(x),p=agPc(x);return `<div class="panel agc${ab?'':' fim'}${p.c}"${p.s}${ab&&!mov?` draggable="true" data-agcard="${esc(x.id)}"`:''}>${p.n}<div class="agch">${agChip(x)}${agAtrasada(x)?'<span class="chip er">Atrasada</span>':''}<span class="chip ln">${x.dia?'Prazo '+esc(dfmt(x.dia)):'Sem prazo'}</span></div><h3>${esc(x.titulo)}</h3>${x.descricao?`<p>${esc(x.descricao)}</p>`:''}<small class="muted">${ab?`Criado em ${tsTxt(x.criado)}`:x.encerrado?`Concluída em ${esc(agDataEnc(x))}`:'Concluída'}</small>
  <div class="agca">${(AG_MOV[x.status]||[]).map(([st,l])=>`<button class="btn sm${st==='concluida'?' pri':''}" data-agmover="${esc(x.id)}" data-agpara="${st}"${trava}>${l}</button>`).join('')}</div>
  <div class="agca"><button class="btn sm ghost" data-agabrir="${esc(x.id)}"${trava}>${ICO.edit}Editar</button>${ab?`<button class="btn sm ghost dan" data-agcancelar="${esc(x.id)}"${trava}>${ICO.x}Cancelar</button>`:`<button class="btn sm ghost dan" data-agexcluir="${esc(x.id)}"${trava}>${ICO.del}Excluir</button>`}</div></div>`};
  const col=(st,titulo)=>{const L=A.filter(x=>x.status===st);return `<section class="agcol" data-agcol="${st}" aria-label="${titulo}"><h2>${titulo} <span class="muted">(${L.length})</span></h2>${L.length?L.map(card).join(''):'<p class="muted">Nenhuma demanda aqui.</p>'}</section>`};
@@ -972,13 +1006,14 @@ function agDem(pronto){
  return `<div class="agquadro">${col('planejada','Planejada')}${col('andamento','Em andamento')}</div>`+enc;
 }
 /* mudança rápida de status (botão ou arrastar); usa a mesma gravação da edição, com controle de versão */
-async function moverAg(id,status){const x=agAchar(id),mv=AG.movendo;
+async function moverAg(id,status){const x=agAchar(id),mv=AG.movendo,ver=AG.ver;
  if(!x||x.tipo!=='demanda'||x.status===status||!Object.hasOwn(AG_ST,status)||mv.has(id))return;
  /* uma mudança por demanda de cada vez: evita o 409 enganoso de dois cliques seguidos */
  mv.add(id);rAgenda();
  try{const r=await DB.agendaSave({id,versao:x.atualizado,data:{tipo:'demanda',titulo:x.titulo,descricao:x.descricao,status,dia:x.dia,hora_ini:null,hora_fim:null}});
   /* aplica na hora a versão gravada, para o cartão já aparecer na coluna nova com a versão certa */
-  if(r&&r.item){if(agAberta(r.item)){AG.enc=AG.enc.filter(y=>y.id!==id);if(AG.buscaRes)AG.buscaRes=AG.buscaRes.filter(y=>y.id!==id);if(!AG.dem.some(y=>y.id===id))AG.dem.push(r.item)}else AG.dem=AG.dem.filter(y=>y.id!==id);['dem','itens','enc'].forEach(k=>{const i=AG[k].findIndex(y=>y.id===id);if(i>=0)AG[k][i]=r.item})}
+  /* se o administrador trocou de pessoa durante a gravação, não mistura o cartão na tela nova: ela recarrega sozinha */
+  if(r&&r.item&&AG.ver===ver){if(agAberta(r.item)){AG.enc=AG.enc.filter(y=>y.id!==id);if(AG.buscaRes)AG.buscaRes=AG.buscaRes.filter(y=>y.id!==id);if(!AG.dem.some(y=>y.id===id))AG.dem.push(r.item)}else AG.dem=AG.dem.filter(y=>y.id!==id);['dem','itens','enc'].forEach(k=>{const i=AG[k].findIndex(y=>y.id===id);if(i>=0)AG[k][i]=r.item})}
   if(ED&&ED.kind==='agenda'&&ED.id===id)closeEd();
   toast(status==='andamento'?'Demanda iniciada':status==='planejada'?(agAberta(x)?'Demanda de volta para planejada':'Demanda reaberta'):'Demanda concluída');
  }catch(e){toast(agConflito(e)||e.message,true)}
@@ -989,22 +1024,31 @@ async function moverAg(id,status){const x=agAchar(id),mv=AG.movendo;
 }
 function rAgenda(){
  if(AG.dono!==meId)AG=agVazio(meId);
+ /* quem deixa de ser administrador volta a ver só a própria agenda */
+ const adm=isAdmin();if(!adm&&AG.ver!==meId){AG.ver=meId;agLimpar()}
+ if(adm&&!AG.excluidas)agExcluidas();
  if(!AG.mes){AG.dia=today();AG.mes=AG.dia.slice(0,7)}
  if(AG.pedido!==agChave()){AG.pedido=agChave();agCarregar()}
  const pronto=AG.chave===agChave(),cal=AG.aba==='cal',ab=AG.dem.filter(agAberta).length;
  const abas=[['cal','Agenda'],['dem',`Demandas${ab?' · '+ab+(ab===1?' aberta':' abertas'):''}`]].map(([k,l])=>`<button role="tab" aria-selected="${AG.aba===k}" class="${AG.aba===k?'on':''}" data-agaba="${k}">${l}</button>`).join('');
  /* só redesenha quando algo mudou, para não tirar o foco de quem navega pelo teclado */
- const html=`<header class="phead"><div><p class="kick">Sua agenda e suas demandas</p><h1>Agenda e Demandas</h1><p class="sub">O que você vai fazer em cada dia do mês e as demandas que está conduzindo.</p></div><div class="tools"><button class="btn pri" data-agnovo="${cal?'agenda':'demanda'}">${ICO.plus}${cal?'Nova atividade':'Nova demanda'}</button></div></header>
+ const html=`<header class="phead"><div><p class="kick">${esc(agVerTxt())}</p><h1>Agenda e Demandas</h1><p class="sub">O que você vai fazer em cada dia do mês e as demandas que está conduzindo.</p></div><div class="tools">${adm?agSeletor():''}<button class="btn pri" data-agnovo="${cal?'agenda':'demanda'}">${ICO.plus}${cal?'Nova atividade':'Nova demanda'}</button></div></header>
  <div class="agtabs"><div class="seg" role="tablist" aria-label="Agenda e Demandas">${abas}</div></div>
  ${AG.limitado?'<div class="banner"><span class="dot wa"></span><div>Há muitos registros: apenas os 2.000 primeiros estão sendo exibidos.</div></div>':''}${cal?agCal(pronto):agDem(pronto)}`;
  /* não redesenha enquanto a pessoa digita na busca; redesenha ao sair do campo */
  if(html!==AG.html){if(document.activeElement&&document.activeElement.id==='agbusca'){AG.adiado=true;return}AG.html=html;$('p-agenda').innerHTML=html}
 }
+/* troca de pessoa: some com o que era da anterior e recarrega tudo, inclusive a busca */
+function agLimpar(){Object.assign(AG,{itens:[],dem:[],enc:[],buscaRes:null,buscaFeita:null,limitado:false,html:null})}
 function openAg(id,tipo){
- const x=id?agAchar(id):tipo==='demanda'?{tipo,titulo:'',descricao:'',status:'planejada',dia:null}:{tipo:'agenda',titulo:'',descricao:'',status:null,dia:AG.dia,hora_ini:null,hora_fim:null};if(!x)return;
+ /* novo registro: o responsável sugerido é a pessoa que está sendo vista, se a conta dela ainda existir */
+ const resp=S.users.some(u=>u.id===AG.ver)?AG.ver:meId;
+ const x=id?agAchar(id):tipo==='demanda'?{tipo,titulo:'',descricao:'',status:'planejada',dia:null,resp}:{tipo:'agenda',titulo:'',descricao:'',status:null,dia:AG.dia,hora_ini:null,hora_fim:null,resp};if(!x)return;
  ED={kind:'agenda',id,x:clone(x)};rEd();showEd();
 }
 function rEdAg(){const{id,x}=ED,dem=x.tipo==='demanda';if(ED.rendered)return;ED.rendered=true;
+ /* só o administrador escolhe o responsável, e só ao criar: depois o responsável não muda */
+ const resp=!id&&isAdmin()?`<div class="f"><label for="ag_resp">Responsável</label><select id="ag_resp">${S.users.slice().sort(agNomeOrd).map(u=>`<option value="${esc(u.id)}"${u.id===x.resp?' selected':''}>${esc(u.nome||u.usuario)}${u.id===meId?' (você)':''}</option>`).join('')}</select></div>`:'';
  const campos=dem?`<div class="g2"><div class="f"><label for="ag_status">Status</label><select id="ag_status">${Object.entries(AG_ST).filter(([v])=>v!=='cancelada').map(([v,t])=>`<option value="${v}" ${x.status===v?'selected':''}>${t[0]}</option>`).join('')}</select></div><div class="f"><label for="ag_dia">Prazo (opcional)</label><input id="ag_dia" type="date" value="${esc(x.dia||'')}"><span class="msg"></span></div></div>`
   :`<div class="f"><label for="ag_dia">Data</label><input id="ag_dia" type="date" value="${esc(x.dia||'')}"><span class="msg"></span></div>
  <div class="g2"><div class="f"><label for="ag_hora_ini">Início (opcional)</label><input id="ag_hora_ini" type="time" value="${esc(x.hora_ini||'')}"></div><div class="f"><label for="ag_hora_fim">Fim (opcional)</label><input id="ag_hora_fim" type="time" value="${esc(x.hora_fim||'')}"><span class="msg"></span></div></div>`;
@@ -1012,6 +1056,8 @@ function rEdAg(){const{id,x}=ED,dem=x.tipo==='demanda';if(ED.rendered)return;ED.
  <div class="edb"><div class="f"><label for="ag_titulo">Título</label><input id="ag_titulo" maxlength="120" value="${esc(x.titulo)}" autocomplete="off"><span class="msg"></span></div>
  <div class="f"><label for="ag_descricao">Descrição</label><textarea id="ag_descricao" maxlength="2000">${esc(x.descricao)}</textarea></div>
  ${campos}
+ ${resp}
+ ${id&&isAdmin()&&x.user_id!==meId?`<div class="last">Responsável: ${esc(agNomeDe(x))}</div>`:''}
  ${id?`<div class="last">Criado em ${tsTxt(x.criado)}${x.atualizado!==x.criado?` · alterado em ${tsTxt(x.atualizado)}`:''}</div>`:''}
  <div class="eda"><button class="btn pri" data-agsalvar>${id?'Salvar':'Adicionar'}</button><button class="btn" data-edclose>Cancelar</button>${id?`<button class="btn dan" data-agexcluir="${esc(id)}">${ICO.del}Excluir</button>`:''}</div></div>`;
 }
@@ -1027,8 +1073,9 @@ async function saveAg(btn){const ed=ED,{id,x}=ed,dem=x.tipo==='demanda',v=k=>$('
  if(data.hora_ini&&data.hora_fim&&data.hora_fim<data.hora_ini)return erro('hora_fim','O fim não pode ser antes do início.');
  /* botão travado durante o envio: evita registro duplicado por duplo clique ou Enter */
  const lbl=btn.innerHTML;btn.textContent='Salvando…';btn.setAttribute('aria-disabled','true');
- try{await DB.agendaSave(id?{id,versao:x.atualizado,data}:{data});
-  if(ED===ed)closeEd();toast(dem&&!agAberta(data)&&(!id||agAberta(x))?'Demanda concluída':id?(dem?'Demanda salva':'Atividade salva'):(dem?'Demanda adicionada':'Atividade adicionada'));
+ const resp=!id&&$('ag_resp')?$('ag_resp').value:null,outro=resp&&resp!==meId?S.users.find(u=>u.id===resp):null;
+ try{await DB.agendaSave(id?{id,versao:x.atualizado,data}:resp?{data,responsavel:resp}:{data});
+  if(ED===ed)closeEd();toast((dem&&!agAberta(data)&&(!id||agAberta(x))?'Demanda concluída':id?(dem?'Demanda salva':'Atividade salva'):(dem?'Demanda adicionada':'Atividade adicionada'))+(outro?` para ${outro.nome||outro.usuario}`:''));
   if(!dem){AG.dia=dia;AG.mes=dia.slice(0,7)}
   AG.buscaFeita=null;AG.pedido=null;render();
  }catch(e){btn.innerHTML=lbl;btn.removeAttribute('aria-disabled');const c=agConflito(e);toast(c||e.message,true);if(c){if(ED===ed)closeEd();AG.buscaFeita=null;AG.pedido=null;render()}}
@@ -1083,6 +1130,7 @@ function agBuscar(){const i=$('agbusca'),s=i?i.value.trim():'';
 }
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.id==='agbusca'){e.preventDefault();agBuscar()}});
 document.addEventListener('input',e=>{if(e.target.id==='agbusca')AG.buscaTxt=e.target.value});
+document.addEventListener('change',e=>{if(e.target.id!=='agver'||!isAdmin())return;AG.ver=e.target.value;agLimpar();rAgenda();const s=$('agver');s&&s.focus()});
 document.addEventListener('focusout',e=>{if(e.target.id==='agbusca'&&AG.adiado){AG.adiado=false;setTimeout(()=>page==='agenda'&&rAgenda())}});
 $('ed').addEventListener('keydown',e=>{if(e.key==='Enter'&&ED&&ED.kind==='agenda'&&e.target.matches('input')){const b=$('ed').querySelector('[data-agsalvar]');b&&b.click()}});
 
