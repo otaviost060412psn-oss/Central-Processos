@@ -519,6 +519,11 @@ button.plc.miss:hover{background:var(--card2)}
 .agc.fim{opacity:.7}
 .agenc{margin-top:var(--gap);display:grid;gap:var(--gap);justify-items:start}
 .agenc .agfut{width:100%}
+.agencp{width:100%;display:grid;gap:12px}
+.agencp .agnav{margin:0}
+.agbusca{display:flex;gap:8px;flex-wrap:wrap}
+.agbusca input{flex:1 1 220px;height:36px;background:var(--bg);border:1px solid var(--bd);border-radius:10px;padding:0 12px}
+.agbusca input:focus{outline:0;border-color:var(--pri);box-shadow:0 0 0 3px rgba(0,204,29,.18)}
 .agquadro{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--gap);align-items:start}
 .agcol{background:var(--bg);border:1px solid var(--bd);border-radius:12px;padding:12px;display:grid;gap:10px;align-content:start;min-height:140px;transition:border-color .15s,background .15s}
 .agcol.alvo{border-color:var(--pri);border-style:dashed;background:rgba(0,204,29,.06)}
@@ -852,25 +857,33 @@ function render(){
    'demanda': o que a pessoa está fazendo (status obrigatório, prazo opcional) */
 const AG_ST={planejada:['Planejada',''],andamento:['Em andamento','wa'],concluida:['Concluída','ok'],cancelada:['Cancelada','cx']};
 const AG_ORD={andamento:0,planejada:1,concluida:2,cancelada:3};
-const AG_MOV={planejada:[['andamento','Iniciar'],['concluida','Concluir'],['cancelada','Cancelar']],andamento:[['concluida','Concluir'],['planejada','Voltar para planejada'],['cancelada','Cancelar']],concluida:[['planejada','Reabrir']],cancelada:[['planejada','Reabrir']]};
+/* cancelar uma demanda = excluí-la de vez (decisão do responsável); por isso não há botão para "cancelada" */
+const AG_MOV={planejada:[['andamento','Iniciar'],['concluida','Concluir']],andamento:[['concluida','Concluir'],['planejada','Voltar para planejada']],concluida:[['planejada','Reabrir']]};
 const DSEM=['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'],DSEML=['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
-const agVazio=dono=>({aba:'cal',mes:null,dia:null,itens:[],dem:[],limitado:false,encerradas:false,movendo:new Set(),pedido:null,chave:null,dono,seq:0,html:null});
+const agVazio=dono=>({aba:'cal',mes:null,dia:null,itens:[],dem:[],enc:[],encDesloc:0,busca:'',buscaRes:null,limitado:false,encerradas:false,movendo:new Set(),pedido:null,chave:null,dono,seq:0,html:null,adiado:false});
 let AG=agVazio(null);
 /* atrasada é calculado, nunca gravado: só demanda com prazo vencido e ainda aberta */
 const agAtrasada=x=>x.tipo==='demanda'&&!!x.dia&&x.dia<today()&&(x.status==='planejada'||x.status==='andamento');
 const agAberta=x=>x.status==='planejada'||x.status==='andamento';
 const agGrade=mes=>{const ini=mondayOf(pdate(mes+'-01'));return Array.from({length:42},(_,i)=>addDays(ini,i))};
-const agAchar=id=>AG.itens.find(x=>x.id===id)||AG.dem.find(x=>x.id===id);
+const agAchar=id=>[AG.itens,AG.dem,AG.enc,AG.buscaRes||[]].reduce((r,L)=>r||L.find(x=>x.id===id),undefined);
+/* mês das concluídas exibidas: o mês atual deslocado pelas setas; vira sozinho quando o mês muda */
+const agEncMes=()=>{const h=new Date(),d=new Date(h.getFullYear(),h.getMonth()+AG.encDesloc,1),f=new Date(d.getFullYear(),d.getMonth()+1,1);return{mes:ymd(d).slice(0,7),desde:d.getTime(),ate:f.getTime()-1,nome:`${MESL[d.getMonth()].toLowerCase()} de ${d.getFullYear()}`}};
+const agChave=()=>`${AG.mes}|${agEncMes().mes}|${AG.busca}`;
+const agDataEnc=x=>x.encerrado?dfmt(ymd(new Date(x.encerrado))):'';
 const agChip=x=>{const s=AG_ST[x.status]||AG_ST.planejada;return `<span class="chip ${s[1]==='cx'?'ln':s[1]}">${s[0]}</span>`};
 async function agCarregar(quieto){
  if(!AG.mes)return;
  /* só a resposta mais recente, do mesmo mês e da mesma conta, é aceita */
- const g=agGrade(AG.mes),mes=AG.mes,dono=AG.dono,seq=++AG.seq;
- try{const[c,f]=await Promise.all([DB.agendaList({de:g[0],ate:g[41]}),DB.agendaList({demandas:true})]);
-  if(seq!==AG.seq||mes!==AG.mes||dono!==AG.dono||dono!==meId)return;
-  const novo={itens:c.itens||[],dem:f.itens||[],limitado:!!(c.limitado||f.limitado)};
-  const mudou=AG.chave!==mes||JSON.stringify([AG.itens,AG.dem])!==JSON.stringify([novo.itens,novo.dem]);
-  Object.assign(AG,novo,{chave:mes});
+ /* calendário, abertas e concluídas do mês escolhido; a busca só quando houver uma ativa */
+ /* a busca roda quando o termo muda, não a cada atualização automática */
+ const g=agGrade(AG.mes),chave=agChave(),em=agEncMes(),busca=AG.busca,nova=busca&&(AG.buscaFeita!==busca||!AG.buscaRes),dono=AG.dono,seq=++AG.seq;
+ try{const[c,f,e,b]=await Promise.all([DB.agendaList({de:g[0],ate:g[41]}),DB.agendaList({demandas:'abertas'}),DB.agendaList({encerradas:true,desde:em.desde,ate:em.ate}),nova?DB.agendaList({busca}):null]);
+  if(seq!==AG.seq||chave!==agChave()||dono!==AG.dono||dono!==meId)return;
+  /* demanda cancelada não aparece em lugar nenhum (registros antigos com esse status) */
+  const novo={itens:(c.itens||[]).filter(x=>x.status!=='cancelada'),dem:f.itens||[],enc:e.itens||[],buscaRes:!busca?null:b?b.itens||[]:AG.buscaRes,buscaLim:b?!!b.limitado:AG.buscaLim,buscaFeita:busca,limitado:!!(c.limitado||f.limitado)};
+  const mudou=AG.chave!==chave||JSON.stringify([AG.itens,AG.dem,AG.enc,AG.buscaRes])!==JSON.stringify([novo.itens,novo.dem,novo.enc,novo.buscaRes]);
+  Object.assign(AG,novo,{chave});
   if(mudou&&page==='agenda')rAgenda();
  }catch(e){if(!quieto)toast(e.message,true)}
 }
@@ -891,17 +904,21 @@ function agCal(pronto){
  <div class="panel agdia"><div class="sech"><div><h2>${DSEML[dd.getDay()]}, ${+AG.dia.slice(8)} de ${MESL[dd.getMonth()].toLowerCase()}</h2><p>${L.length?`${L.length} ${L.length===1?'item':'itens'}`:'Nada programado para este dia.'}</p></div></div>${L.length?`<div class="aglist">${L.map(agItem).join('')}</div>`:''}<button class="btn" data-agnovo="agenda">${ICO.plus}Nova atividade neste dia</button></div></div>`;
 }
 function agDem(pronto){
- const T=AG.dem.slice().sort((a,b)=>(AG_ORD[a.status]??9)-(AG_ORD[b.status]??9)||(a.dia||'9999').localeCompare(b.dia||'9999')||a.criado-b.criado);
- /* abertas sempre visíveis; concluídas e canceladas só quando a pessoa pede */
- const A=T.filter(agAberta),F=T.filter(x=>!agAberta(x));if(!F.length)AG.encerradas=false;
+ const A=AG.dem.filter(agAberta).sort((a,b)=>(AG_ORD[a.status]??9)-(AG_ORD[b.status]??9)||(a.dia||'9999').localeCompare(b.dia||'9999')||a.criado-b.criado);
  /* cartões abertos podem ser arrastados entre as colunas; os botões fazem o mesmo no celular e no teclado */
  /* demanda sendo gravada: botões travados e sem arrastar até a resposta (o estado faz parte do HTML, então o cache funciona) */
- const card=x=>{const mov=AG.movendo.has(x.id),trava=mov?' aria-disabled="true"':'';return `<div class="panel agc${agAberta(x)?'':' fim'}"${agAberta(x)&&!mov?` draggable="true" data-agcard="${esc(x.id)}"`:''}><div class="agch">${agChip(x)}${agAtrasada(x)?'<span class="chip er">Atrasada</span>':''}<span class="chip ln">${x.dia?'Prazo '+esc(dfmt(x.dia)):'Sem prazo'}</span></div><h3>${esc(x.titulo)}</h3>${x.descricao?`<p>${esc(x.descricao)}</p>`:''}<small class="muted">Criado em ${tsTxt(x.criado)}</small>
+ const card=x=>{const mov=AG.movendo.has(x.id),trava=mov?' aria-disabled="true"':'',ab=agAberta(x);return `<div class="panel agc${ab?'':' fim'}"${ab&&!mov?` draggable="true" data-agcard="${esc(x.id)}"`:''}><div class="agch">${agChip(x)}${agAtrasada(x)?'<span class="chip er">Atrasada</span>':''}<span class="chip ln">${x.dia?'Prazo '+esc(dfmt(x.dia)):'Sem prazo'}</span></div><h3>${esc(x.titulo)}</h3>${x.descricao?`<p>${esc(x.descricao)}</p>`:''}<small class="muted">${ab?`Criado em ${tsTxt(x.criado)}`:x.encerrado?`Concluída em ${esc(agDataEnc(x))}`:'Concluída'}</small>
  <div class="agca">${(AG_MOV[x.status]||[]).map(([st,l])=>`<button class="btn sm${st==='concluida'?' pri':''}" data-agmover="${esc(x.id)}" data-agpara="${st}"${trava}>${l}</button>`).join('')}</div>
- <div class="agca"><button class="btn sm ghost" data-agabrir="${esc(x.id)}"${trava}>${ICO.edit}Editar</button><button class="btn sm ghost dan" data-agexcluir="${esc(x.id)}"${trava}>${ICO.del}Excluir</button></div></div>`};
+ <div class="agca"><button class="btn sm ghost" data-agabrir="${esc(x.id)}"${trava}>${ICO.edit}Editar</button>${ab?`<button class="btn sm ghost dan" data-agcancelar="${esc(x.id)}"${trava}>${ICO.x}Cancelar</button>`:`<button class="btn sm ghost dan" data-agexcluir="${esc(x.id)}"${trava}>${ICO.del}Excluir</button>`}</div></div>`};
  const col=(st,titulo)=>{const L=A.filter(x=>x.status===st);return `<section class="agcol" data-agcol="${st}" aria-label="${titulo}"><h2>${titulo} <span class="muted">(${L.length})</span></h2>${L.length?L.map(card).join(''):'<p class="muted">Nenhuma demanda aqui.</p>'}</section>`};
- const enc=F.length?`<div class="agenc"><button class="btn sm ghost" data-agenc aria-expanded="${AG.encerradas}">${AG.encerradas?'Ocultar encerradas':`Mostrar encerradas (${F.length})`}</button>${AG.encerradas?`<div class="agfut">${F.map(card).join('')}</div>`:''}</div>`:'';
- if(!T.length)return pronto?`<div class="panel agvazio"><b>Nenhuma demanda ainda.</b><p class="muted">Registre aqui o que você está fazendo, como preparar um treinamento ou desenvolver uma melhoria, e acompanhe pelo status.</p><button class="btn" data-agnovo="demanda">${ICO.plus}Nova demanda</button></div>`:'<div class="panel"><p class="muted" role="status">Carregando…</p></div>';
+ /* concluídas: as do mês escolhido (setas), ou o resultado da busca em todos os meses */
+ const em=agEncMes(),R=AG.buscaRes;
+ const lista=!pronto?'<p class="muted" role="status">Carregando…</p>':R?`<p class="muted">${R.length?`${AG.buscaLim?'Os 50 resultados mais recentes':R.length+(R.length===1?' resultado':' resultados')} para “${esc(AG.busca)}” em todos os meses.`:`Nenhuma demanda concluída encontrada para “${esc(AG.busca)}”.`}</p>${R.length?`<div class="agfut">${R.map(card).join('')}</div>`:''}`
+  :AG.enc.length?`<div class="agfut">${AG.enc.map(card).join('')}</div>`:'<p class="muted">Nenhuma demanda concluída neste mês.</p>';
+ const enc=`<div class="agenc"><button class="btn sm ghost" data-agenc aria-expanded="${AG.encerradas}">${AG.encerradas?'Ocultar concluídas':`Mostrar concluídas${AG.encDesloc?'':` de ${MESL[new Date().getMonth()].toLowerCase()} (${AG.enc.length})`}`}</button>
+ ${AG.encerradas?`<div class="panel agencp"><div class="agnav">${AG.busca?'<b>Busca</b>':`<button class="ico" data-agencmes="-1" aria-label="Mês anterior">${ICO.l}</button><b>Concluídas em ${em.nome}</b><button class="ico" data-agencmes="1" aria-label="Próximo mês"${AG.encDesloc>=0?' aria-disabled="true"':''}>${ICO.r}</button>`}</div>
+ <div class="agbusca"><input id="agbusca" type="search" maxlength="100" placeholder="Buscar em todas as concluídas" aria-label="Buscar em todas as demandas concluídas" value="${esc(AG.buscaTxt??AG.busca)}" autocomplete="off"><button class="btn sm" data-agbuscar>Buscar</button>${AG.busca?'<button class="btn sm ghost" data-aglimpar>Limpar busca</button>':''}</div>${lista}</div>`:''}</div>`;
+ if(!pronto&&!A.length)return '<div class="panel"><p class="muted" role="status">Carregando…</p></div>';
  return `<div class="agquadro">${col('planejada','Planejada')}${col('andamento','Em andamento')}</div>`+enc;
 }
 /* mudança rápida de status (botão ou arrastar); usa a mesma gravação da edição, com controle de versão */
@@ -911,33 +928,34 @@ async function moverAg(id,status){const x=agAchar(id),mv=AG.movendo;
  mv.add(id);rAgenda();
  try{const r=await DB.agendaSave({id,versao:x.atualizado,data:{tipo:'demanda',titulo:x.titulo,descricao:x.descricao,status,dia:x.dia,hora_ini:null,hora_fim:null}});
   /* aplica na hora a versão gravada, para o cartão já aparecer na coluna nova com a versão certa */
-  if(r&&r.item)['dem','itens'].forEach(k=>{const i=AG[k].findIndex(y=>y.id===id);if(i>=0)AG[k][i]=r.item});
+  if(r&&r.item){if(agAberta(r.item)){AG.enc=AG.enc.filter(y=>y.id!==id);if(AG.buscaRes)AG.buscaRes=AG.buscaRes.filter(y=>y.id!==id);if(!AG.dem.some(y=>y.id===id))AG.dem.push(r.item)}else AG.dem=AG.dem.filter(y=>y.id!==id);['dem','itens','enc'].forEach(k=>{const i=AG[k].findIndex(y=>y.id===id);if(i>=0)AG[k][i]=r.item})}
   if(ED&&ED.kind==='agenda'&&ED.id===id)closeEd();
-  toast(status==='andamento'?'Demanda iniciada':status==='planejada'?(agAberta(x)?'Demanda de volta para planejada':'Demanda reaberta'):status==='concluida'?'Demanda concluída':'Demanda cancelada');
+  toast(status==='andamento'?'Demanda iniciada':status==='planejada'?(agAberta(x)?'Demanda de volta para planejada':'Demanda reaberta'):'Demanda concluída');
  }catch(e){toast(agConflito(e)||e.message,true)}
  finally{mv.delete(id)}
- AG.pedido=null;render();
+ AG.buscaFeita=null;AG.pedido=null;render();
  /* devolve o foco ao cartão movido, para quem usa o teclado */
  const b=document.querySelector(`[data-agmover="${CSS.escape(id)}"]`);b&&b.focus();
 }
 function rAgenda(){
  if(AG.dono!==meId)AG=agVazio(meId);
  if(!AG.mes){AG.dia=today();AG.mes=AG.dia.slice(0,7)}
- if(AG.pedido!==AG.mes){AG.pedido=AG.mes;agCarregar()}
- const pronto=AG.chave===AG.mes,cal=AG.aba==='cal',ab=AG.dem.filter(agAberta).length;
+ if(AG.pedido!==agChave()){AG.pedido=agChave();agCarregar()}
+ const pronto=AG.chave===agChave(),cal=AG.aba==='cal',ab=AG.dem.filter(agAberta).length;
  const abas=[['cal','Agenda'],['dem',`Demandas${ab?' · '+ab+(ab===1?' aberta':' abertas'):''}`]].map(([k,l])=>`<button role="tab" aria-selected="${AG.aba===k}" class="${AG.aba===k?'on':''}" data-agaba="${k}">${l}</button>`).join('');
  /* só redesenha quando algo mudou, para não tirar o foco de quem navega pelo teclado */
  const html=`<header class="phead"><div><p class="kick">Sua agenda e suas demandas</p><h1>Agenda e Demandas</h1><p class="sub">O que você vai fazer em cada dia do mês e as demandas que está conduzindo.</p></div><div class="tools"><button class="btn pri" data-agnovo="${cal?'agenda':'demanda'}">${ICO.plus}${cal?'Nova atividade':'Nova demanda'}</button></div></header>
  <div class="agtabs"><div class="seg" role="tablist" aria-label="Agenda e Demandas">${abas}</div></div>
  ${AG.limitado?'<div class="banner"><span class="dot wa"></span><div>Há muitos registros: apenas os 2.000 primeiros estão sendo exibidos.</div></div>':''}${cal?agCal(pronto):agDem(pronto)}`;
- if(html!==AG.html){AG.html=html;$('p-agenda').innerHTML=html}
+ /* não redesenha enquanto a pessoa digita na busca; redesenha ao sair do campo */
+ if(html!==AG.html){if(document.activeElement&&document.activeElement.id==='agbusca'){AG.adiado=true;return}AG.html=html;$('p-agenda').innerHTML=html}
 }
 function openAg(id,tipo){
  const x=id?agAchar(id):tipo==='demanda'?{tipo,titulo:'',descricao:'',status:'planejada',dia:null}:{tipo:'agenda',titulo:'',descricao:'',status:null,dia:AG.dia,hora_ini:null,hora_fim:null};if(!x)return;
  ED={kind:'agenda',id,x:clone(x)};rEd();showEd();
 }
 function rEdAg(){const{id,x}=ED,dem=x.tipo==='demanda';if(ED.rendered)return;ED.rendered=true;
- const campos=dem?`<div class="g2"><div class="f"><label for="ag_status">Status</label><select id="ag_status">${Object.entries(AG_ST).map(([v,t])=>`<option value="${v}" ${x.status===v?'selected':''}>${t[0]}</option>`).join('')}</select></div><div class="f"><label for="ag_dia">Prazo (opcional)</label><input id="ag_dia" type="date" value="${esc(x.dia||'')}"><span class="msg"></span></div></div>`
+ const campos=dem?`<div class="g2"><div class="f"><label for="ag_status">Status</label><select id="ag_status">${Object.entries(AG_ST).filter(([v])=>v!=='cancelada').map(([v,t])=>`<option value="${v}" ${x.status===v?'selected':''}>${t[0]}</option>`).join('')}</select></div><div class="f"><label for="ag_dia">Prazo (opcional)</label><input id="ag_dia" type="date" value="${esc(x.dia||'')}"><span class="msg"></span></div></div>`
   :`<div class="f"><label for="ag_dia">Data</label><input id="ag_dia" type="date" value="${esc(x.dia||'')}"><span class="msg"></span></div>
  <div class="g2"><div class="f"><label for="ag_hora_ini">Início (opcional)</label><input id="ag_hora_ini" type="time" value="${esc(x.hora_ini||'')}"></div><div class="f"><label for="ag_hora_fim">Fim (opcional)</label><input id="ag_hora_fim" type="time" value="${esc(x.hora_fim||'')}"><span class="msg"></span></div></div>`;
  $('ed').innerHTML=`<div class="edh"><div class="row"><span>${dem?'Demandas':'Agenda'}</span><button class="ico" data-edclose aria-label="Fechar">${ICO.x}</button></div><div><div class="k">${id?'Editar':dem?'Nova demanda':'Nova atividade'}</div><h3>${id?esc(x.titulo):dem?'Nova demanda':'Nova atividade'}</h3></div></div>
@@ -960,19 +978,22 @@ async function saveAg(btn){const ed=ED,{id,x}=ed,dem=x.tipo==='demanda',v=k=>$('
  /* botão travado durante o envio: evita registro duplicado por duplo clique ou Enter */
  const lbl=btn.innerHTML;btn.textContent='Salvando…';btn.setAttribute('aria-disabled','true');
  try{await DB.agendaSave(id?{id,versao:x.atualizado,data}:{data});
-  if(ED===ed)closeEd();toast(dem&&!agAberta(data)?(data.status==='concluida'?'Demanda concluída':'Demanda cancelada'):id?(dem?'Demanda salva':'Atividade salva'):(dem?'Demanda adicionada':'Atividade adicionada'));
+  if(ED===ed)closeEd();toast(dem&&!agAberta(data)&&(!id||agAberta(x))?'Demanda concluída':id?(dem?'Demanda salva':'Atividade salva'):(dem?'Demanda adicionada':'Atividade adicionada'));
   if(!dem){AG.dia=dia;AG.mes=dia.slice(0,7)}
-  AG.pedido=null;render();
- }catch(e){btn.innerHTML=lbl;btn.removeAttribute('aria-disabled');const c=agConflito(e);toast(c||e.message,true);if(c){if(ED===ed)closeEd();AG.pedido=null;render()}}
+  AG.buscaFeita=null;AG.pedido=null;render();
+ }catch(e){btn.innerHTML=lbl;btn.removeAttribute('aria-disabled');const c=agConflito(e);toast(c||e.message,true);if(c){if(ED===ed)closeEd();AG.buscaFeita=null;AG.pedido=null;render()}}
 }
-async function delAg(id){const x=agAchar(id);if(!x)return;
+/* cancelar uma demanda exclui o registro de vez, como "Excluir" */
+async function delAg(id,cancelar){const x=agAchar(id);if(!x)return;
  const dem=x.tipo==='demanda';
- if(!await confirmBox(dem?'Excluir demanda?':'Excluir atividade?',`${dem?'A demanda':'A atividade'} "${x.titulo}" será excluída.`,'Excluir',true))return;
+ /* título e botão sem a palavra "Cancelar", que já é o botão de desistir da janela */
+ if(!await confirmBox(cancelar?'Excluir esta demanda de vez?':dem?'Excluir demanda?':'Excluir atividade?',cancelar?`A demanda "${x.titulo}" será cancelada e excluída. Isso não pode ser desfeito.`:`${dem?'A demanda':'A atividade'} "${x.titulo}" será excluída.`,cancelar?'Excluir de vez':'Excluir',true))return;
  /* fecha o painel só se ele for do registro excluído */
  const doPainel=()=>ED&&ED.kind==='agenda'&&ED.id===id;
- try{await DB.agendaDelete(id);if(doPainel())closeEd();toast(dem?'Demanda excluída':'Atividade excluída')}
+ try{await DB.agendaDelete(id);if(doPainel())closeEd();toast(cancelar?'Demanda cancelada e excluída':dem?'Demanda excluída':'Atividade excluída')}
  catch(e){const c=agConflito(e);toast(c||e.message,true);if(c&&doPainel())closeEd()}
- AG.pedido=null;render();
+ /* depois de gravar, a busca ativa roda de novo para não mostrar cartões desatualizados */
+ AG.buscaFeita=null;AG.pedido=null;render();
 }
 document.addEventListener('click',e=>{
  const t=e.target.closest('button');if(!t)return;
@@ -982,6 +1003,10 @@ document.addEventListener('click',e=>{
  if(d.agaba){AG.aba=d.agaba;foco=`[data-agaba="${d.agaba}"]`}
  else if('agenc' in d){AG.encerradas=!AG.encerradas;foco='[data-agenc]'}
  else if(d.agmover)return moverAg(d.agmover,d.agpara);
+ else if(d.agcancelar)return delAg(d.agcancelar,true);
+ else if(d.agencmes){AG.encDesloc=Math.min(0,AG.encDesloc+(+d.agencmes));foco=`[data-agencmes="${d.agencmes}"]`}
+ else if('agbuscar' in d)return agBuscar();
+ else if('aglimpar' in d){AG.busca='';AG.buscaTxt=undefined;AG.buscaRes=null;AG.buscaFeita=null;foco='#agbusca'}
  else if(d.agmes){const[y,m]=AG.mes.split('-').map(Number),n=new Date(y,m-1+(+d.agmes),1,12);AG.mes=ymd(n).slice(0,7);AG.dia=today().slice(0,7)===AG.mes?today():AG.mes+'-01';foco=`[data-agmes="${d.agmes}"]`}
  else if('aghoje' in d){AG.dia=today();AG.mes=AG.dia.slice(0,7);foco=`[data-agdia="${AG.dia}"]`}
  else if(d.agdia){AG.dia=d.agdia;AG.mes=d.agdia.slice(0,7);foco=`[data-agdia="${AG.dia}"]`}
@@ -1001,6 +1026,14 @@ document.addEventListener('dragstart',e=>{const c=e.target.closest&&e.target.clo
 document.addEventListener('dragend',e=>{const c=e.target.closest&&e.target.closest('[data-agcard]');c&&c.classList.remove('arr');agLimparAlvo()});
 document.addEventListener('dragover',e=>{const col=agColDe(e);if(!col)return;e.preventDefault();e.dataTransfer.dropEffect='move';if(!col.classList.contains('alvo')){agLimparAlvo();col.classList.add('alvo')}});
 document.addEventListener('drop',e=>{const col=agColDe(e);if(!col)return;e.preventDefault();agLimparAlvo();const id=e.dataTransfer.getData(AG_DND);if(id)moverAg(id,col.dataset.agcol)});
+/* busca nas concluídas de todos os meses (o servidor valida de 2 a 100 caracteres) */
+function agBuscar(){const i=$('agbusca'),s=i?i.value.trim():'';
+ if(!s){AG.busca='';AG.buscaTxt=undefined;AG.buscaRes=null}else if(s.length<2){toast('Digite pelo menos 2 letras para buscar.',true);return}else{AG.busca=s;AG.buscaTxt=s;AG.buscaRes=null}
+ i&&i.blur();rAgenda();
+}
+document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.id==='agbusca'){e.preventDefault();agBuscar()}});
+document.addEventListener('input',e=>{if(e.target.id==='agbusca')AG.buscaTxt=e.target.value});
+document.addEventListener('focusout',e=>{if(e.target.id==='agbusca'&&AG.adiado){AG.adiado=false;setTimeout(()=>page==='agenda'&&rAgenda())}});
 $('ed').addEventListener('keydown',e=>{if(e.key==='Enter'&&ED&&ED.kind==='agenda'&&e.target.matches('input')){const b=$('ed').querySelector('[data-agsalvar]');b&&b.click()}});
 
 /* ---------- seletor de ano, mês e semana ---------- */

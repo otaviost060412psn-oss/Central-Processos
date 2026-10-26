@@ -18,7 +18,7 @@ const init=async()=>{
    sem chave estrangeira para cp_users, para preservar os registros de contas excluídas */
 let agPronto=null;
 const initAgenda=()=>agPronto||(agPronto=(async()=>{
- await pool.query(`CREATE TABLE IF NOT EXISTS cp_agenda(id text PRIMARY KEY,user_id text NOT NULL,resp_nome text NOT NULL,resp_usuario text NOT NULL,titulo text NOT NULL,descricao text NOT NULL DEFAULT '',tipo text NOT NULL CHECK(tipo IN ('agenda','demanda')),status text CHECK(status IN ('planejada','andamento','concluida','cancelada')),dia text CHECK(dia ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}$'),hora_ini text CHECK(hora_ini ~ '^[0-9]{2}:[0-9]{2}$'),hora_fim text CHECK(hora_fim ~ '^[0-9]{2}:[0-9]{2}$'),criado bigint NOT NULL,criado_por text NOT NULL,atualizado bigint NOT NULL,atualizado_por text NOT NULL,CHECK(dia IS NOT NULL OR (hora_ini IS NULL AND hora_fim IS NULL)),CHECK((tipo='agenda' AND dia IS NOT NULL AND status IS NULL) OR (tipo='demanda' AND status IS NOT NULL AND hora_ini IS NULL AND hora_fim IS NULL)))`);
+ await pool.query(`CREATE TABLE IF NOT EXISTS cp_agenda(id text PRIMARY KEY,user_id text NOT NULL,resp_nome text NOT NULL,resp_usuario text NOT NULL,titulo text NOT NULL,descricao text NOT NULL DEFAULT '',tipo text NOT NULL CHECK(tipo IN ('agenda','demanda')),status text CHECK(status IN ('planejada','andamento','concluida','cancelada')),dia text CHECK(dia ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}$'),hora_ini text CHECK(hora_ini ~ '^[0-9]{2}:[0-9]{2}$'),hora_fim text CHECK(hora_fim ~ '^[0-9]{2}:[0-9]{2}$'),criado bigint NOT NULL,criado_por text NOT NULL,atualizado bigint NOT NULL,atualizado_por text NOT NULL,encerrado bigint,CHECK(encerrado IS NULL OR (tipo='demanda' AND status IN ('concluida','cancelada'))),CHECK(dia IS NOT NULL OR (hora_ini IS NULL AND hora_fim IS NULL)),CHECK((tipo='agenda' AND dia IS NOT NULL AND status IS NULL) OR (tipo='demanda' AND status IS NOT NULL AND hora_ini IS NULL AND hora_fim IS NULL)))`);
  await pool.query('CREATE INDEX IF NOT EXISTS cp_agenda_user_dia ON cp_agenda(user_id,dia)');
  await pool.query('CREATE INDEX IF NOT EXISTS cp_agenda_dia ON cp_agenda(dia)');
 })().catch(e=>{agPronto=null;if(e.code!=='23505'&&e.code!=='42P07')throw e}));
@@ -30,12 +30,15 @@ const pathSet=(o,path,value)=>{const parts=path.split('.');if(parts.some(x=>!x||
    tipo 'agenda': item do calendário, data obrigatória, horário opcional, sem status;
    tipo 'demanda': o que a pessoa está fazendo, status obrigatório, prazo (dia) opcional, sem horário */
 const AG_TIPOS=['agenda','demanda'],AG_STATUS=['planejada','andamento','concluida','cancelada'];
-const AG_COLS=['id','user_id','resp_nome','resp_usuario','titulo','descricao','tipo','status','dia','hora_ini','hora_fim','criado','criado_por','atualizado','atualizado_por'];
+const AG_COLS=['id','user_id','resp_nome','resp_usuario','titulo','descricao','tipo','status','dia','hora_ini','hora_fim','criado','criado_por','atualizado','atualizado_por','encerrado'];
 /* leitura com o nome atual do responsável; conta excluída mantém o nome gravado no registro */
 const AG_SEL=`SELECT ${AG_COLS.map(c=>c==='resp_nome'?'COALESCE(u.nome,a.resp_nome) AS resp_nome':c==='resp_usuario'?'COALESCE(u.usuario,a.resp_usuario) AS resp_usuario':'a.'+c).join(',')},(u.id IS NULL) AS conta_excluida FROM cp_agenda a LEFT JOIN cp_users u ON u.id=a.user_id`;
 const AG_INS=`INSERT INTO cp_agenda(${AG_COLS.join(',')}) VALUES(${AG_COLS.map((_,i)=>'$'+(i+1)).join(',')})`;
 const agVals=r=>AG_COLS.map(c=>r[c]);
-const agRow=r=>({...r,criado:Number(r.criado),atualizado:Number(r.atualizado)});
+const agRow=r=>({...r,criado:Number(r.criado),atualizado:Number(r.atualizado),encerrado:r.encerrado==null?null:Number(r.encerrado)});
+/* data de encerramento: gravada ao concluir/cancelar, mantida entre status encerrados, apagada ao reabrir */
+const AG_FECHADO=['concluida','cancelada'];
+const agEncerrado=(novo,antigo,encAntigo,agora)=>!AG_FECHADO.includes(novo)?null:AG_FECHADO.includes(antigo)&&encAntigo!=null?Number(encAntigo):agora;
 const isDia=s=>typeof s==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(s)&&!isNaN(Date.parse(s+'T00:00:00Z'))&&new Date(s+'T00:00:00Z').toISOString().slice(0,10)===s;
 const isHora=s=>typeof s==='string'&&/^([01]\d|2[0-3]):[0-5]\d$/.test(s);
 const isUuid=s=>typeof s==='string'&&/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s);
@@ -64,11 +67,15 @@ const agRegistro=r=>{
  const id=(v)=>typeof v==='string'&&!!v.trim()&&v.length<=100,txt=(v,max)=>typeof v==='string'&&v.length<=max,ts=v=>Number.isSafeInteger(v)&&v>0&&v<=Date.now()+864e5;
  if(!id(r.user_id)||!txt(r.resp_nome,200)||!txt(r.resp_usuario,200)||!id(r.criado_por)||!id(r.atualizado_por))fail(400,'Responsável ou autor inválido.');
  if(!ts(r.criado)||!ts(r.atualizado)||r.criado>r.atualizado)fail(400,'Datas de criação ou atualização inválidas.');
- return {...agCampos(r),id:r.id,user_id:r.user_id,resp_nome:r.resp_nome,resp_usuario:r.resp_usuario,criado:r.criado,criado_por:r.criado_por,atualizado:r.atualizado,atualizado_por:r.atualizado_por};
+ const c=agCampos(r);
+ /* encerrado só existe em demanda encerrada; backup sem a data usa a da última alteração */
+ if(r.encerrado!=null&&!ts(r.encerrado))fail(400,'Data de encerramento inválida.');
+ const encerrado=AG_FECHADO.includes(c.status)?(r.encerrado??r.atualizado):null;
+ return {...c,id:r.id,user_id:r.user_id,resp_nome:r.resp_nome,resp_usuario:r.resp_usuario,criado:r.criado,criado_por:r.criado_por,atualizado:r.atualizado,atualizado_por:r.atualizado_por,encerrado};
 };
 const agGet=async id=>{const r=(await pool.query(`${AG_SEL} WHERE a.id=$1`,[id])).rows[0];if(!r)fail(404,'Registro não encontrado.');return agRow(r)};
 /* no restore, um registro existente mantém dono e autoria originais */
-const AG_RESTORE_SET=['titulo','descricao','tipo','status','dia','hora_ini','hora_fim','atualizado','atualizado_por'];
+const AG_RESTORE_SET=['titulo','descricao','tipo','status','dia','hora_ini','hora_fim','atualizado','atualizado_por','encerrado'];
 const AG_LIMITE=2000;
 export default async function handler(req,res){
  res.setHeader('Cache-Control','no-store');
@@ -106,13 +113,15 @@ export default async function handler(req,res){
   if(action==='agendaList'){
    const p=[],w=[],pessoa=u.admin?(b.pessoa??u.id):u.id;
    if(pessoa!=='*'){p.push(String(pessoa));w.push(`a.user_id=$${p.length}`)}
-   /* demandas: todas, com ou sem prazo; senão, tudo (agenda e prazos de demandas) no período */
-   if(b.demandas===true)w.push("a.tipo='demanda'");
+   /* quatro consultas: demandas abertas; concluídas num intervalo de encerramento (um mês);
+      busca nas concluídas de todos os meses; ou, por padrão, agenda e prazos num período */
+   let ordem='a.dia NULLS LAST,a.hora_ini NULLS FIRST,a.criado',lim=AG_LIMITE;
+   if(b.demandas==='abertas'){w.push("a.tipo='demanda'","a.status IN ('planejada','andamento')");ordem="CASE a.status WHEN 'andamento' THEN 0 ELSE 1 END,a.dia NULLS LAST,a.criado"}
+   else if(b.encerradas===true){if(!Number.isSafeInteger(b.desde)||!Number.isSafeInteger(b.ate)||b.desde>b.ate||b.ate-b.desde>32*864e5)fail(400,'Período inválido.');p.push(b.desde,b.ate);w.push("a.tipo='demanda'","a.status='concluida'",`a.encerrado BETWEEN $${p.length-1} AND $${p.length}`);ordem='a.encerrado DESC NULLS LAST'}
+   else if(b.busca!=null){const s=typeof b.busca==='string'?b.busca.trim():'';if(s.length<2||s.length>100)fail(400,'Digite de 2 a 100 caracteres para buscar.');p.push('%'+s.replace(/[\\%_]/g,c=>'\\'+c)+'%');w.push("a.tipo='demanda'","a.status='concluida'",`(a.titulo ILIKE $${p.length} ESCAPE '\\' OR a.descricao ILIKE $${p.length} ESCAPE '\\')`);ordem='a.encerrado DESC NULLS LAST';lim=50}
    else{if(!isDia(b.de)||!isDia(b.ate)||b.de>b.ate)fail(400,'Período inválido.');if((Date.parse(b.ate)-Date.parse(b.de))/864e5>400)fail(400,'Consulte no máximo 400 dias por vez.');p.push(b.de,b.ate);w.push(`a.dia BETWEEN $${p.length-1} AND $${p.length}`)}
-   /* demandas abertas primeiro, para não ficarem de fora do limite */
-   const ordem=b.demandas===true?"CASE a.status WHEN 'andamento' THEN 0 WHEN 'planejada' THEN 1 ELSE 2 END,a.dia NULLS LAST,a.criado":'a.dia NULLS LAST,a.hora_ini NULLS FIRST,a.criado';
-   const q=await pool.query(`${AG_SEL}${w.length?' WHERE '+w.join(' AND '):''} ORDER BY ${ordem} LIMIT ${AG_LIMITE+1}`,p);
-   return res.json({itens:q.rows.slice(0,AG_LIMITE).map(agRow),limitado:q.rows.length>AG_LIMITE});
+   const q=await pool.query(`${AG_SEL}${w.length?' WHERE '+w.join(' AND '):''} ORDER BY ${ordem} LIMIT ${lim+1}`,p);
+   return res.json({itens:q.rows.slice(0,lim).map(agRow),limitado:q.rows.length>lim});
   }
   if(action==='agendaSave'){
    const x=agCampos(b.data),agora=Date.now();
@@ -121,17 +130,17 @@ export default async function handler(req,res){
     let dono=u;
     if(u.admin&&b.responsavel&&b.responsavel!==u.id){const q=await pool.query('SELECT id,nome,usuario FROM cp_users WHERE id=$1',[String(b.responsavel)]);if(!q.rows.length)fail(400,'Responsável inválido.');dono=q.rows[0]}
     const id=uid();
-    await pool.query(AG_INS,agVals({...x,id,user_id:dono.id,resp_nome:dono.nome,resp_usuario:dono.usuario,criado:agora,criado_por:u.id,atualizado:agora,atualizado_por:u.id}));
+    await pool.query(AG_INS,agVals({...x,id,user_id:dono.id,resp_nome:dono.nome,resp_usuario:dono.usuario,criado:agora,criado_por:u.id,atualizado:agora,atualizado_por:u.id,encerrado:agEncerrado(x.status,null,null,agora)}));
     return res.json({item:await agGet(id)});
    }
    const client=await pool.connect();try{await client.query('BEGIN');
-    const q=await client.query('SELECT user_id,tipo,atualizado FROM cp_agenda WHERE id=$1 FOR UPDATE',[String(b.id)]),r=q.rows[0];
+    const q=await client.query('SELECT user_id,tipo,status,atualizado,encerrado FROM cp_agenda WHERE id=$1 FOR UPDATE',[String(b.id)]),r=q.rows[0];
     if(!r||(!u.admin&&r.user_id!==u.id))fail(404,'Registro não encontrado.');
     if(b.versao!=null&&b.versao!==Number(r.atualizado))fail(409,'Este registro foi alterado por outra pessoa. Recarregue.');
     /* o tipo é fixo depois de criado: atividade continua atividade, demanda continua demanda */
     if(x.tipo!==r.tipo)fail(400,'O tipo do registro não pode ser alterado.');
     /* responsável não muda na edição; nome e login são atualizados se a conta ainda existir */
-    await client.query('UPDATE cp_agenda SET titulo=$2,descricao=$3,tipo=$4,status=$5,dia=$6,hora_ini=$7,hora_fim=$8,atualizado=$9,atualizado_por=$10,resp_nome=COALESCE((SELECT nome FROM cp_users WHERE id=cp_agenda.user_id),resp_nome),resp_usuario=COALESCE((SELECT usuario FROM cp_users WHERE id=cp_agenda.user_id),resp_usuario) WHERE id=$1',[String(b.id),x.titulo,x.descricao,x.tipo,x.status,x.dia,x.hora_ini,x.hora_fim,Math.max(agora,Number(r.atualizado)+1),u.id]);
+    await client.query('UPDATE cp_agenda SET titulo=$2,descricao=$3,tipo=$4,status=$5,dia=$6,hora_ini=$7,hora_fim=$8,atualizado=$9,atualizado_por=$10,encerrado=$11,resp_nome=COALESCE((SELECT nome FROM cp_users WHERE id=cp_agenda.user_id),resp_nome),resp_usuario=COALESCE((SELECT usuario FROM cp_users WHERE id=cp_agenda.user_id),resp_usuario) WHERE id=$1',[String(b.id),x.titulo,x.descricao,x.tipo,x.status,x.dia,x.hora_ini,x.hora_fim,Math.max(agora,Number(r.atualizado)+1),u.id,agEncerrado(x.status,r.status,r.encerrado,agora)]);
     await client.query('COMMIT')}catch(e){await client.query('ROLLBACK');throw e}finally{client.release()}
    return res.json({item:await agGet(String(b.id))});
   }
