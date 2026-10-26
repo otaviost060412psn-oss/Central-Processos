@@ -497,6 +497,44 @@ button.plc.miss:hover{background:var(--card2)}
 @media (max-width:640px){.top .now{display:none}}
 @media (max-width:820px){.lg-card{grid-template-columns:1fr;min-height:0}.lg-img{display:none}.lg-form{padding:40px 24px}.acb{grid-template-columns:1fr}.top .hide-s{display:none}.step .wk{min-width:0}}
 @media (max-width:560px){:root{--pad:14px}.top .ttl{display:none}.edb .g2{grid-template-columns:1fr}.brand.mn{--bh:24px}}
+/* ===== agenda ===== */
+.agtabs{margin:-6px 0 18px}
+.agwrap{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(280px,1fr);gap:var(--gap);align-items:start}
+.agnav{display:flex;align-items:center;gap:6px;margin-bottom:12px}
+.agnav b{font-size:17px;font-weight:600;min-width:150px;text-align:center}
+.agnav .btn{margin-left:auto}
+.agsem,.aggrid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+.agsem span{font-size:12px;color:var(--mu);text-align:center;padding:4px 0}
+.agd{min-height:74px;border:1px solid transparent;border-radius:10px;background:var(--bg);padding:6px 8px;display:flex;flex-direction:column;align-items:flex-start;gap:6px;text-align:left;color:var(--tx)}
+.agd:hover{border-color:var(--bd2)}
+.agd .n{font-size:13px;font-weight:500;width:24px;height:24px;display:grid;place-items:center;border-radius:99px}
+.agd.fora{opacity:.45}
+.agd.hoje .n{box-shadow:inset 0 0 0 1.5px var(--pri);color:var(--pri)}
+.agd.sel{border-color:var(--pri);background:var(--card2)}
+.agd .pts{display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+.agd .pts small{font-size:11px;color:var(--mu)}
+.agd .qt{display:none}
+.dot.cx{background:none;box-shadow:inset 0 0 0 1.5px var(--mu2)}
+.agload{margin-top:10px}
+.agdia{display:grid;gap:12px}
+.agdia .sech{margin:0}
+.aglist{display:grid;gap:6px}
+.agi{display:grid;grid-template-columns:96px minmax(0,1fr) auto;align-items:center;gap:10px;width:100%;text-align:left;background:var(--bg);border:1px solid var(--bd);border-radius:10px;padding:10px 12px;color:var(--tx)}
+.agi:hover{border-color:var(--bd2)}
+.agi .h{font-size:13px;color:var(--mu)}
+.agi .t{min-width:0;display:grid}
+.agi .t b{font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.agi .t small{font-size:12px;color:var(--mu2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.agfut{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:var(--gap)}
+.agc{display:grid;gap:8px;align-content:start}
+.agc h3{font-size:17px;line-height:1.3;overflow-wrap:anywhere}
+.agc p{margin:0;color:var(--mu);font-size:14px;white-space:pre-wrap;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.agch,.agca{display:flex;gap:6px;flex-wrap:wrap}
+.agca{margin-top:4px}
+.agvazio{display:grid;gap:8px;justify-items:start}
+.f input:disabled{opacity:.45;cursor:not-allowed}
+@media (max-width:900px){.agwrap{grid-template-columns:1fr}}
+@media (max-width:640px){.agd{min-height:48px;padding:4px;align-items:center}.agd .pts{display:none}.agd .qt{display:block;font-size:11px;color:var(--mu)}.agd .qt.er{color:var(--er)}.agi{grid-template-columns:minmax(0,1fr) auto}.agi .h{grid-column:1/-1}.agnav b{min-width:0;flex:1}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -544,6 +582,7 @@ button.plc.miss:hover{background:var(--card2)}
       <button data-p="qualidade"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.6 2.6L16 9.7"/></svg>Qualidade<span class="st" id="stq"></span></button>
       <button data-p="operacoes"><svg class="i" viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Operações<span class="st" id="sto"></span></button>
       <button data-p="palavra"><svg class="i" viewBox="0 0 24 24"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg>Palavra da Semana</button>
+      <button data-p="agenda"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Agenda</button>
     </div>
     <button class="btn pri" data-present><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M8 5.5v13l11-6.5z"/></svg>Apresentar</button>
     <div class="foot nav">
@@ -558,6 +597,7 @@ button.plc.miss:hover{background:var(--card2)}
     <section class="page" id="p-qualidade"></section>
     <section class="page" id="p-operacoes"></section>
     <section class="page" id="p-palavra"></section>
+    <section class="page" id="p-agenda"></section>
     <section class="page" id="p-config"></section>
   </main>
 </div>
@@ -719,7 +759,11 @@ const NeonDB={
  async addUser(user){await this.mutate('addUser',{user})},
  async updateUser(id,data){await this.mutate('updateUser',{id,data})},
  async setPassword(id,senha,atual){await this.mutate('setPassword',{id,senha,atual})},
- async deleteUser(id){await this.mutate('deleteUser',{id})}
+ async deleteUser(id){await this.mutate('deleteUser',{id})},
+ /* agenda: fora do snapshot; carregada só na tela da Agenda */
+ async agendaList(p){return this.req('agendaList',p)},
+ async agendaSave(p){return this.req('agendaSave',p)},
+ async agendaDelete(id){return this.req('agendaDelete',{id})}
 };
 
 const DB=NeonDB;
@@ -785,11 +829,127 @@ function render(){
  ['q','o'].forEach(f=>{const s=status(w,f);$('st'+f).innerHTML=`<span class="dot ${s.cls}"></span>${s.label}`});
  const m=me();$('navCfg').hidden=!isAdmin();$('who').textContent=m?`Conectado como ${m.usuario}${m.admin?' · administrador':''}`:'';if(page==='config'&&!isAdmin())page='inicio';
  document.querySelectorAll('#nav button[data-p]').forEach(b=>b.classList.toggle('on',b.dataset.p===page));
- $('pageTitle').textContent={inicio:'Início',qualidade:'Qualidade',operacoes:'Operações',palavra:'Palavra da Semana',config:'Configurações'}[page];
+ $('pageTitle').textContent={inicio:'Início',qualidade:'Qualidade',operacoes:'Operações',palavra:'Palavra da Semana',agenda:'Agenda',config:'Configurações'}[page];
  document.querySelectorAll('.page').forEach(p=>p.classList.toggle('on',p.id==='p-'+page));
- if(page==='inicio')rInicio(w);else if(page==='palavra')rPalavra(w);else if(page==='config'){if(!(['setores'].includes(cfgView)&&render.cfgShown===cfgView&&!render.force))rConfig();render.cfgShown=cfgView}else rFrente(w,page==='qualidade'?'q':'o');
+ document.querySelector('.wsel').hidden=page==='agenda';
+ if(page==='inicio')rInicio(w);else if(page==='palavra')rPalavra(w);else if(page==='agenda')rAgenda();else if(page==='config'){if(!(['setores'].includes(cfgView)&&render.cfgShown===cfgView&&!render.force))rConfig();render.cfgShown=cfgView}else rFrente(w,page==='qualidade'?'q':'o');
  if(ED)rEd();
 }
+
+/* ---------- agenda ---------- */
+const AG_ST={planejada:['Planejada',''],andamento:['Em andamento','wa'],concluida:['Concluída','ok'],cancelada:['Cancelada','cx']};
+const AG_TP={atividade:'Atividade',compromisso:'Compromisso'};
+const DSEM=['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'],DSEML=['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+const agVazio=dono=>({aba:'cal',mes:null,dia:null,itens:[],fut:[],limitado:false,pedido:null,chave:null,dono,seq:0,html:null});
+let AG=agVazio(null);
+/* atrasada é calculado, nunca gravado; registro sem data nunca está atrasado */
+const agAtrasada=x=>!!x.dia&&x.dia<today()&&(x.status==='planejada'||x.status==='andamento');
+const agGrade=mes=>{const ini=mondayOf(pdate(mes+'-01'));return Array.from({length:42},(_,i)=>addDays(ini,i))};
+const agAchar=id=>AG.itens.find(x=>x.id===id)||AG.fut.find(x=>x.id===id);
+async function agCarregar(quieto){
+ if(!AG.mes)return;
+ /* só a resposta mais recente, do mesmo mês e da mesma conta, é aceita */
+ const g=agGrade(AG.mes),mes=AG.mes,dono=AG.dono,seq=++AG.seq;
+ try{const[c,f]=await Promise.all([DB.agendaList({de:g[0],ate:g[41]}),DB.agendaList({semData:true})]);
+  if(seq!==AG.seq||mes!==AG.mes||dono!==AG.dono||dono!==meId)return;
+  const novo={itens:c.itens||[],fut:f.itens||[],limitado:!!(c.limitado||f.limitado)};
+  const mudou=AG.chave!==mes||JSON.stringify([AG.itens,AG.fut])!==JSON.stringify([novo.itens,novo.fut]);
+  Object.assign(AG,novo,{chave:mes});
+  if(mudou&&page==='agenda')rAgenda();
+ }catch(e){if(!quieto)toast(e.message,true)}
+}
+const agItem=x=>{const s=AG_ST[x.status]||AG_ST.planejada,atr=agAtrasada(x);
+ return `<button class="agi" data-agabrir="${esc(x.id)}"><span class="h">${x.hora_ini?esc(x.hora_ini)+(x.hora_fim?'–'+esc(x.hora_fim):''):'Sem horário'}</span><span class="t"><b>${esc(x.titulo)}</b><small>${AG_TP[x.tipo]||''}${x.descricao?' · '+esc(x.descricao):''}</small></span><span class="chip ${atr?'er':s[1]==='cx'?'ln':s[1]}">${atr?'Atrasada':s[0]}</span></button>`};
+function agCal(pronto){
+ const[y,m]=AG.mes.split('-').map(Number),g=agGrade(AG.mes),hj=today(),por={};
+ AG.itens.forEach(x=>(por[x.dia]=por[x.dia]||[]).push(x));
+ const cel=d=>{const L=por[d]||[],atr=L.some(agAtrasada),n=+d.slice(8);
+  const pts=L.slice(0,3).map(x=>`<i class="dot ${agAtrasada(x)?'er':(AG_ST[x.status]||AG_ST.planejada)[1]}"></i>`).join('')+(L.length>3?`<small>+${L.length-3}</small>`:'');
+  return `<button class="agd${d.slice(0,7)!==AG.mes?' fora':''}${d===hj?' hoje':''}${d===AG.dia?' sel':''}" data-agdia="${d}" aria-pressed="${d===AG.dia}" aria-label="${n} de ${MESL[+d.slice(5,7)-1].toLowerCase()} de ${d.slice(0,4)}${d===hj?', hoje':''}${L.length?`, ${L.length} ${L.length===1?'registro':'registros'}${atr?', com atraso':''}`:''}"><span class="n">${n}</span><span class="pts">${pts}</span>${L.length?`<span class="qt${atr?' er':''}">${L.length}</span>`:''}</button>`};
+ const L=por[AG.dia]||[],dd=pdate(AG.dia);
+ return `<div class="agwrap"><div class="panel agcal"><div class="agnav"><button class="ico" data-agmes="-1" aria-label="Mês anterior">${ICO.l}</button><b>${MESL[m-1]} ${y}</b><button class="ico" data-agmes="1" aria-label="Próximo mês">${ICO.r}</button><button class="btn sm ghost" data-aghoje ${AG.dia===hj?'aria-disabled="true"':''}>Hoje</button></div>
+ <div class="agsem">${DSEM.map(s=>`<span>${s}</span>`).join('')}</div><div class="aggrid">${g.map(cel).join('')}</div>${pronto?'':'<p class="muted agload" role="status">Carregando…</p>'}</div>
+ <div class="panel agdia"><div class="sech"><div><h2>${DSEML[dd.getDay()]}, ${+AG.dia.slice(8)} de ${MESL[dd.getMonth()].toLowerCase()}</h2><p>${L.length?`${L.length} ${L.length===1?'registro':'registros'}`:'Nada programado para este dia.'}</p></div></div>${L.length?`<div class="aglist">${L.map(agItem).join('')}</div>`:''}<button class="btn" data-agnovo="${AG.dia}">${ICO.plus}Nova atividade neste dia</button></div></div>`;
+}
+function agFut(pronto){const L=AG.fut;
+ if(!L.length)return pronto?`<div class="panel agvazio"><b>Nenhuma programação sem data.</b><p class="muted">Use esta área para algo que ainda não tem dia definido, como preparar um treinamento ou planejar uma melhoria.</p><button class="btn" data-agnovo="">${ICO.plus}Nova programação</button></div>`:'<div class="panel"><p class="muted" role="status">Carregando…</p></div>';
+ return `<div class="agfut">${L.map(x=>{const s=AG_ST[x.status]||AG_ST.planejada;return `<div class="panel agc"><div class="agch"><span class="chip ln">Sem data definida</span><span class="chip ${s[1]==='cx'?'ln':s[1]}">${s[0]}</span></div><h3>${esc(x.titulo)}</h3>${x.descricao?`<p>${esc(x.descricao)}</p>`:''}<small class="muted">${AG_TP[x.tipo]||''} · criado em ${tsTxt(x.criado)}</small>
+ <div class="agca"><button class="btn sm" data-agabrir="${esc(x.id)}">${ICO.edit}Editar</button><button class="btn sm pri" data-agdata="${esc(x.id)}">${ICO.cal}Definir data</button><button class="btn sm ghost dan" data-agexcluir="${esc(x.id)}">${ICO.del}Excluir</button></div></div>`}).join('')}</div>`;
+}
+function rAgenda(){
+ if(AG.dono!==meId)AG=agVazio(meId);
+ if(!AG.mes){AG.dia=today();AG.mes=AG.dia.slice(0,7)}
+ if(AG.pedido!==AG.mes){AG.pedido=AG.mes;agCarregar()}
+ const pronto=AG.chave===AG.mes,cal=AG.aba==='cal';
+ const abas=[['cal','Calendário'],['fut',`Programações futuras${AG.fut.length?' · '+AG.fut.length:''}`]].map(([k,l])=>`<button role="tab" aria-selected="${AG.aba===k}" class="${AG.aba===k?'on':''}" data-agaba="${k}">${l}</button>`).join('');
+ /* só redesenha quando algo mudou, para não tirar o foco de quem navega pelo teclado */
+ const html=`<header class="phead"><div><p class="kick">Sua agenda</p><h1>Agenda</h1><p class="sub">Atividades e compromissos do mês, e programações que ainda não têm data.</p></div><div class="tools"><button class="btn pri" data-agnovo="${cal?AG.dia:''}">${ICO.plus}${cal?'Nova atividade':'Nova programação'}</button></div></header>
+ <div class="agtabs"><div class="seg" role="tablist" aria-label="Visualização da agenda">${abas}</div></div>
+ ${AG.limitado?'<div class="banner"><span class="dot wa"></span><div>Há muitos registros: apenas os 2.000 primeiros estão sendo exibidos.</div></div>':''}${cal?agCal(pronto):agFut(pronto)}`;
+ if(html!==AG.html){AG.html=html;$('p-agenda').innerHTML=html}
+}
+function openAg(id,dia,exigeData){
+ const x=id?agAchar(id):{titulo:'',descricao:'',tipo:'atividade',status:'planejada',dia:dia||null,hora_ini:null,hora_fim:null};if(!x)return;
+ ED={kind:'agenda',id,x:clone(x),exigeData:!!exigeData};rEd();showEd();
+ if(exigeData)setTimeout(()=>{const i=$('ag_dia');i&&i.focus()},340);
+}
+function rEdAg(){const{id,x,exigeData}=ED;if(ED.rendered)return;ED.rendered=true;
+ const sel=(k,l,o)=>`<div class="f"><label for="ag_${k}">${l}</label><select id="ag_${k}">${Object.entries(o).map(([v,t])=>`<option value="${v}" ${x[k]===v?'selected':''}>${t}</option>`).join('')}</select></div>`;
+ const sd=!x.dia;
+ $('ed').innerHTML=`<div class="edh"><div class="row"><span>Agenda</span><button class="ico" data-edclose aria-label="Fechar">${ICO.x}</button></div><div><div class="k">${exigeData?'Definir data':id?'Editar':'Novo registro'}</div><h3>${id?esc(x.titulo):x.dia?'Nova atividade':'Nova programação'}</h3></div></div>
+ <div class="edb"><div class="f"><label for="ag_titulo">Título</label><input id="ag_titulo" maxlength="120" value="${esc(x.titulo)}" autocomplete="off"><span class="msg"></span></div>
+ <div class="f"><label for="ag_descricao">Descrição</label><textarea id="ag_descricao" maxlength="2000">${esc(x.descricao)}</textarea></div>
+ <div class="g2">${sel('tipo','Tipo',AG_TP)}${sel('status','Status',Object.fromEntries(Object.entries(AG_ST).map(([k,v])=>[k,v[0]])))}</div>
+ <div class="f"><label for="ag_dia">${exigeData?'Data':'Data (deixe vazio para programação futura)'}</label><input id="ag_dia" type="date" value="${esc(x.dia||'')}"><span class="msg"></span></div>
+ <div class="g2"><div class="f"><label for="ag_hora_ini">Início</label><input id="ag_hora_ini" type="time" value="${esc(x.hora_ini||'')}" ${sd?'disabled':''}></div><div class="f"><label for="ag_hora_fim">Fim</label><input id="ag_hora_fim" type="time" value="${esc(x.hora_fim||'')}" ${sd?'disabled':''}><span class="msg"></span></div></div>
+ ${id?`<div class="last">Criado em ${tsTxt(x.criado)}${x.atualizado!==x.criado?` · alterado em ${tsTxt(x.atualizado)}`:''}</div>`:''}
+ <div class="eda"><button class="btn pri" data-agsalvar>${id?'Salvar':'Adicionar'}</button><button class="btn" data-edclose>Cancelar</button>${id?`<button class="btn dan" data-agexcluir="${esc(id)}">${ICO.del}Excluir</button>`:''}</div></div>`;
+}
+/* conflito (409) ou registro apagado (404): avisa e mostra a versão atual */
+const agConflito=e=>/alterado por outra pessoa/.test(e.message)?'Este registro mudou em outra aba ou por outra pessoa. A tela foi atualizada.':/não encontrado/.test(e.message)?'Este registro não existe mais. A tela foi atualizada.':null;
+async function saveAg(btn){const ed=ED,{id,x,exigeData}=ed,v=k=>$('ag_'+k).value,dia=v('dia')||null;
+ const data={titulo:v('titulo').trim(),descricao:v('descricao'),tipo:v('tipo'),status:v('status'),dia,hora_ini:dia&&v('hora_ini')||null,hora_fim:dia&&v('hora_fim')||null};
+ const erro=(k,m)=>{const b=$('ag_'+k).closest('.f');b.classList.add('bad');b.querySelector('.msg').textContent=m;$('ag_'+k).focus()};
+ if(!data.titulo)return erro('titulo','Digite um título.');
+ if(exigeData&&!dia)return erro('dia','Escolha a data.');
+ if(data.hora_fim&&!data.hora_ini)return erro('hora_fim','Informe também o horário de início.');
+ if(data.hora_ini&&data.hora_fim&&data.hora_fim<data.hora_ini)return erro('hora_fim','O fim não pode ser antes do início.');
+ /* botão travado durante o envio: evita registro duplicado por duplo clique ou Enter */
+ const lbl=btn.innerHTML;btn.textContent='Salvando…';btn.setAttribute('aria-disabled','true');
+ try{await DB.agendaSave(id?{id,versao:x.atualizado,data}:{data});
+  if(ED===ed)closeEd();toast(exigeData?'Data definida':id?'Registro salvo':'Registro adicionado');
+  if(dia){AG.dia=dia;AG.mes=dia.slice(0,7);if(exigeData)AG.aba='cal'}
+  AG.pedido=null;render();
+ }catch(e){btn.innerHTML=lbl;btn.removeAttribute('aria-disabled');const c=agConflito(e);toast(c||e.message,true);if(c){if(ED===ed)closeEd();AG.pedido=null;render()}}
+}
+async function delAg(id){const x=agAchar(id);if(!x)return;
+ if(!await confirmBox('Excluir registro?',`"${x.titulo}" será excluído da agenda.`,'Excluir',true))return;
+ /* fecha o painel só se ele for do registro excluído */
+ const doPainel=()=>ED&&ED.kind==='agenda'&&ED.id===id;
+ try{await DB.agendaDelete(id);if(doPainel())closeEd();toast('Registro excluído')}
+ catch(e){const c=agConflito(e);toast(c||e.message,true);if(c&&doPainel())closeEd()}
+ AG.pedido=null;render();
+}
+document.addEventListener('click',e=>{
+ const t=e.target.closest('button');if(!t)return;
+ /* ao sair, a agenda da conta anterior é apagada da memória e da tela */
+ if(t.id==='logout'){AG=agVazio(null);$('p-agenda').innerHTML='';return}
+ if(t.getAttribute('aria-disabled')==='true')return;const d=t.dataset;let foco=null;
+ if(d.agaba){AG.aba=d.agaba;foco=`[data-agaba="${d.agaba}"]`}
+ else if(d.agmes){const[y,m]=AG.mes.split('-').map(Number),n=new Date(y,m-1+(+d.agmes),1,12);AG.mes=ymd(n).slice(0,7);AG.dia=today().slice(0,7)===AG.mes?today():AG.mes+'-01';foco=`[data-agmes="${d.agmes}"]`}
+ else if('aghoje' in d){AG.dia=today();AG.mes=AG.dia.slice(0,7);foco=`[data-agdia="${AG.dia}"]`}
+ else if(d.agdia){AG.dia=d.agdia;AG.mes=d.agdia.slice(0,7);foco=`[data-agdia="${AG.dia}"]`}
+ else if('agnovo' in d)return openAg(null,d.agnovo||null);
+ else if(d.agabrir)return openAg(d.agabrir);
+ else if(d.agdata)return openAg(d.agdata,null,true);
+ else if(d.agexcluir)return delAg(d.agexcluir);
+ else if('agsalvar' in d)return saveAg(t);
+ else return;
+ rAgenda();const f=foco&&document.querySelector(foco);f&&f.focus();
+ if(d.agdia&&innerWidth<=900){const p=document.querySelector('.agdia');p&&p.scrollIntoView({behavior:'smooth',block:'start'})}
+});
+$('ed').addEventListener('input',e=>{if(e.target.id!=='ag_dia')return;const vazio=!e.target.value;['ag_hora_ini','ag_hora_fim'].forEach(k=>{const i=$(k);i.disabled=vazio;if(vazio)i.value=''})});
+$('ed').addEventListener('keydown',e=>{if(e.key==='Enter'&&ED&&ED.kind==='agenda'&&e.target.matches('input')){const b=$('ed').querySelector('[data-agsalvar]');b&&b.click()}});
 
 /* ---------- seletor de ano, mês e semana ---------- */
 function rWsel(){const w=Wk();$('wTxt').textContent=`${wkTxt(w)} ${w.inicio.slice(0,4)}`;const old=$('wBtn').querySelector('.lk');old&&old.remove();if(w.fechada){const s=document.createElement('span');s.className='lk';s.title='Semana fechada';$('wBtn').insertBefore(s,$('wBtn').querySelector('.ch'))}$('wNow').hidden=sel===curWeek();if(!$('wp').hidden)rWp()}
@@ -911,7 +1071,7 @@ async function saveColab(){const{id}=ED,nome=$('c_nome').value.trim().replace(/\
  const k=x=>norm(x).normalize('NFD').replace(/[\u0300-\u036f]/g,'');if(COLS_().some(c=>c.id!==id&&k(c.nome)===k(nome))){box.classList.add('bad');box.querySelector('.msg').textContent='Já existe um colaborador com esse nome.';return}
  await saveSettings(s=>{s.colaboradores=(s.colaboradores||[]).slice();if(id){const c=s.colaboradores.find(x=>x.id===id);if(c){c.nome=nome;c.ativo=ativo}}else s.colaboradores.push({id:'c'+uid(),nome,ativo,criado:Date.now()})},id?'Colaborador salvo':'Colaborador adicionado');closeEd()}
 function openUser(id){const u=id?S.users.find(x=>x.id===id):{nome:'',usuario:'',admin:false};if(!u)return;ED={kind:'user',id,u:clone(u)};rEd();showEd()}
-function rEd(){if(!ED)return;if(ED.kind==='plan')return rEdPlan();if(ED.kind==='user')return rEdUser();if(ED.kind==='colab')return rEdColab();
+function rEd(){if(!ED)return;if(ED.kind==='agenda')return rEdAg();if(ED.kind==='plan')return rEdPlan();if(ED.kind==='user')return rEdUser();if(ED.kind==='colab')return rEdColab();
  const w=Wk(),{f}=ED,st=steps(f);if(ED.i>=st.length)ED.i=st.length-1;const i=ED.i,id=st[i],ro=!canEdit(w),isS=id==='sla';const r=isS?{}:((f==='q'?w.q:w.o)[id]||{});
  if(document.activeElement&&$('ed').contains(document.activeElement)&&ED.rendered===`${sel}|${f}|${i}`)return;ED.rendered=`${sel}|${f}|${i}`;
  const done=k=>k==='sla'?isN(w.sla):rowDone(f,(f==='q'?w.q:w.o)[k]||{});
@@ -1184,6 +1344,7 @@ async function onData(d){
  if(!S.weeks[cur]){try{await DB.createWeek(cur,emptyWeek(cur))}catch(e){}if(!S.weeks[cur])S.weeks[cur]=emptyWeek(cur)}
  if(isAdmin()&&!(S.settings&&S.settings.colabMigrado)&&!migrating){migrating=true;try{for(const[id,w]of Object.entries(S.weeks)){if(w.palavras&&Object.keys(w.palavras).length){await DB.update(id,{palavras:{}});w.palavras={}}}const st=ST();st.colaboradores=(S.settings&&S.settings.colaboradores)||[];st.colabMigrado=true;['pessoas','metaQualidade','regraQualidade','limiteDias','horasDia'].forEach(k=>delete st[k]);await DB.saveSettings(st);S.settings=st}catch(e){toast(e.message||errMsg(e),true)}migrating=false}
  if(!sel||!S.weeks[sel]){const p=prevOf(cur);sel=new Date().getDay()===1&&p?p.inicio:cur}
+ if(page==='agenda')agCarregar(true);
  render();
 }
 async function boot(){
