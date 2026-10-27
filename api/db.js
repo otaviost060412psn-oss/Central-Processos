@@ -13,6 +13,7 @@ const init=async()=>{
  await pool.query(`CREATE TABLE IF NOT EXISTS cp_weeks(id text PRIMARY KEY,data jsonb NOT NULL)`);
  await pool.query(`CREATE TABLE IF NOT EXISTS cp_settings(id int PRIMARY KEY DEFAULT 1,data jsonb NOT NULL)`);
  await initAgenda();
+ await initRegistros();
 };
 /* agenda: criada uma vez por instância (CREATE INDEX bloquearia escritas se rodasse em todo pedido);
    sem chave estrangeira para cp_users, para preservar os registros de contas excluídas */
@@ -77,6 +78,40 @@ const agGet=async id=>{const r=(await pool.query(`${AG_SEL} WHERE a.id=$1`,[id])
 /* no restore, um registro existente mantém dono e autoria originais */
 const AG_RESTORE_SET=['titulo','descricao','tipo','status','dia','hora_ini','hora_fim','atualizado','atualizado_por','encerrado'];
 const AG_LIMITE=2000;
+/* ---------- registros das áreas novas (Jornada, Diagnósticos, Projetos…) ----------
+   uma tabela para todas; 'area' diz de que área é o registro e o servidor confere os campos de cada uma.
+   só administradores leem ou alteram; 'ordem' guarda a posição quando a área tem ordem (etapas da jornada) */
+let regPronto=null;
+const initRegistros=()=>regPronto||(regPronto=(async()=>{
+ await pool.query(`CREATE TABLE IF NOT EXISTS cp_registros(id text PRIMARY KEY,area text NOT NULL,data jsonb NOT NULL,ordem int,criado bigint NOT NULL,criado_por text NOT NULL,atualizado bigint NOT NULL,atualizado_por text NOT NULL)`);
+ await pool.query('CREATE INDEX IF NOT EXISTS cp_registros_area ON cp_registros(area,ordem)');
+})().catch(e=>{regPronto=null;if(e.code!=='23505'&&e.code!=='42P07')throw e}));
+const regTxt=(v,max,nome,obrig)=>{const s=v==null?'':v;if(typeof s!=='string'||s.length>max)fail(400,`${nome}: até ${max} caracteres.`);const t=s.trim();if(obrig&&!t)fail(400,`Informe ${nome.toLowerCase()}.`);return obrig?t:s};
+const regId=v=>typeof v==='string'&&!!v.trim()&&v.length<=100;
+const REG_FLUXOS=['retorno','recorrencia','desvio'];
+/* campos aceitos em cada área; qualquer outro é ignorado */
+/* 'grupo': áreas que dependem umas das outras gravam uma de cada vez (etapas e caminhos da jornada) */
+const REG_AREAS={
+ jornada_etapa:{grupo:'jornada',ordenada:true,campos:x=>{
+  const setores=x.setores==null?[]:x.setores;
+  if(!Array.isArray(setores)||setores.length>50||!setores.every(regId))fail(400,'Setores inválidos.');
+  return {nome:regTxt(x.nome,120,'O nome da etapa',true),descricao:regTxt(x.descricao,2000,'Descrição'),setores:[...new Set(setores)],
+   processos:regTxt(x.processos,2000,'Processos'),motivos:regTxt(x.motivos,2000,'Motivos de contato'),riscos:regTxt(x.riscos,2000,'Problemas que podem surgir')}}},
+ jornada_fluxo:{grupo:'jornada',ordenada:false,campos:x=>{
+  if(!regId(x.de)||!regId(x.para))fail(400,'Escolha a etapa de origem e a de destino.');
+  if(!REG_FLUXOS.includes(x.tipo))fail(400,'Tipo de caminho inválido.');
+  return {de:x.de,para:x.para,tipo:x.tipo,descricao:regTxt(x.descricao,120,'Descrição')}}}};
+/* registros que dependem de outros: um caminho só existe entre etapas que existem */
+const regRefs=async(client,area,d)=>{
+ if(area!=='jornada_fluxo')return;
+ const q=await client.query("SELECT id FROM cp_registros WHERE area='jornada_etapa' AND id=ANY($1)",[[d.de,d.para]]);
+ if(q.rows.length!==new Set([d.de,d.para]).size)fail(400,'Etapa de origem ou de destino não encontrada.');
+};
+const regArea=a=>{if(typeof a!=='string'||!Object.hasOwn(REG_AREAS,a))fail(400,'Área inválida.');return REG_AREAS[a]};
+/* uma gravação por grupo de cada vez, até o fim da transação: evita travas cruzadas e ordem repetida */
+const regTrava=(client,A)=>client.query('SELECT pg_advisory_xact_lock(hashtext($1))',['cp_registros:'+A.grupo]);
+const regRow=r=>({id:r.id,area:r.area,data:r.data,ordem:r.ordem,criado:Number(r.criado),criado_por:r.criado_por,atualizado:Number(r.atualizado),atualizado_por:r.atualizado_por});
+const REG_LIMITE=1000;
 export default async function handler(req,res){
  res.setHeader('Cache-Control','no-store');
  if(req.method!=='POST')return res.status(405).json({error:'Método inválido'});
@@ -179,6 +214,55 @@ export default async function handler(req,res){
     for(const r of regs){const q=await client.query(`${AG_INS} ON CONFLICT(id) DO UPDATE SET ${AG_RESTORE_SET.map(c=>`${c}=EXCLUDED.${c}`).join(',')} WHERE cp_agenda.atualizado<EXCLUDED.atualizado RETURNING (xmax=0) AS novo`,agVals(r));if(!q.rows.length)ignorados++;else if(q.rows[0].novo)novos++;else atualizados++}
     await client.query('COMMIT')}catch(e){await client.query('ROLLBACK');throw e}finally{client.release()}
    return res.json({ok:true,novos,atualizados,ignorados});
+  }
+  else if(action==='regList'){
+   regArea(b.area);
+   const q=await pool.query(`SELECT * FROM cp_registros WHERE area=$1 ORDER BY ordem NULLS LAST,criado,id LIMIT ${REG_LIMITE+1}`,[b.area]);
+   return res.json({itens:q.rows.slice(0,REG_LIMITE).map(regRow),limitado:q.rows.length>REG_LIMITE});
+  }
+  else if(action==='regSave'){
+   const A=regArea(b.area),d=A.campos(b.data&&typeof b.data==='object'&&!Array.isArray(b.data)?b.data:fail(400,'Dados inválidos.')),agora=Date.now();
+   if(b.versao!=null&&!Number.isSafeInteger(b.versao))fail(400,'Dados inválidos.');
+   if(b.id!=null&&!regId(b.id))fail(400,'Dados inválidos.');
+   let item;
+   const client=await pool.connect();try{await client.query('BEGIN');await regTrava(client,A);
+    await regRefs(client,b.area,d);
+    if(!b.id){
+     const n=(await client.query('SELECT COUNT(*)::int AS n,COALESCE(MAX(ordem),0)+1 AS o FROM cp_registros WHERE area=$1',[b.area])).rows[0];
+     if(n.n>=REG_LIMITE)fail(400,`Esta área já tem o máximo de ${REG_LIMITE} registros.`);
+     /* nova etapa entra no fim da ordem */
+     item=(await client.query('INSERT INTO cp_registros(id,area,data,ordem,criado,criado_por,atualizado,atualizado_por) VALUES($1,$2,$3,$4,$5,$6,$5,$6) RETURNING *',[uid(),b.area,JSON.stringify(d),A.ordenada?n.o:null,agora,u.id])).rows[0];
+    }else{
+     const r=(await client.query('SELECT area,atualizado FROM cp_registros WHERE id=$1',[b.id])).rows[0];
+     if(!r||r.area!==b.area)fail(404,'Registro não encontrado.');
+     if(b.versao!=null&&b.versao!==Number(r.atualizado))fail(409,'Este registro foi alterado por outra pessoa. Recarregue.');
+     item=(await client.query('UPDATE cp_registros SET data=$2,atualizado=$3,atualizado_por=$4 WHERE id=$1 RETURNING *',[b.id,JSON.stringify(d),Math.max(agora,Number(r.atualizado)+1),u.id])).rows[0];
+    }
+    await client.query('COMMIT')}catch(e){await client.query('ROLLBACK');throw e}finally{client.release()}
+   return res.json({item:regRow(item)});
+  }
+  else if(action==='regDelete'){
+   const A=regArea(b.area);if(!regId(b.id))fail(400,'Dados inválidos.');
+   let removidos=0;
+   const client=await pool.connect();try{await client.query('BEGIN');await regTrava(client,A);
+    const r=(await client.query('SELECT area FROM cp_registros WHERE id=$1',[b.id])).rows[0];
+    if(!r||r.area!==b.area)fail(404,'Registro não encontrado.');
+    /* excluir uma etapa exclui junto os caminhos que saem dela ou chegam nela */
+    if(r.area==='jornada_etapa')removidos=(await client.query("DELETE FROM cp_registros WHERE area='jornada_fluxo' AND (data->>'de'=$1 OR data->>'para'=$1)",[String(b.id)])).rowCount;
+    await client.query('DELETE FROM cp_registros WHERE id=$1',[String(b.id)]);
+    await client.query('COMMIT')}catch(e){await client.query('ROLLBACK');throw e}finally{client.release()}
+   return res.json({ok:true,removidos});
+  }
+  else if(action==='regOrdem'){
+   /* recebe a lista completa na nova ordem; se alguém incluiu ou excluiu algo nesse meio tempo, pede para recarregar */
+   const A=regArea(b.area);if(!A.ordenada)fail(400,'Esta área não tem ordem.');
+   const ids=b.ids;if(!Array.isArray(ids)||!ids.length||ids.length>REG_LIMITE||!ids.every(regId)||new Set(ids).size!==ids.length)fail(400,'Ordem inválida.');
+   const client=await pool.connect();try{await client.query('BEGIN');await regTrava(client,A);
+    const q=await client.query('SELECT id FROM cp_registros WHERE area=$1',[b.area]),atuais=new Set(q.rows.map(x=>x.id));
+    if(atuais.size!==ids.length||!ids.every(x=>atuais.has(x)))fail(409,'A lista mudou enquanto você reorganizava. Recarregue.');
+    await client.query('UPDATE cp_registros r SET ordem=v.o FROM unnest($1::text[]) WITH ORDINALITY AS v(id,o) WHERE r.id=v.id',[ids]);
+    await client.query('COMMIT')}catch(e){await client.query('ROLLBACK');throw e}finally{client.release()}
+   return res.json({ok:true});
   }
   else fail(400,'Operação desconhecida');
   return res.json({ok:true});
