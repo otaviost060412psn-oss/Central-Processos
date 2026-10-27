@@ -100,7 +100,20 @@ const REG_AREAS={
  jornada_fluxo:{grupo:'jornada',ordenada:false,campos:x=>{
   if(!regId(x.de)||!regId(x.para))fail(400,'Escolha a etapa de origem e a de destino.');
   if(!REG_FLUXOS.includes(x.tipo))fail(400,'Tipo de caminho inválido.');
-  return {de:x.de,para:x.para,tipo:x.tipo,descricao:regTxt(x.descricao,120,'Descrição')}}}};
+  return {de:x.de,para:x.para,tipo:x.tipo,descricao:regTxt(x.descricao,120,'Descrição')}}},
+ /* problema da experiência; etapas são ids da jornada (uma etapa excluída depois continua listada e aparece como "Etapa excluída") */
+ diagnostico:{grupo:'diagnostico',ordenada:false,campos:x=>{
+  const lista=(v,nome,ok)=>{const L=v==null?[]:v;if(!Array.isArray(L)||L.length>50||!L.every(ok))fail(400,`${nome}: lista inválida.`);return L};
+  const etapas=[...new Set(lista(x.etapas,'Etapas',regId))];
+  /* setores digitados: sem espaços nas pontas e sem repetir maiúsculas/minúsculas */
+  const vistos=new Set(),setores=lista(x.setores,'Setores',s=>typeof s==='string'&&s.trim().length>0&&s.length<=100).map(s=>s.trim()).filter(s=>{const k=s.toLowerCase();if(vistos.has(k))return false;vistos.add(k);return true});
+  const opcao=(v,L,nome,obrig)=>{if(v==null||v===''){if(obrig)fail(400,`Informe: ${nome}.`);return ''}if(!L.includes(v))fail(400,`${nome}: opção inválida.`);return v};
+  const data=x.data==null||x.data===''?'':x.data;if(data&&!isDia(data))fail(400,'Data de registro inválida.');
+  return {titulo:regTxt(x.titulo,150,'O título do problema',true),descricao:regTxt(x.descricao,4000,'Descrição'),etapas,setores,tema:regTxt(x.tema,100,'Tema').trim(),data,
+   impacto:regTxt(x.impacto,4000,'Impacto para o cliente'),frequencia:opcao(x.frequencia,['diaria','semanal','quinzenal','mensal','pontual','nao_medida'],'Frequência'),
+   gravidade:opcao(x.gravidade,['critica','alta','media','baixa'],'Gravidade',true),causaTipo:opcao(x.causaTipo,['hipotese','confirmada'],'Tipo de causa',true),
+   causa:regTxt(x.causa,4000,'Causa'),evidencias:regTxt(x.evidencias,4000,'Evidências'),proxima:regTxt(x.proxima,1000,'Próxima ação'),
+   situacao:opcao(x.situacao,['ativo','investigacao','reduzido','resolvido'],'Situação',true)}}}};
 /* registros que dependem de outros: um caminho só existe entre etapas que existem */
 const regRefs=async(client,area,d)=>{
  if(area!=='jornada_fluxo')return;
