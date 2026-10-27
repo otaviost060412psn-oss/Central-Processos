@@ -431,6 +431,15 @@ button.pli:hover{background:var(--card2)}
 .spi .chip{font-size:17px;padding:6px 14px}
 .smiss{font-size:21px;color:rgba(232,244,234,.7);border:2px dashed rgba(232,244,234,.2);border-radius:20px;padding:18px 26px}
 .smiss b{color:#fff}
+/* jornada com calor e textos menores nas listas das apresentações de Agenda e Análises */
+.sjr{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:18px}
+.sjr>div{display:grid;gap:8px;align-content:start;background:rgba(232,244,234,.06);border:1px solid rgba(232,244,234,.17);border-radius:20px;padding:24px;box-shadow:inset 0 7px 0 var(--q,transparent)}
+.sjr .k{font-size:17px;color:rgba(232,244,234,.6)}
+.sjr b{font:600 26px/1.25 var(--fd);overflow-wrap:anywhere}
+.sjr small{font-size:19px;color:rgba(232,244,234,.84)}
+.sjrleg{display:flex;flex-wrap:wrap;gap:10px 26px;font-size:19px;color:rgba(232,244,234,.7)}
+.sjrleg i{display:inline-block;width:24px;height:7px;border-radius:4px;margin-right:9px;vertical-align:middle;background:var(--q)}
+.stbl .sub2{display:block;font-size:19px;color:rgba(232,244,234,.62);margin-top:4px;overflow-wrap:anywhere}
 .swords{display:grid;gap:18px}
 .swc{border-radius:20px;background:var(--forest);padding:22px 26px;display:flex;flex-direction:column;justify-content:space-between;min-height:150px}
 .swc small{font-size:20px;color:rgba(255,255,255,.82)}
@@ -810,7 +819,7 @@ button.jrlab:hover{background:var(--card2)}
 </div>
 
 <div class="mb" id="pcfgMb"><div class="modal pcfg" role="dialog" aria-modal="true" aria-labelledby="pcfgT">
-  <h2 id="pcfgT">Configurar apresentação</h2><p class="sub">Escolha o período. Ele sempre é formado por semanas inteiras.</p>
+  <h2 id="pcfgT">Configurar apresentação</h2><p class="sub" id="pcfgSub">Escolha o período. Ele sempre é formado por semanas inteiras.</p>
   <div class="pcb" id="pcfgBody"></div>
   <div class="mbtns"><button class="btn ghost" id="pcfgNo">Cancelar</button><button class="btn" id="pcfgDl"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>Baixar apresentação</button><button class="btn pri" id="pcfgGo"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M8 5.5v13l11-6.5z"/></svg>Iniciar apresentação</button></div>
 </div></div>
@@ -1045,6 +1054,7 @@ function render(){
  $('app').classList.toggle('nao-adm',!isAdmin());
  document.querySelectorAll('#nav button[data-p]').forEach(b=>{const on=b.dataset.p===page;b.classList.toggle('on',on);on?b.setAttribute('aria-current','page'):b.removeAttribute('aria-current')});
  rMenu();
+ document.querySelectorAll('.top [data-present]').forEach(b=>b.hidden=!presModoDaPagina());
  $('pageTitle').textContent=({inicio:'Visão Geral',qualidade:'Qualidade',operacoes:'Operações',palavra:'Palavra da Semana',agenda:'Agenda e Demandas','an-jornada':'Jornada do Cliente','an-diag':'Diagnósticos',config:'Configurações'})[page]||(EMB[page]||[])[0]||'';
  document.querySelectorAll('.page').forEach(p=>p.classList.toggle('on',p.id==='p-'+(EMB[page]?'embreve':page)));
  document.querySelector('.wsel').hidden=page==='agenda'||page==='an-jornada'||page==='an-diag'||!!EMB[page];
@@ -2038,12 +2048,32 @@ function rPcfg(){const all=ids().slice().reverse(),L=periodWeeks(pFrom,pTo),pend
   <div class="pc-r"><div class="k">Resumo do período</div><div class="big">${L.length} ${L.length===1?'semana':'semanas'}</div><div>${dfmt(L[0].inicio)} a ${dfmt(L.at(-1).fim)}</div>
   ${pend.length?`<div class="wa">${pend.length} ${pend.length===1?'semana com dados pendentes':'semanas com dados pendentes'}: ${pend.map(w=>wkTxt(w)).join(', ')}</div>`:'<div class="okk">Todas as semanas preenchidas</div>'}
   <div class="mu">${nf(Q.mon)} monitorias · ${PL} ${PL===1?'plano':'planos'} · ${PW} ${PW===1?'palavra':'palavras'}</div></div>`}
-function openPres(){if(!Wk()||!isAdmin())return;closeMenu();pFrom=pTo=sel;pShort=null;rPcfg();$('pcfgMb').classList.add('show');setTimeout(()=>$('pcfgGo').focus(),30)}
+/* "Apresentar" apresenta a área aberta: Visão Geral, Calibragem Semanal, Agenda e Demandas ou Análises */
+const PRES_MODO={inicio:'geral',cal:'cal',agenda:'ag',an:'an'};
+const presModoDaPagina=()=>PRES_MODO[areaDe(page)]||null;
+let presModo='cal',pAg=null;
+function openPres(){const m=presModoDaPagina();if(!m||!isAdmin()||((m==='geral'||m==='cal')&&!Wk()))return;closeMenu();presModo=m;
+ $('pcfgT').textContent={geral:'Apresentar a Visão Geral',cal:'Apresentar a Calibragem Semanal',ag:'Apresentar a Agenda e Demandas',an:'Apresentar as Análises'}[m];
+ $('pcfgSub').textContent=m==='ag'?'Escolha o período. As demandas em aberto aparecem como estão hoje.':m==='an'?'A apresentação mostra a situação de hoje.':'Escolha o período. Ele sempre é formado por semanas inteiras.';
+ if(m==='ag'){const[de,ate]=exRange('mes');pAg={de,ate,short:'mes'};rPcfgAg()}else if(m==='an')rPcfgAn();else{pFrom=pTo=sel;pShort=null;rPcfg()}
+ $('pcfgMb').classList.add('show');setTimeout(()=>$('pcfgGo').focus(),30)}
+const pAgResumo=()=>{const{de,ate}=pAg,d=de&&ate?Math.round((Date.parse(ate)-Date.parse(de))/864e5)+1:0;
+ return `<div class="k">Período</div><div class="big">${d>0?`${d} ${d===1?'dia':'dias'}`:'—'}</div><div>${d>0?`${dfmt(de)} a ${dfmt(ate)}`:'Preencha as duas datas'}</div><div class="mu">Equipe toda: demandas em aberto, concluídas no período e agenda do período</div>`};
+function rPcfgAg(){const{de,ate}=pAg;
+ $('pcfgBody').innerHTML=`<div class="pc-l"><div class="pc-s" role="group" aria-label="Atalhos">${EX_DSH.map(([k,t])=>`<button class="${pAg.short===k?'on':''}" data-pagds="${k}">${t}</button>`).join('')}</div>
+  <div class="frow"><div class="f"><label for="pAgDe">De</label><input id="pAgDe" type="date" value="${esc(de)}"></div><div class="f"><label for="pAgAte">Até</label><input id="pAgAte" type="date" value="${esc(ate)}"></div></div></div>
+  <div class="pc-r">${pAgResumo()}</div>`}
+function rPcfgAn(){$('pcfgBody').innerHTML=`<div class="pc-l"><p class="muted">Números dos diagnósticos, a Jornada do Cliente com a cor do problema ativo mais grave em cada etapa e a lista dos problemas ativos, do mais grave para o menos grave.</p></div>
+  <div class="pc-r"><div class="k">Situação em</div><div class="big">${dfmt(today())}</div></div>`}
 function closePcfg(){$('pcfgMb').classList.remove('show')}
-$('pcfgMb').addEventListener('click',e=>{const b=e.target.closest('[data-pshort]');if(!b)return;const r=shortRange(b.dataset.pshort);if(!r)return;[pFrom,pTo]=r;pShort=b.dataset.pshort;rPcfg()});
-$('pcfgMb').addEventListener('change',e=>{if(e.target.id==='pFrom')pFrom=e.target.value;if(e.target.id==='pTo')pTo=e.target.value;if(pFrom>pTo)[pFrom,pTo]=[pTo,pFrom];pShort=null;rPcfg()});
+$('pcfgMb').addEventListener('click',e=>{const g=e.target.closest('[data-pagds]');if(g&&pAg){const r=exRange(g.dataset.pagds);if(r){[pAg.de,pAg.ate]=r;pAg.short=g.dataset.pagds;rPcfgAg()}return}
+ const b=e.target.closest('[data-pshort]');if(!b)return;const r=shortRange(b.dataset.pshort);if(!r)return;[pFrom,pTo]=r;pShort=b.dataset.pshort;rPcfg()});
+$('pcfgMb').addEventListener('change',e=>{if(e.target.id==='pAgDe'||e.target.id==='pAgAte'){pAg[e.target.id==='pAgDe'?'de':'ate']=e.target.value;pAg.short=null;
+  $('pcfgMb').querySelectorAll('[data-pagds]').forEach(b=>b.classList.remove('on'));const r=$('pcfgMb').querySelector('.pc-r');if(r)r.innerHTML=pAgResumo();return}
+ if(presModo==='ag'||presModo==='an')return;
+ if(e.target.id==='pFrom')pFrom=e.target.value;if(e.target.id==='pTo')pTo=e.target.value;if(pFrom>pTo)[pFrom,pTo]=[pTo,pFrom];pShort=null;rPcfg()});
 $('pcfgNo').onclick=closePcfg;
-$('pcfgGo').onclick=()=>{closePcfg();startPres(periodWeeks(pFrom,pTo))};
+$('pcfgGo').onclick=()=>presIr(false);
 /* ---------- baixar a apresentação como HTML independente ---------- */
 function presRuntime(T,H){var $=function(i){return document.getElementById(i)},si=0,S=[].slice.call(document.querySelectorAll('.sl'));
  function show(i,back){si=Math.max(0,Math.min(S.length-1,i));S.forEach(function(el,k){el.classList.remove('on','bk');if(k===si){void el.offsetWidth;el.classList.add('on');if(back)el.classList.add('bk')}});
@@ -2060,20 +2090,24 @@ function presRuntime(T,H){var $=function(i){return document.getElementById(i)},s
  document.addEventListener('keydown',function(e){if(['Enter',' '].indexOf(e.key)>-1&&e.target.closest&&e.target.closest('.swn'))return;
   if(['ArrowRight','PageDown',' ','Enter'].indexOf(e.key)>-1){e.preventDefault();show(si+1)}else if(['ArrowLeft','PageUp','Backspace'].indexOf(e.key)>-1){e.preventDefault();show(si-1,true)}else if(e.key==='f'||e.key==='F')fsToggle()});
  fit();show(0)}
-function downloadPres(L){if(!L||!L.length)return;buildSlides(L);
+function downloadPres(L,modo){if(!L||!L.length)return;buildSlides(L,modo);const a=L[0].inicio,z=L.at(-1).fim;
+ presBaixar(`${modo==='geral'?'Visão Geral':'Central de Qualidade e Operações'} · ${dfmt(a)} a ${dfmt(z)}`,`apresentacao-${modo==='geral'?'visao-geral':'qualidade-operacoes'}-${a}-a-${z}.html`)}
+/* gera o HTML independente com os slides já montados */
+function presBaixar(tt,arq){
  const c=$('pres').cloneNode(true);c.classList.add('on');c.removeAttribute('aria-hidden');
  const cl=c.querySelector('#pclose');cl&&cl.remove();const st=c.querySelector('#stage');st&&st.removeAttribute('style');
  c.querySelectorAll('.sl').forEach(x=>x.classList.remove('on','bk'));const hn=c.querySelector('.hint');if(hn)hn.textContent='← → navegar · F tela cheia';
  const H=PWL.map(p=>p.words.length===1?`<small>${esc(p.nome)}</small><b>${esc(p.words[0].palavra)}</b>`:`<small>${esc(p.nome)}</small><div class="swl">${p.words.map(x=>`<div><span>${dshort(x.sem)}</span><b>${esc(x.palavra)}</b></div>`).join('')}</div>`);
  const J=v=>JSON.stringify(v).replace(/</g,'\\u003c');
  const css=[...document.querySelectorAll('style')].map(x=>x.textContent).join('\n')+'\nhtml,body{margin:0;height:100%;overflow:hidden;background:#031a12}';
- const sv=$('ig')&&$('ig').closest('svg'),defs=sv?sv.outerHTML:'';const ico=document.querySelector('link[rel="icon"]'),a=L[0].inicio,z=L.at(-1).fim,tt=`Central de Qualidade e Operações · ${dfmt(a)} a ${dfmt(z)}`;
+ const sv=$('ig')&&$('ig').closest('svg'),defs=sv?sv.outerHTML:'';const ico=document.querySelector('link[rel="icon"]');
  const html=`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(tt)}</title>${ico?ico.outerHTML:''}<style>${css}</style></head><body>${defs}${c.outerHTML}<script>(${presRuntime.toString()})(${J(slides.map(x=>x.t))},${J(H)});<\/script></body></html>`;
- const bl=new Blob([html],{type:'text/html'}),l=document.createElement('a');l.href=URL.createObjectURL(bl);l.download=`apresentacao-qualidade-operacoes-${a}-a-${z}.html`;document.body.appendChild(l);l.click();l.remove();setTimeout(()=>URL.revokeObjectURL(l.href),4000);
+ const bl=new Blob([html],{type:'text/html'}),l=document.createElement('a');l.href=URL.createObjectURL(bl);l.download=arq;document.body.appendChild(l);l.click();l.remove();setTimeout(()=>URL.revokeObjectURL(l.href),4000);
  toast('Apresentação baixada.')}
-$('pcfgDl').onclick=()=>{closePcfg();downloadPres(periodWeeks(pFrom,pTo))};
+$('pcfgDl').onclick=()=>presIr(true);
 const odelta=(cur,prev,better,kind,lab)=>{if(!isN(cur)||!isN(prev))return `<span>Sem ${lab.replace('vs. ','')} para comparar</span>`;const d=cur-prev;if(Math.abs(d)<0.005)return `<span>Igual ${lab.includes('período')?'ao período anterior':'à semana anterior'}</span>`;const good=(d>0)===(better==='up');const t=kind==='pct'?nf(Math.abs(d),2)+' p.p.':kind==='dur'?dur(Math.abs(d)):nf(Math.abs(d));return `<span class="${good?'good':'badc'}">${d>0?'▲':'▼'} ${t}</span> ${lab}`};
-function buildSlides(L){
+/* modo: "cal" (Calibragem Semanal, completa) ou "geral" (Visão Geral: capa e números) */
+function buildSlides(L,modo){
  const n=L.length,first=L[0],last=L.at(-1),Q=aggQ(L),O=aggO(L),pv=prevPeriod(L),PQ=pv&&aggQ(pv),PO=pv&&aggO(pv),pend=pendentes(L);
  const lab=n===1?'vs. semana anterior':'vs. período anterior',ptxt=n===1?`Semana de ${periodo(first)}`:`${dshort(first.inicio)} a ${dfmt(last.fim)} · ${n} semanas`,ftxt=ptxt+(pend.length?` · ${pend.length} ${pend.length===1?'semana':'semanas'} com dados pendentes`:'');
  const fbn=d=>d?`<br><span style="opacity:.7">Última semana com dado: ${dshort(d)}</span>`:'';
@@ -2099,18 +2133,71 @@ function buildSlides(L){
  s.push({t:'Operações · Por setor',h:side('Operações','Resultado por setor',n>1?'Tickets tratados somados; backlog e tempo médio da última semana.':'')+`<div class="body"><table class="stbl"><thead><tr><th>Setor</th><th class="n">Tratados</th><th class="n">Backlog</th><th class="n">Tempo médio</th><th class="n">Dias úteis</th></tr></thead><tbody>${O.rows.map(r=>`<tr><td><span class="nm">${esc(r.nome)}</span></td><td class="n">${nf(r.tratados)}</td><td class="n">${isN(r.backlog)&&isN(r.tratados)&&r.backlog>r.tratados&&n===1?`<span class="chip w">${nf(r.backlog)}</span>`:nf(r.backlog)}</td><td class="n">${dur(r.tempo)}</td><td class="n">${isN(r.tempo)?diasTxt(r.tempo):'—'}</td></tr>`).join('')}</tbody><tfoot><tr><td>Total</td><td class="n">${nf(O.trat)}</td><td class="n">${nf(O.back)}</td><td class="n">${dur(O.tempo)}</td><td class="n">${diasTxt(O.tempo)}</td></tr></tfoot></table></div>`});
  s.push({t:'Operações · Planos de ação',h:plSlide('o')});
  const W=palavrasPeriod(L);PWL=W;
- s.push({t:'Palavra da Semana',h:side('Para fechar',n>1?'As palavras do período':'As palavras da semana',W.length?`${W.length} ${W.length===1?'colaborador':'colaboradores'}. Clique num nome para revelar ${n>1?'as palavras':'a palavra'}.`:'Nenhuma palavra registrada.')+`<div class="body">${W.length?`<div class="swbig wait" id="swbig"><small>&nbsp;</small><b>Clique num nome para ver ${n>1?'as palavras':'a palavra'}</b></div><div class="swn" id="swn">${W.map((x,j)=>`<button data-swn="${j}">${esc(x.nome)}</button>`).join('')}</div>`:'<div class="swbig"><small>&nbsp;</small><b class="none">Nenhuma palavra registrada</b></div>'}</div>`});
+ if(modo!=='geral')s.push({t:'Palavra da Semana',h:side('Para fechar',n>1?'As palavras do período':'As palavras da semana',W.length?`${W.length} ${W.length===1?'colaborador':'colaboradores'}. Clique num nome para revelar ${n>1?'as palavras':'a palavra'}.`:'Nenhuma palavra registrada.')+`<div class="body">${W.length?`<div class="swbig wait" id="swbig"><small>&nbsp;</small><b>Clique num nome para ver ${n>1?'as palavras':'a palavra'}</b></div><div class="swn" id="swn">${W.map((x,j)=>`<button data-swn="${j}">${esc(x.nome)}</button>`).join('')}</div>`:'<div class="swbig"><small>&nbsp;</small><b class="none">Nenhuma palavra registrada</b></div>'}</div>`});
+ if(modo==='geral'){PWL=[];s[0]=presCapa('Visão Geral','QUALIDADE • OPERAÇÕES','Período de referência',`${dfmt(first.inicio)} a ${dfmt(last.fim)}${n>1?` · ${n} semanas`:''}`);presMontar(s.filter(x=>['Capa','Qualidade · Números','Operações · Números'].includes(x.t)));return}
  slides=s;
  $('slides').innerHTML=s.map(x=>`<section class="sl ${x.c||''}">${x.h}</section>`).join('');
  $('psegs').innerHTML=s.map((x,i)=>`<i data-si="${i}" title="${esc(x.t)}"></i>`).join('');
 }
+/* peças comuns dos slides novos, no mesmo visual da apresentação da Calibragem */
+const PRES_BEAMS='<div class="beams"><div style="background:linear-gradient(var(--g),transparent 80%)"></div><div style="background:linear-gradient(var(--forest),transparent 75%)"></div><div style="background:linear-gradient(var(--g),transparent 70%)"></div><div style="background:linear-gradient(var(--forest),transparent 65%)"></div></div>';
+const presCapa=(titulo,tag,lb,txt)=>({t:'Capa',c:'cover',h:`<div class="bg"></div>${PRES_BEAMS}${brandHTML('--bh:72px;position:absolute;left:96px;top:80px;z-index:3')}<div class="cv"><p class="e">Conexão Green</p><h1>${titulo}</h1></div><div class="cvf"><span class="lb">${lb}</span><span>${txt}</span></div><div class="stag">${tag}</div>`});
+const presLado=(k,t,d,rod)=>`<div class="bg"></div><aside class="side"><p class="kick">${k}</p><h2>${t}</h2>${d?`<p class="desc">${d}</p>`:''}<div class="foot">${rod}</div></aside>`;
+const presPag=(a,n)=>{const r=[];for(let i=0;i<a.length;i+=n)r.push(a.slice(i,i+n));return r.length?r:[[]]};
+const presCorta=(s,n)=>{const c=Array.from(String(s||'').trim());return c.length>n?c.slice(0,n-1).join('')+'…':c.join('')};
+const presNum=(l,v,d,ruim)=>`<div><div class="l">${l}</div><div class="v${ruim?' bad':''}">${nf(v)}</div><div class="d">${d}</div></div>`;
+/* lista em uma ou mais páginas: cada página vira um slide com o mesmo título e (1/2), (2/2)… */
+const presLista=(s,k,t,d,rod,itens,n,cab,linha,vazio)=>presPag(itens,n).forEach((P,i,T)=>{const tt=t+(T.length>1?` (${i+1}/${T.length})`:'');
+ s.push({t:`${k} · ${tt}`,h:presLado(k,tt,d,rod)+`<div class="body">${P.length?`<table class="stbl"><thead><tr>${cab}</tr></thead><tbody>${P.map(linha).join('')}</tbody></table>`:`<div class="smiss">${vazio}</div>`}</div>`})});
+function presMontar(s){slides=s;$('slides').innerHTML=s.map(x=>`<section class="sl ${x.c||''}">${x.h}</section>`).join('');$('psegs').innerHTML=s.map((x,i)=>`<i data-si="${i}" title="${esc(x.t)}"></i>`).join('')}
+const presResp=x=>(x.resp_nome||'—')+(x.conta_excluida?' (conta excluída)':'');
+function buildSlidesAg(D,de,ate){PWL=[];const hoje=today(),rod=`${dfmt(de)} a ${dfmt(ate)} · equipe toda`,atr=x=>!!x.dia&&x.dia<hoje,pz=(a,b)=>(a.dia||'9999').localeCompare(b.dia||'9999')||a.criado-b.criado;
+ const And=D.abertas.filter(x=>x.status==='andamento').sort(pz),Pl=D.abertas.filter(x=>x.status!=='andamento').sort(pz),At=D.abertas.filter(atr),Co=D.concl.slice().sort((a,b)=>a.encerrado-b.encerrado),Ag=D.agenda.slice().sort((a,b)=>(a.dia+(a.hora_ini||'')).localeCompare(b.dia+(b.hora_ini||''))||a.criado-b.criado);
+ const s=[presCapa('Agenda e<br>Demandas','AGENDA • DEMANDAS','Período de referência',`${dfmt(de)} a ${dfmt(ate)}`)];
+ s.push({t:'Resumo',h:presLado('Agenda e Demandas','Resumo',`Demandas em aberto como estão em ${dfmt(hoje)}; concluídas e agenda do período.`,rod)+`<div class="body"><div class="sfx">${presNum('Em andamento',And.length,'Demandas sendo feitas agora')}${presNum('Planejadas',Pl.length,'Demandas ainda não iniciadas')}${presNum('Atrasadas',At.length,'Em aberto com o prazo vencido',At.length>0)}${presNum('Concluídas no período',Co.length,'Encerradas entre as datas escolhidas')}</div></div>`});
+ const dem=x=>`<tr><td><span class="nm">${esc(presCorta(x.titulo,60))}</span>${x.descricao?`<span class="sub2">${esc(presCorta(x.descricao,90))}</span>`:''}</td><td>${esc(presResp(x))}</td><td class="n">${x.dia?`<span class="chip ${atr(x)?'w':'s'}">${dshort(x.dia)}${atr(x)?' · atrasada':''}</span>`:'Sem prazo'}</td></tr>`;
+ presLista(s,'Demandas','Em andamento','',rod,And,7,'<th>Demanda</th><th>Responsável</th><th class="n">Prazo</th>',dem,'Nenhuma demanda em andamento.');
+ presLista(s,'Demandas','Planejadas','',rod,Pl,7,'<th>Demanda</th><th>Responsável</th><th class="n">Prazo</th>',dem,'Nenhuma demanda planejada.');
+ presLista(s,'Demandas','Concluídas no período','',rod,Co,7,'<th>Demanda</th><th>Responsável</th><th class="n">Concluída em</th>',x=>`<tr><td><span class="nm">${esc(presCorta(x.titulo,60))}</span></td><td>${esc(presResp(x))}</td><td class="n">${x.encerrado?dfmt(ymd(new Date(x.encerrado))):'—'}</td></tr>`,'Nenhuma demanda concluída no período.');
+ presLista(s,'Agenda','Compromissos do período','',rod,Ag,8,'<th>Dia</th><th>Horário</th><th>Compromisso</th><th>Responsável</th>',x=>`<tr><td>${dshort(x.dia)}</td><td>${x.hora_ini?esc(x.hora_ini+(x.hora_fim?' às '+x.hora_fim:'')):'—'}</td><td><span class="nm">${esc(presCorta(x.titulo,55))}</span></td><td>${esc(presResp(x))}</td></tr>`,'Nenhum compromisso no período.');
+ presMontar(s)}
+const PRES_CALOR={critica:'#F2665A',alta:'#FF8A3D',media:'#F5D04F',baixa:'#9AA59F'},PRES_GCHIP={critica:'w',alta:'a',media:'',baixa:'s'},PRES_SCHIP={ativo:'w',investigacao:'a',reduzido:'s',resolvido:'g'};
+function buildSlidesAn(E,Dg){PWL=[];const hoje=today(),rod=`Situação em ${dfmt(hoje)}`,peso=x=>DG_GRAV[jrGrav(x)][2],nome=id=>{const e=E.find(y=>y.id===id);return e?e.data.nome:'Etapa excluída'};
+ const A=Dg.filter(dgAtivo).sort((a,b)=>peso(b)-peso(a)||(b.data.data||'').localeCompare(a.data.data||'')||b.criado-a.criado);
+ const s=[presCapa('Análises','JORNADA • DIAGNÓSTICOS','Situação em',dfmt(hoje))];
+ s.push({t:'Diagnósticos · Números',h:presLado('Diagnósticos','Números de hoje','Problemas ativos são os ativos e os em investigação, de todos os meses.',rod)+`<div class="body"><div class="sfx">${presNum('Problemas ativos',A.length,'Ativos e em investigação')}${presNum('Críticos ativos',A.filter(x=>x.data.gravidade==='critica').length,'Gravidade crítica',A.some(x=>x.data.gravidade==='critica'))}${presNum('Em investigação',Dg.filter(x=>x.data.situacao==='investigacao').length,'Causa sendo apurada')}${presNum('Resolvidos ou reduzidos',Dg.filter(x=>x.data.situacao==='resolvido'||x.data.situacao==='reduzido').length,'Desde o início dos registros')}</div></div>`});
+ if(E.length){const leg=`<div class="sjrleg"><span>Cor no topo = problema ativo mais grave:</span>${Object.entries(PRES_CALOR).map(([k,c])=>`<span><i style="--q:${c}"></i>${esc(DG_GRAV[k][0])}</span>`).join('')}</div>`;
+  presPag(E.map((e,i)=>({e,i})),12).forEach((P,j,T)=>{const tt='Onde estão os problemas'+(T.length>1?` (${j+1}/${T.length})`:'');
+   s.push({t:'Jornada do Cliente · '+tt,h:presLado('Jornada do Cliente',tt,'As etapas pelas quais o cliente passa e os problemas ativos ligados a cada uma.',rod)+`<div class="body">${leg}<div class="sjr">${P.map(({e,i})=>{const Q=A.filter(x=>(x.data.etapas||[]).includes(e.id)),g=Q.length?jrGrav(Q[0]):'';
+    return `<div${g?` style="--q:${PRES_CALOR[g]}"`:''}><span class="k">Etapa ${i+1}</span><b>${esc(presCorta(e.data.nome,60))}</b><small>${Q.length?`${Q.length} ${Q.length===1?'problema ativo':'problemas ativos'} · mais grave: ${esc(DG_GRAV[g][0])}`:'Nenhum problema ativo'}</small></div>`}).join('')}</div></div>`})})}
+ presLista(s,'Diagnósticos','Problemas ativos','Do mais grave para o menos grave.',rod,A,6,'<th>Problema</th><th>Gravidade</th><th>Situação</th><th>Etapas</th><th>Próxima ação</th>',x=>{const d=x.data,g=dgM(DG_GRAV,d.gravidade),st=dgM(DG_SIT,d.situacao);
+  return `<tr><td><span class="nm">${esc(presCorta(d.titulo,50))}</span>${d.tema?`<span class="sub2">Tema: ${esc(presCorta(d.tema,40))}</span>`:''}</td><td>${g?`<span class="chip ${PRES_GCHIP[d.gravidade]}">${esc(g[0])}</span>`:'—'}</td><td>${st?`<span class="chip ${PRES_SCHIP[d.situacao]}">${esc(st[0])}</span>`:'—'}</td><td>${esc(presCorta([...new Set((d.etapas||[]).map(nome))].join(', ')||'—',50))}</td><td>${esc(presCorta(d.proxima||'—',60))}</td></tr>`},'Nenhum problema ativo.');
+ presMontar(s)}
+/* busca os dados da área (Agenda e Análises), monta os slides e apresenta ou baixa */
+let presTok=0;
+async function presIr(baixar){const m=presModo,tk=++presTok,pg=page;
+ if(m==='geral'||m==='cal'){closePcfg();const L=periodWeeks(pFrom,pTo);baixar?downloadPres(L,m):startPres(L,m);return}
+ let de,ate;if(m==='ag'){({de,ate}=pAg);if(!de||!ate||![de,ate].every(d=>/^\d{4}-\d{2}-\d{2}$/.test(d)&&d>='2000-01-01'&&d<='2100-12-31'))return toast('Confira as datas do período.',true);
+  if(de>ate)[de,ate]=[ate,de];if((Date.parse(ate)-Date.parse(de))/864e5>366)return toast('Escolha um período de até 1 ano.',true)}
+ closePcfg();toast('Preparando a apresentação…');let limitado=false;const lim=r=>{if(r.limitado)limitado=true;return r.itens||[]};
+ try{if(m==='ag'){const C=new Map();
+   const[ab,agd]=await Promise.all([DB.agendaList({pessoa:'*',demandas:'abertas'}),DB.agendaList({pessoa:'*',de,ate})]);
+   for(let d=de;d<=ate;d=exSoma(d,31)){const f=[exSoma(d,30),ate].sort()[0];lim(await DB.agendaList({pessoa:'*',encerradas:true,desde:new Date(d+'T00:00:00').getTime(),ate:new Date(f+'T23:59:59.999').getTime()})).forEach(x=>C.set(x.id,x))}
+   buildSlidesAg({abertas:lim(ab),concl:[...C.values()],agenda:lim(agd).filter(x=>x.tipo==='agenda')},de,ate)}
+  else{const[re,rd]=await Promise.all([DB.regList('jornada_etapa'),DB.regList('diagnostico')]);buildSlidesAn(lim(re),lim(rd))}
+ }catch(e){if(tk===presTok)toast(e.message||'Não foi possível preparar a apresentação.',true);return}
+ if(tk!==presTok||page!==pg||!meId||!isAdmin())return;
+ if(limitado)toast('Atenção: havia registros demais e parte deles ficou de fora da apresentação.',true);
+ if(baixar)m==='ag'?presBaixar(`Agenda e Demandas · ${dfmt(de)} a ${dfmt(ate)}`,`apresentacao-agenda-${de}-a-${ate}.html`):presBaixar(`Análises · ${dfmt(today())}`,`apresentacao-analises-${today()}.html`);
+ else presAbrir()}
 function show(i,back){si=Math.max(0,Math.min(slides.length-1,i));document.querySelectorAll('.sl').forEach((el,k)=>{el.classList.remove('on','bk');if(k===si){void el.offsetWidth;el.classList.add('on');if(back)el.classList.add('bk')}});
  document.querySelectorAll('#psegs i').forEach((el,k)=>el.classList.toggle('on',k<=si));$('pwhere').textContent=slides[si].t;$('pcount').textContent=`${si+1} / ${slides.length}`;$('pprev').disabled=si===0;$('pnext').disabled=si===slides.length-1}
 const fit=()=>{const k=Math.min(innerWidth/1920,innerHeight/1080);$('stage').style.transform=`translate(-50%,-50%) scale(${k})`};
 const fsOn=()=>!!(document.fullscreenElement||document.webkitFullscreenElement);
-function fsToggle(){try{if(fsOn())(document.exitFullscreen||document.webkitExitFullscreen).call(document);else{const el=document.documentElement;(el.requestFullscreen||el.webkitRequestFullscreen).call(el)}}catch(e){}}
+function fsToggle(){try{const p=fsOn()?(document.exitFullscreen||document.webkitExitFullscreen).call(document):(el=>(el.requestFullscreen||el.webkitRequestFullscreen).call(el))(document.documentElement);if(p&&p.catch)p.catch(()=>{})}catch(e){}}
 function fsLabel(){$('pfs').setAttribute('aria-label',fsOn()?'Sair da tela cheia':'Tela cheia');$('pfs').title=fsOn()?'Sair da tela cheia (F)':'Tela cheia (F)';$('pfs').classList.toggle('on',fsOn())}
-function startPres(L){if(!L||!L.length)return;buildSlides(L);$('pres').classList.add('on');$('pres').setAttribute('aria-hidden','false');fit();show(0);if(!fsOn())fsToggle()}
+function startPres(L,modo){if(!L||!L.length)return;buildSlides(L,modo);presAbrir()}
+function presAbrir(){$('pres').classList.add('on');$('pres').setAttribute('aria-hidden','false');fit();show(0);if(!fsOn())fsToggle()}
 function closePres(){$('pres').classList.remove('on');$('pres').setAttribute('aria-hidden','true');if(fsOn())fsToggle()}
 $('pnext').onclick=()=>show(si+1);$('pprev').onclick=()=>show(si-1,true);$('pclose').onclick=closePres;$('pfs').onclick=fsToggle;
 ['fullscreenchange','webkitfullscreenchange'].forEach(ev=>document.addEventListener(ev,()=>{fsLabel();setTimeout(fit,60)}));
