@@ -530,6 +530,26 @@ button.plc.miss:hover{background:var(--card2)}
 .cfgp{display:grid;gap:16px}
 /* perguntas-chave: cada pergunta abre e fecha a lista de itens que a respondem */
 .pqs{display:grid;gap:10px}
+/* por setor: período, tabela de comparação e detalhe */
+.porbar{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;margin-bottom:12px}
+.porbar .muted{font-size:13px}
+.portab td.n,.portab th.n{text-align:right;white-space:nowrap}
+.porajuda{font-size:12px;margin:8px 0 var(--gap)}
+.pordet{display:grid;gap:14px;scroll-margin-top:80px}
+.pordet:focus{outline:0}
+.pordh{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.pordh h2{font-size:22px;margin:2px 0 8px}
+.pordet h3{font-size:15px;font-weight:600;margin:6px 0 8px}
+.pordet h3 .muted{font-weight:400;font-size:13px}
+.pordet .pqb{padding:0}
+.porkpis{margin:0}
+.porkpis .kpi .l,.porkpis .kpi .v{display:block}
+.porkpis .kpi .v{margin:8px 0 0}
+.porcols{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.porch{height:180px}
+.pordet .sech{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:10px}
+.pordet .sech h3{margin:0}
+@media (max-width:900px){.porcols{grid-template-columns:1fr}}
 .pq{padding:0}
 .pqh{width:100%;display:flex;align-items:center;gap:14px;background:none;border:0;padding:16px 18px;text-align:left;color:var(--tx);border-radius:inherit}
 .pqh:hover{background:var(--card2)}
@@ -844,7 +864,7 @@ button.jrlab:hover{background:var(--card2)}
         <div class="grp so-adm" data-grp="inicio"><button data-p="inicio"><svg class="i" viewBox="0 0 24 24"><path d="M4 11l8-7 8 7v9a1 1 0 0 1-1 1h-5v-6h-4v6H5a1 1 0 0 1-1-1z"/></svg>Visão Geral</button></div>
         <div class="grp" data-grp="cal"><button data-p="qualidade"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg>Qualidade<span class="st" id="stq"></span></button><button data-p="operacoes"><svg class="i" viewBox="0 0 24 24"><path d="M4 21V7l8-4 8 4v14M9 21v-6h6v6"/></svg>Operações<span class="st" id="sto"></span></button><button data-p="palavra"><svg class="i" viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/></svg>Palavra da Semana</button></div>
         <div class="grp" data-grp="agenda"><button data-p="agenda"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Agenda e Demandas</button></div>
-        <div class="grp so-adm" data-grp="an"><button data-p="an-jornada"><svg class="i" viewBox="0 0 24 24"><circle cx="5" cy="18" r="2"/><circle cx="19" cy="6" r="2"/><path d="M7 18h7a3 3 0 0 0 0-6h-4a3 3 0 0 1 0-6h7"/></svg>Jornada do Cliente</button><button data-p="an-diag"><svg class="i" viewBox="0 0 24 24"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg>Diagnósticos</button><button data-p="an-perg"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.7M12 17h.01"/></svg>Perguntas-chave</button><button data-p="an-setor"><svg class="i" viewBox="0 0 24 24"><circle cx="9" cy="8" r="4"/><path d="M2 21a7 7 0 0 1 14 0M16 4a4 4 0 0 1 0 8M22 21a7 7 0 0 0-5-6.7"/></svg>Por setor<span class="eb">Em breve</span></button></div>
+        <div class="grp so-adm" data-grp="an"><button data-p="an-jornada"><svg class="i" viewBox="0 0 24 24"><circle cx="5" cy="18" r="2"/><circle cx="19" cy="6" r="2"/><path d="M7 18h7a3 3 0 0 0 0-6h-4a3 3 0 0 1 0-6h7"/></svg>Jornada do Cliente</button><button data-p="an-diag"><svg class="i" viewBox="0 0 24 24"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg>Diagnósticos</button><button data-p="an-perg"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.7M12 17h.01"/></svg>Perguntas-chave</button><button data-p="an-setor"><svg class="i" viewBox="0 0 24 24"><circle cx="9" cy="8" r="4"/><path d="M2 21a7 7 0 0 1 14 0M16 4a4 4 0 0 1 0 8M22 21a7 7 0 0 0-5-6.7"/></svg>Por setor</button></div>
         <div class="grp so-adm" data-grp="pm"><button data-p="pm-proj"><svg class="i" viewBox="0 0 24 24"><path d="M3 6a1 1 0 0 1 1-1h5l2 2h9a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/></svg>Projetos e Iniciativas</button><button data-p="pm-fut"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Planejamento Futuro</button></div>
       </div>
       <small class="pfoot">Central de Qualidade e Operações</small>
@@ -866,6 +886,7 @@ button.jrlab:hover{background:var(--card2)}
     <section class="page" id="p-an-jornada"></section>
     <section class="page" id="p-an-diag"></section>
     <section class="page" id="p-an-perg"></section>
+    <section class="page" id="p-an-setor"></section>
     <section class="page" id="p-pm-proj"></section>
     <section class="page" id="p-pm-fut"></section>
     <section class="page" id="p-embreve"></section>
@@ -1110,10 +1131,10 @@ function render(){
  document.querySelectorAll('#nav button[data-p]').forEach(b=>{const on=b.dataset.p===page;b.classList.toggle('on',on);on?b.setAttribute('aria-current','page'):b.removeAttribute('aria-current')});
  rMenu();
  document.querySelectorAll('.top [data-present]').forEach(b=>b.hidden=!presModoDaPagina());
- $('pageTitle').textContent=({inicio:'Visão Geral',qualidade:'Qualidade',operacoes:'Operações',palavra:'Palavra da Semana',agenda:'Agenda e Demandas','an-jornada':'Jornada do Cliente','an-diag':'Diagnósticos','an-perg':'Perguntas-chave','pm-proj':'Projetos e Iniciativas','pm-fut':'Planejamento Futuro',config:'Configurações'})[page]||(EMB[page]||[])[0]||'';
+ $('pageTitle').textContent=({inicio:'Visão Geral',qualidade:'Qualidade',operacoes:'Operações',palavra:'Palavra da Semana',agenda:'Agenda e Demandas','an-jornada':'Jornada do Cliente','an-diag':'Diagnósticos','an-perg':'Perguntas-chave','an-setor':'Por setor','pm-proj':'Projetos e Iniciativas','pm-fut':'Planejamento Futuro',config:'Configurações'})[page]||(EMB[page]||[])[0]||'';
  document.querySelectorAll('.page').forEach(p=>p.classList.toggle('on',p.id==='p-'+(EMB[page]?'embreve':page)));
- document.querySelector('.wsel').hidden=page==='agenda'||page==='an-jornada'||page==='an-diag'||page==='an-perg'||page==='pm-proj'||page==='pm-fut'||!!EMB[page];
- if(EMB[page])rEmBreve();else if(page==='an-jornada')rJornada();else if(page==='an-diag')rDiag();else if(page==='an-perg')rPerg();else if(page==='pm-proj')rProj();else if(page==='pm-fut')rFut();else if(page==='inicio')rInicio(w);else if(page==='palavra')rPalavra(w);else if(page==='agenda')rAgenda();else if(page==='config'){if(!(['setores','jornada','exportacao'].includes(cfgView)&&render.cfgShown===cfgView&&!render.force))rConfig();render.cfgShown=cfgView}else rFrente(w,page==='qualidade'?'q':'o');
+ document.querySelector('.wsel').hidden=page==='agenda'||page==='an-jornada'||page==='an-diag'||page==='an-perg'||page==='an-setor'||page==='pm-proj'||page==='pm-fut'||!!EMB[page];
+ if(EMB[page])rEmBreve();else if(page==='an-jornada')rJornada();else if(page==='an-diag')rDiag();else if(page==='an-perg')rPerg();else if(page==='an-setor')rSetor();else if(page==='pm-proj')rProj();else if(page==='pm-fut')rFut();else if(page==='inicio')rInicio(w);else if(page==='palavra')rPalavra(w);else if(page==='agenda')rAgenda();else if(page==='config'){if(!(['setores','jornada','exportacao'].includes(cfgView)&&render.cfgShown===cfgView&&!render.force))rConfig();render.cfgShown=cfgView}else rFrente(w,page==='qualidade'?'q':'o');
  if(ED)rEd();
 }
 
@@ -1121,7 +1142,7 @@ function render(){
 const PAG_COLAB=['qualidade','operacoes','palavra','agenda'];
 /* áreas ainda não construídas: [título, categoria, o que a área vai fazer] */
 const EMB={
- 'an-setor':['Análises por setor','Análises','Evolução de Qualidade e Operações por setor, comparação entre setores e problemas recorrentes, com filtro de período.'],};
+};
 function rEmBreve(){const[t,c,d]=EMB[page];
  $('p-embreve').innerHTML=`<header class="phead"><div><p class="kick">${c}</p><h1>${t}</h1><p class="sub">${d}</p></div></header><div class="panel embreve"><span class="chip ln">Em breve</span><p class="muted">Esta área ainda está em construção. Nenhum dado é exibido aqui até ela ficar pronta.</p></div>`}
 /* trilho: cada ícone é uma área; o painel ao lado mostra as páginas da área escolhida.
@@ -1336,7 +1357,7 @@ async function delAg(id,cancelar){const x=agAchar(id);if(!x)return;
 document.addEventListener('click',e=>{
  const t=e.target.closest('button');if(!t)return;
  /* ao sair, a agenda da conta anterior é apagada da memória e da tela */
- if(t.id==='logout'){AG=agVazio(null);$('p-agenda').innerHTML='';JR=jrVazio(null);$('p-an-jornada').innerHTML='';DG=dgVazio(null);$('p-an-diag').innerHTML='';PJ=pjVazio(null);$('p-pm-proj').innerHTML='';$('p-pm-fut').innerHTML='';PQ.html=null;PQ.abertas.clear();$('p-an-perg').innerHTML='';return}
+ if(t.id==='logout'){AG=agVazio(null);$('p-agenda').innerHTML='';JR=jrVazio(null);$('p-an-jornada').innerHTML='';DG=dgVazio(null);$('p-an-diag').innerHTML='';PJ=pjVazio(null);$('p-pm-proj').innerHTML='';$('p-pm-fut').innerHTML='';PQ.html=null;PQ.abertas.clear();$('p-an-perg').innerHTML='';Object.assign(POR,{sel:null,html:null});$('p-an-setor').innerHTML='';return}
  if(t.getAttribute('aria-disabled')==='true')return;const d=t.dataset;let foco=null;
  if(d.agaba){AG.aba=d.agaba;foco=`[data-agaba="${d.agaba}"]`}
  else if('agenc' in d){AG.encerradas=!AG.encerradas;foco='[data-agenc]'}
@@ -1388,12 +1409,12 @@ const jrTipo=k=>(JR_TIPOS[k]||[k])[0];
 const jrSetores=x=>x.data.setores.filter(s=>typeof s==='string'&&s.trim());
 /* nomes já usados na Jornada e nos Diagnósticos, sem repetir maiúsculas/minúsculas: viram sugestões ao digitar */
 const jrSugestoes=()=>{const m=new Map(),add=s=>{const k=s.trim().toLowerCase();if(k&&!m.has(k))m.set(k,s.trim())};
- (JR.etapas||[]).forEach(e=>jrSetores(e).forEach(add));(DG.itens||[]).forEach(x=>x.data.setores.forEach(add));return [...m.values()].sort((a,b)=>a.localeCompare(b))};
+ SET().forEach(s=>add(s.nome));(JR.etapas||[]).forEach(e=>jrSetores(e).forEach(add));(DG.itens||[]).forEach(x=>x.data.setores.forEach(add));(PJ.itens||[]).forEach(x=>x.data.setores.forEach(add));return [...m.values()].sort((a,b)=>a.localeCompare(b))};
 /* só os caminhos cujas duas pontas ainda existem */
 const jrFluxos=()=>JR.fluxos.filter(f=>jrEtapa(f.data.de)&&jrEtapa(f.data.para));
 const jrLigados=id=>jrFluxos().filter(f=>f.data.de===id||f.data.para===id);
 /* a aba de Configurações só é refeita quando os dados da jornada mudam (como a de Setores), para não tirar o foco a cada atualização */
-const jrRedesenhar=()=>{if(page==='an-diag'||page==='an-perg'||page==='pm-proj'||page==='pm-fut')return render();if(page==='an-jornada'||(page==='config'&&cfgView==='jornada')){
+const jrRedesenhar=()=>{if(page==='an-diag'||page==='an-perg'||page==='an-setor'||page==='pm-proj'||page==='pm-fut')return render();if(page==='an-jornada'||(page==='config'&&cfgView==='jornada')){
  /* mantém a rolagem lateral da linha do tempo de Configurações ao redesenhar */
  const t=document.querySelector('#p-config .jrtrilho'),x=t?t.scrollLeft:0;render.cfgShown=null;render();const n=document.querySelector('#p-config .jrtrilho');if(n)n.scrollLeft=x}};
 /* uma leitura por vez; se outra for pedida no meio, roda de novo no fim. Resposta de outra conta é descartada */
@@ -1490,7 +1511,7 @@ function rEdJrEtapa(){const{id,x}=ED,d=x.data;if(ED.rendered)return;ED.rendered=
  $('ed').innerHTML=`${jrTopo(id,'Nova etapa',id?esc(d.nome):'Adicionar etapa')}
  <div class="edb"><div class="f"><label for="jr_nome">Nome da etapa</label><input id="jr_nome" maxlength="120" value="${esc(d.nome)}" autocomplete="off"><span class="msg"></span></div>
  ${ta('descricao','Descrição')}
- <div class="f"><label for="jr_setor">Setores que participam</label><div class="jrtags" id="jr_tags"></div><input id="jr_setor" list="jr_sug" maxlength="100" placeholder="Digite o setor e aperte Enter" autocomplete="off"><datalist id="jr_sug"></datalist><span class="msg" data-h="Ao digitar, aparecem os setores já usados na Jornada e nos Diagnósticos.">Ao digitar, aparecem os setores já usados na Jornada e nos Diagnósticos.</span></div>
+ <div class="f"><label for="jr_setor">Setores que participam</label><div class="jrtags" id="jr_tags"></div><input id="jr_setor" list="jr_sug" maxlength="100" placeholder="Digite o setor e aperte Enter" autocomplete="off"><datalist id="jr_sug"></datalist><span class="msg" data-h="Ao digitar, aparecem os setores de Configurações e os já usados na Jornada, nos Diagnósticos e nos Projetos.">Ao digitar, aparecem os setores de Configurações e os já usados na Jornada, nos Diagnósticos e nos Projetos.</span></div>
  ${ta('processos','Processos que acontecem')}${ta('motivos','Motivos de contato e reclamações')}${ta('riscos','Problemas que podem surgir')}
  ${jrAcoes(id)}</div>`;jrTags()}
 /* etiquetas de setor (painéis de etapa e de diagnóstico, os que têm ED.setores):
@@ -1590,7 +1611,7 @@ const dgAtivo=x=>x.data.situacao==='ativo'||x.data.situacao==='investigacao';
 const dgChip=(M,k)=>{const v=dgM(M,k);return v?`<span class="chip ${v[1]}">${esc(v[0])}</span>`:''};
 /* nomes das etapas só depois de a Jornada carregar (antes disso, não dá para saber se foi excluída) */
 const dgEtapas=x=>JR.etapas?[...new Set(x.data.etapas.map(jrNome))].join(', '):x.data.etapas.length?(JR.erro?'Não carregadas':'…'):'';
-const dgRedesenhar=()=>{if(page==='an-diag'||page==='an-jornada'||page==='an-perg'||page==='pm-proj'||page==='pm-fut')render()};
+const dgRedesenhar=()=>{if(page==='an-diag'||page==='an-jornada'||page==='an-perg'||page==='an-setor'||page==='pm-proj'||page==='pm-fut')render()};
 async function dgCarregar(){
  if(!isAdmin())return;
  if(DG.dono!==meId)DG=dgVazio(meId);
@@ -1671,7 +1692,7 @@ function rEdDiag(){const{id,x}=ED,d=x.data;if(ED.rendered)return;ED.rendered=tru
  <div class="edb"><div class="f"><label for="dg_titulo">Título do problema</label><input id="dg_titulo" maxlength="150" value="${esc(d.titulo)}" autocomplete="off"><span class="msg"></span></div>
  ${ta('descricao','O que está acontecendo')}
  <fieldset class="dgset"><legend>Onde acontece na jornada</legend>${etapas}</fieldset>
- <div class="f"><label for="jr_setor">Setores envolvidos</label><div class="jrtags" id="jr_tags"></div><input id="jr_setor" list="jr_sug" maxlength="100" placeholder="Digite o setor e aperte Enter" autocomplete="off"><datalist id="jr_sug"></datalist><span class="msg" data-h="Ao digitar, aparecem os setores já usados na Jornada e nos Diagnósticos.">Ao digitar, aparecem os setores já usados na Jornada e nos Diagnósticos.</span></div>
+ <div class="f"><label for="jr_setor">Setores envolvidos</label><div class="jrtags" id="jr_tags"></div><input id="jr_setor" list="jr_sug" maxlength="100" placeholder="Digite o setor e aperte Enter" autocomplete="off"><datalist id="jr_sug"></datalist><span class="msg" data-h="Ao digitar, aparecem os setores de Configurações e os já usados na Jornada, nos Diagnósticos e nos Projetos.">Ao digitar, aparecem os setores de Configurações e os já usados na Jornada, nos Diagnósticos e nos Projetos.</span></div>
  <div class="g2"><div class="f"><label for="dg_tema">Tema</label><input id="dg_tema" list="dg_temas" maxlength="100" value="${esc(d.tema)}" autocomplete="off"><datalist id="dg_temas">${temas.map(t=>`<option value="${esc(t)}">`).join('')}</datalist><span class="msg" data-h="Use o mesmo tema em problemas parecidos.">Use o mesmo tema em problemas parecidos.</span></div>
  <div class="f"><label for="dg_data">Data de registro</label><input id="dg_data" type="date" value="${esc(d.data||'')}"><span class="msg"></span></div></div>
  ${ta('impacto','Impacto para o cliente')}
@@ -1739,7 +1760,7 @@ const pjPeso=x=>(dgM(DG_GRAV,x.data.prioridade)||[0,0,0])[2];
 const pjHist=id=>(PJ.hist||[]).filter(h=>h.data.projeto===id).sort((a,b)=>b.data.dia.localeCompare(a.data.dia)||b.criado-a.criado);
 const pjProbNome=id=>{const x=(DG.itens||[]).find(y=>y.id===id);return x?x.data.titulo:DG.itens?'Problema excluído':'…'};
 const pjDoProblema=id=>(PJ.itens||[]).filter(x=>x.data.status!=='cancelado'&&x.data.problemas.includes(id));
-const pjRedesenhar=()=>{if(page==='pm-proj'||page==='pm-fut'||page==='an-diag'||page==='an-perg')render();
+const pjRedesenhar=()=>{if(page==='pm-proj'||page==='pm-fut'||page==='an-diag'||page==='an-perg'||page==='an-setor')render();
  /* o painel aberto não é redesenhado (perderia o que está sendo digitado): só a lista do histórico */
  if(ED&&ED.kind==='proj'&&ED.id&&$('pj_hist'))$('pj_hist').innerHTML=pjHistHtml(ED.id)};
 async function pjCarregar(){
@@ -1850,7 +1871,7 @@ function rEdProj(){const{id,x}=ED,d=x.data;if(ED.rendered)return;ED.rendered=tru
  ${inp('nome','Nome do projeto',150)}
  <div class="g2">${sel('status','Status',PJ_ST)}${sel('prioridade','Prioridade',DG_GRAV)}</div>
  ${inp('responsavel','Responsável',120,'',' list="pj_nomes"')}<datalist id="pj_nomes">${nomes.map(n=>`<option value="${esc(n)}">`).join('')}</datalist>
- <div class="f"><label for="jr_setor">Setores envolvidos</label><div class="jrtags" id="jr_tags"></div><input id="jr_setor" list="jr_sug" maxlength="100" placeholder="Digite o setor e aperte Enter" autocomplete="off"><datalist id="jr_sug"></datalist><span class="msg" data-h="Ao digitar, aparecem os setores já usados na Jornada e nos Diagnósticos.">Ao digitar, aparecem os setores já usados na Jornada e nos Diagnósticos.</span></div>
+ <div class="f"><label for="jr_setor">Setores envolvidos</label><div class="jrtags" id="jr_tags"></div><input id="jr_setor" list="jr_sug" maxlength="100" placeholder="Digite o setor e aperte Enter" autocomplete="off"><datalist id="jr_sug"></datalist><span class="msg" data-h="Ao digitar, aparecem os setores de Configurações e os já usados na Jornada, nos Diagnósticos e nos Projetos.">Ao digitar, aparecem os setores de Configurações e os já usados na Jornada, nos Diagnósticos e nos Projetos.</span></div>
  <fieldset class="dgset"><legend>Etapas da jornada impactadas</legend>${etapas}</fieldset>
  <fieldset class="dgset"><legend>Problemas dos Diagnósticos que o projeto resolve</legend>${probs}</fieldset>
  <h4 class="pjsec">Plano</h4>
@@ -2028,6 +2049,86 @@ document.addEventListener('click',e=>{const t=e.target.closest&&e.target.closest
  /* etapa: abre a Jornada com ela selecionada */
  else if(d.pqetapa){JR.sel=d.pqetapa;page='an-jornada';closeMenu();closeEd();render();scrollTo({top:0})}
  else if('pqrecarregar' in d){if(JR.erro)JR=jrVazio(null);if(DG.erro)DG=dgVazio(null);if(PJ.erro)PJ=pjVazio(null);render()}});
+
+/* ---------- análises por setor ----------
+   junta os setores de Configurações (Calibragem) com as etiquetas digitadas na Jornada, nos Diagnósticos e nos Projetos,
+   casando pelo nome (sem diferenciar maiúsculas e minúsculas). Só lê os dados; nada é gravado */
+const POR_PER=[['ult4','Últimas 4 semanas'],['mes','Mês atual'],['mesant','Mês anterior'],['tri','Últimos 3 meses'],['ano','Este ano']];
+const POR_IND={q:[['qualidade','Qualidade','pct','up'],['monitorias','Monitorias','num','up'],['zeradas','Zeradas','num','down']],o:[['tratados','Tratados','num','up'],['backlog','Backlog','num','down'],['tempo','Tempo médio','dur','down']]};
+const POR={per:'ult4',sel:null,ind:null,html:null};
+const porK=s=>String(s||'').trim().toLowerCase();
+/* período escolhido: datas e as semanas da Calibragem que começam nele (até a semana atual) */
+function porPeriodo(){const seg=mondayOf(new Date());let de,ate,L;
+ if(POR.per==='ult4'){const r=shortRange('ult4');L=r?periodWeeks(r[0],r[1]).filter(w=>w.inicio<seg):[];de=L.length?L[0].inicio:today();ate=L.length?L.at(-1).fim:today()}
+ else{[de,ate]=exRange(POR.per);L=ids().filter(id=>id>=de&&id<=ate&&id<=seg).map(id=>S.weeks[id])}
+ return {de,ate,L,aq:L.length?aggQ(L):null,ao:L.length?aggO(L):null}}
+/* todos os setores: os de Configurações primeiro (na ordem de lá), depois as etiquetas em ordem alfabética */
+/* k: chave da linha; m: nome em minúsculas usado para casar as etiquetas (só o primeiro setor de cada nome recebe as etiquetas) */
+function porSetores(){const L=[],nomes=new Set();
+ SET().forEach(s=>{const m=porK(s.nome);L.push({k:'cfg:'+s.id,nome:s.nome,cfg:s,m:m&&!nomes.has(m)?m:null});m&&nomes.add(m)});
+ const tags=new Map();[...(JR.etapas||[]).flatMap(jrSetores),...(DG.itens||[]).flatMap(x=>x.data.setores),...(PJ.itens||[]).flatMap(x=>x.data.setores)].forEach(t=>{const m=porK(t);if(m&&!nomes.has(m)&&!tags.has(m))tags.set(m,t.trim())});
+ [...tags.entries()].sort((a,b)=>a[1].localeCompare(b[1])).forEach(([m,nome])=>L.push({k:m,nome,cfg:null,m}));
+ return L}
+const porTem=(lista,k)=>lista.some(s=>porK(s)===k);
+/* números de um setor no período */
+function porNumeros(s,P){const{de,ate,L}=P,c=s.cfg,r={q:null,o:null};
+ if(c&&L.length){if(temFrente(c,'q'))r.q=P.aq.rows.find(x=>x.id===c.id)||null;if(temFrente(c,'o'))r.o=P.ao.rows.find(x=>x.id===c.id)||null}
+ if(r.q&&!(r.q.monitorias>0))r.q={...r.q,qualidade:null};
+ const tem=lista=>!!s.m&&porTem(lista,s.m),A=(DG.itens||[]).filter(x=>dgAtivo(x)&&tem(x.data.setores)),Pj=(PJ.itens||[]).filter(x=>tem(x.data.setores));
+ r.prob=A.sort((a,b)=>pqGravP(b)-pqGravP(a));r.crit=A.filter(x=>x.data.gravidade==='critica').length;
+ r.abertos=Pj.filter(pjAberto).sort((a,b)=>pjPeso(b)-pjPeso(a));r.atr=r.abertos.filter(pjAtrasado).length;
+ r.concl=Pj.filter(x=>x.data.status==='concluido'&&x.data.concluidoEm&&x.data.concluidoEm>=de&&x.data.concluidoEm<=ate);
+ r.etapas=(JR.etapas||[]).map((e,i)=>({e,i})).filter(({e})=>tem(jrSetores(e)));
+ return r}
+const porV=(v,kind)=>isN(v)?(kind==='pct'?pct(v):kind==='dur'?dur(v):nf(v)):'—';
+/* evolução semana a semana do setor, no mesmo visual do gráfico da Calibragem */
+function porGrafico(s,L){const c=s.cfg,inds=[...(temFrente(c,'q')?POR_IND.q:[]),...(temFrente(c,'o')?POR_IND.o:[])];if(!inds.length||!L.length)return '';
+ if(!inds.some(i=>i[0]===POR.ind))POR.ind=inds[0][0];const[key,,kind,better]=inds.find(i=>i[0]===POR.ind),f=POR_IND.q.some(i=>i[0]===key)?'q':'o';
+ const vals=L.map(w=>{const r=(w[f]&&w[f][c.id])||{};return key==='qualidade'&&!(r.monitorias>0)?null:isN(r[key])?r[key]:null}),max=Math.max(1,...vals.filter(isN)),n=L.length,muitas=n>13;
+ const cols=`style="grid-template-columns:repeat(${n},minmax(0,1fr))${muitas?';gap:3px':''}"`;
+ return `<div class="sech"><div><h3>Evolução por semana</h3><p class="muted">${n} ${n===1?'semana':'semanas'} no período.</p></div><div class="seg" role="group" aria-label="Indicador">${inds.map(i=>`<button class="${i[0]===POR.ind?'on':''}" data-porind="${i[0]}">${i[1]}</button>`).join('')}</div></div>
+ <div class="ch porch" ${cols}>${L.map((w,i)=>{const v=vals[i];return `<div class="cc ${w.inicio===mondayOf(new Date())?'cur':''} ${isN(v)?'':'empty'}" title="${esc(periodo(w))}: ${esc(porV(v,kind))}">${muitas?'':`<span class="bv">${porV(v,kind)}</span>`}<i style="${isN(v)?`height:${Math.max(2,v/max*82)}%`:''}"></i></div>`}).join('')}</div>
+ <div class="chl" ${cols}>${L.map((w,i)=>`<div><div class="wl ${w.inicio===mondayOf(new Date())?'cur':''}">${muitas&&i%4?'':dshort(w.inicio)}</div></div>`).join('')}</div>`}
+function porDetalhe(s,P){const r=porNumeros(s,P),c=s.cfg,{de,ate,L}=P;
+ const kpi=(l,v)=>`<div class="kpi"><span class="l">${l}</span><span class="v">${v}</span></div>`,k=[];
+ if(r.q)k.push(kpi('Qualidade média',porV(r.q.qualidade,'pct')),kpi('Monitorias',porV(r.q.monitorias)),kpi('Zeradas',porV(r.q.zeradas)));
+ if(r.o)k.push(kpi('Tickets tratados',porV(r.o.tratados)),kpi('Backlog (última semana)',porV(r.o.backlog)),kpi('Tempo médio',porV(r.o.tempo,'dur')));
+ const frentes=c?[temFrente(c,'q')?'Qualidade':'',temFrente(c,'o')?'Operações':''].filter(Boolean):[];
+ const planos=c&&L.length?[...plansPeriod(L,'q'),...plansPeriod(L,'o')].filter(p=>p.setor===c.id):[];
+ return `<section class="panel pordet" id="por_det" aria-label="Detalhe do setor ${esc(s.nome)}">
+  <div class="pordh"><div><p class="kick">Detalhe do setor</p><h2>${esc(s.nome)}</h2><div class="agch">${frentes.map(f=>`<span class="chip ln">${f}</span>`).join('')||'<span class="chip ln">Não está na Calibragem</span>'}</div></div><button class="ico" data-porfechar aria-label="Fechar detalhe">${ICO.x}</button></div>
+  <p class="muted">Etapas da jornada onde atua: ${r.etapas.length?r.etapas.map(({e,i})=>`<button class="dglink" data-pqetapa="${esc(e.id)}"><span>${i+1}. ${esc(e.data.nome)}</span></button>`).join(', '):'nenhuma'}</p>
+  ${k.length?`<div class="kpis porkpis">${k.join('')}</div>`:`<p class="muted">${c?'Sem semanas da Calibragem no período.':'Este setor aparece só como etiqueta na Jornada, nos Diagnósticos ou nos Projetos; não tem números da Calibragem.'}</p>`}
+  ${c?porGrafico(s,L):''}
+  <div class="porcols"><div><h3>Problemas ativos <span class="muted">${r.prob.length}</span></h3>${r.prob.length?`<div class="pqb">${r.prob.map(x=>pqProb(x)).join('')}</div>`:'<p class="muted">Nenhum problema ativo.</p>'}</div>
+  <div><h3>Projetos em aberto <span class="muted">${r.abertos.length}</span></h3>${r.abertos.length?`<div class="pqb">${r.abertos.map(x=>pqProj(x,pjAtrasado(x)?`<span class="pjfalta">Atrasado desde ${esc(dfmt(x.data.prazo))}</span>`:x.data.proxima?`Próxima ação: ${esc(x.data.proxima)}`:'')).join('')}</div>`:'<p class="muted">Nenhum projeto em aberto.</p>'}
+  ${r.concl.length?`<h3>Concluídos no período <span class="muted">${r.concl.length}</span></h3><div class="pqb">${r.concl.map(x=>pqProj(x,`${esc(dfmt(x.data.concluidoEm))} · ${esc(PJ_VAL[x.data.validacao]||'')}`)).join('')}</div>`:''}</div></div>
+  ${c?`<h3>Planos de ação da Calibragem no período <span class="muted">${planos.length}</span></h3>${planos.length?`<div class="pqb">${planos.map(p=>pqTexto(`${esc(FR[p.frente])} · ${esc(p.erro||'Erro não descrito')}`,`${p.acao?'Ação: '+esc(p.acao):''}${p.prazo?' · prazo '+esc(dfmt(p.prazo)):''}`,` data-p="${p.frente==='q'?'qualidade':'operacoes'}"`)).join('')}</div>`:'<p class="muted">Nenhum plano de ação no período.</p>'}`:''}
+ </section>`}
+function rSetor(){pjCarregarTudo();
+ let h;
+ if(!pqPronto())h=pqErro()?`<div class="panel cfgp"><p class="muted">Não foi possível carregar os dados das análises.</p><div><button class="btn sm" data-pqrecarregar>Tentar de novo</button></div></div>`:'<div class="panel"><p class="muted" role="status">Carregando…</p></div>';
+ else{const P=porPeriodo(),S_=porSetores();if(POR.sel&&!S_.some(s=>s.k===POR.sel))POR.sel=null;
+  const linha=s=>{const r=porNumeros(s,P),on=POR.sel===s.k;return `<tr data-porrow="${esc(s.k)}"${on?' class="dgopen"':''}><td><button class="dglink" data-porsel="${esc(s.k)}" aria-pressed="${on}"><span>${esc(s.nome)}</span></button>${s.cfg?'':'<span class="by">Só etiqueta</span>'}</td>
+   <td class="n">${r.q?porV(r.q.qualidade,'pct'):'—'}</td><td class="n">${r.q?porV(r.q.zeradas):'—'}</td><td class="n">${r.o?porV(r.o.tratados):'—'}</td><td class="n">${r.o?porV(r.o.backlog):'—'}</td>
+   <td class="n">${r.prob.length}${r.crit?` <span class="chip er">${r.crit} crít.</span>`:''}</td><td class="n">${r.abertos.length}${r.atr?` <span class="chip er">${r.atr} atras.</span>`:''}</td><td class="n">${r.concl.length}</td></tr>`};
+  const sel=S_.find(s=>s.k===POR.sel);
+  h=`${JR.limitado||DG.limitado||PJ.limitado?'<div class="banner"><span class="dot wa"></span><div>Há muitos registros: parte deles não está sendo considerada.</div></div>':''}
+  <div class="porbar"><div class="pc-s" role="group" aria-label="Período">${POR_PER.map(([k,t])=>`<button class="${POR.per===k?'on':''}" data-porper="${k}" aria-pressed="${POR.per===k}">${t}</button>`).join('')}</div><span class="muted">${P.L.length||POR.per!=='ult4'?`${esc(dfmt(P.de))} a ${esc(dfmt(P.ate))} · ${P.L.length} ${P.L.length===1?'semana':'semanas'} da Calibragem`:'Ainda não há semanas anteriores na Calibragem'}</span></div>
+  ${S_.length?`<div class="panel dgpan"><div class="tw"><table class="dgtab portab"><thead><tr><th>Setor</th><th class="n">Qualidade</th><th class="n">Zeradas</th><th class="n">Tratados</th><th class="n">Backlog</th><th class="n">Problemas ativos</th><th class="n">Projetos em aberto</th><th class="n">Concluídos</th></tr></thead><tbody>${S_.map(linha).join('')}</tbody></table></div></div>
+  <p class="muted porajuda">Clique num setor para ver o detalhe. Qualidade e zeradas: média e soma do período; tratados: soma; backlog: última semana. Problemas e projetos em aberto: como estão hoje; concluídos: no período.</p>
+  ${sel?porDetalhe(sel,P):''}`:'<div class="panel embreve"><p class="muted">Nenhum setor cadastrado ainda.</p></div>'}`}
+ const html=`<header class="phead"><div><p class="kick">Análises</p><h1>Por setor</h1><p class="sub">Comparação entre setores e o detalhe de cada um: números da Calibragem, problemas, projetos e etapas da jornada, no período escolhido.</p></div></header>${h}`;
+ if(html===POR.html)return;POR.html=html;$('p-an-setor').innerHTML=html}
+document.addEventListener('click',e=>{
+ const tr=e.target.closest&&e.target.closest('tr[data-porrow]');if(tr&&!e.target.closest('button')){porEscolher(tr.dataset.porrow);return}
+ const t=e.target.closest&&e.target.closest('button');if(!t)return;const d=t.dataset;
+ if(d.porsel)porEscolher(d.porsel);
+ else if(d.porper&&POR_PER.some(([k])=>k===d.porper)){POR.per=d.porper;rSetor();const b=document.querySelector(`[data-porper="${d.porper}"]`);b&&b.focus()}
+ else if(d.porind){POR.ind=d.porind;rSetor();const b=document.querySelector(`[data-porind="${CSS.escape(d.porind)}"]`);b&&b.focus()}
+ else if('porfechar' in d){const k=POR.sel;POR.sel=null;rSetor();const b=document.querySelector(`[data-porsel="${CSS.escape(k)}"]`);b&&b.focus()}});
+/* escolher o mesmo setor de novo fecha o detalhe; um setor novo abre o detalhe e rola até ele */
+function porEscolher(k){POR.sel=POR.sel===k?null:k;rSetor();const d=$('por_det');if(d){d.scrollIntoView({behavior:'smooth',block:'start'});d.setAttribute('tabindex','-1');d.focus({preventScroll:true})}}
 
 /* ---------- seletor de ano, mês e semana ---------- */
 function rWsel(){const w=Wk();$('wTxt').textContent=`${wkTxt(w)} ${w.inicio.slice(0,4)}`;const old=$('wBtn').querySelector('.lk');old&&old.remove();if(w.fechada){const s=document.createElement('span');s.className='lk';s.title='Semana fechada';$('wBtn').insertBefore(s,$('wBtn').querySelector('.ch'))}$('wNow').hidden=sel===curWeek();if(!$('wp').hidden)rWp()}
@@ -2612,7 +2713,7 @@ async function onData(d){
  if(page==='agenda')agCarregar(true);
  if(page==='an-jornada'||(page==='config'&&cfgView==='jornada'))jrCarregar();
  if(page==='an-diag'||page==='an-jornada')dgCarregar();if(page==='an-diag')jrCarregar();
- if(page==='pm-proj'||page==='pm-fut'||page==='an-diag'||page==='an-perg')pjCarregar();if(page==='pm-proj'||page==='pm-fut'||page==='an-perg'){jrCarregar();dgCarregar()}
+ if(page==='pm-proj'||page==='pm-fut'||page==='an-diag'||page==='an-perg'||page==='an-setor')pjCarregar();if(page==='pm-proj'||page==='pm-fut'||page==='an-perg'||page==='an-setor'){jrCarregar();dgCarregar()}
  render();
 }
 async function boot(){
