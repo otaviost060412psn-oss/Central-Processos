@@ -528,6 +528,31 @@ button.plc.miss:hover{background:var(--card2)}
 
 /* configurações: listas e formulários */
 .cfgp{display:grid;gap:16px}
+/* projetos: quadro por status, cartões, planejamento futuro e painel */
+.chip.in{background:rgba(79,157,255,.14);color:#6AAEFF}
+[data-theme="light"] .chip.in{background:rgba(31,99,196,.1);color:#1F63C4}
+.pjquadro{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(250px,1fr);gap:var(--gap);overflow-x:auto;padding-bottom:8px;align-items:start}
+.pjquadro .agcol{min-height:160px}
+.pjc{cursor:pointer}.pjc[draggable="true"]{cursor:grab}.pjc.arr{opacity:.5}.pjc:hover{border-color:var(--bd2)}.pjc[aria-busy="true"]{opacity:.6}
+.pjc h3{font-size:16px}
+.pjvazio{font-size:13px;margin:0}
+.pjbar{margin:-4px 0 12px}
+.pjvis{display:inline-flex;border:1px solid var(--inb);border-radius:10px;overflow:hidden;height:38px}
+.pjvis button{border:0;background:none;padding:0 14px;color:var(--mu);font-size:14px}
+.pjvis button.on{background:var(--card2);color:var(--tx);font-weight:500}
+.pjfb{display:grid;gap:12px;margin-bottom:var(--gap)}
+.pjfb h2{font-size:17px}.pjfb h2 .muted{font-weight:400;font-size:14px}.pjfb.venc h2{color:var(--er)}
+.pjgrade{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:var(--gap)}
+.pjfalta{color:var(--er);font-weight:500}
+.pjsec{font-size:12px;font-weight:600;color:var(--pri);text-transform:uppercase;letter-spacing:.06em;margin:10px 0 0;padding-top:14px;border-top:1px solid var(--bd)}
+.edb .pjsec:first-child{border-top:0;margin-top:0;padding-top:0}
+.pjprobs{max-height:220px;overflow-y:auto}
+.pjhist{display:grid;gap:10px}
+.pjhi{border:1px solid var(--bd);border-radius:10px;padding:10px 12px;display:grid;gap:6px}
+.pjhi .agch{align-items:center}.pjhi .ico{margin-left:auto;width:30px;height:30px}
+.pjhi p{margin:0;font-size:14px;white-space:pre-wrap;overflow-wrap:anywhere}
+.pjhadd{display:grid;gap:10px;border:1px dashed var(--bd2);border-radius:12px;padding:12px}
+.pjlig{display:grid;grid-template-columns:auto auto;justify-content:start;gap:6px 10px;align-items:center}
 /* exportar dados */
 #ex_box{display:grid;gap:var(--gap)}
 .exchks{display:flex;flex-wrap:wrap;gap:8px}
@@ -800,7 +825,7 @@ button.jrlab:hover{background:var(--card2)}
         <div class="grp" data-grp="cal"><button data-p="qualidade"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg>Qualidade<span class="st" id="stq"></span></button><button data-p="operacoes"><svg class="i" viewBox="0 0 24 24"><path d="M4 21V7l8-4 8 4v14M9 21v-6h6v6"/></svg>Operações<span class="st" id="sto"></span></button><button data-p="palavra"><svg class="i" viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/></svg>Palavra da Semana</button></div>
         <div class="grp" data-grp="agenda"><button data-p="agenda"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Agenda e Demandas</button></div>
         <div class="grp so-adm" data-grp="an"><button data-p="an-jornada"><svg class="i" viewBox="0 0 24 24"><circle cx="5" cy="18" r="2"/><circle cx="19" cy="6" r="2"/><path d="M7 18h7a3 3 0 0 0 0-6h-4a3 3 0 0 1 0-6h7"/></svg>Jornada do Cliente</button><button data-p="an-diag"><svg class="i" viewBox="0 0 24 24"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg>Diagnósticos</button><button data-p="an-perg"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.7M12 17h.01"/></svg>Perguntas-chave<span class="eb">Em breve</span></button><button data-p="an-setor"><svg class="i" viewBox="0 0 24 24"><circle cx="9" cy="8" r="4"/><path d="M2 21a7 7 0 0 1 14 0M16 4a4 4 0 0 1 0 8M22 21a7 7 0 0 0-5-6.7"/></svg>Por setor<span class="eb">Em breve</span></button></div>
-        <div class="grp so-adm" data-grp="pm"><button data-p="pm-proj"><svg class="i" viewBox="0 0 24 24"><path d="M3 6a1 1 0 0 1 1-1h5l2 2h9a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/></svg>Projetos e Iniciativas<span class="eb">Em breve</span></button><button data-p="pm-fut"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Planejamento Futuro<span class="eb">Em breve</span></button></div>
+        <div class="grp so-adm" data-grp="pm"><button data-p="pm-proj"><svg class="i" viewBox="0 0 24 24"><path d="M3 6a1 1 0 0 1 1-1h5l2 2h9a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/></svg>Projetos e Iniciativas</button><button data-p="pm-fut"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Planejamento Futuro</button></div>
       </div>
       <small class="pfoot">Central de Qualidade e Operações</small>
     </div>
@@ -820,6 +845,8 @@ button.jrlab:hover{background:var(--card2)}
     <section class="page" id="p-agenda"></section>
     <section class="page" id="p-an-jornada"></section>
     <section class="page" id="p-an-diag"></section>
+    <section class="page" id="p-pm-proj"></section>
+    <section class="page" id="p-pm-fut"></section>
     <section class="page" id="p-embreve"></section>
     <section class="page" id="p-config"></section>
   </main>
@@ -1062,10 +1089,10 @@ function render(){
  document.querySelectorAll('#nav button[data-p]').forEach(b=>{const on=b.dataset.p===page;b.classList.toggle('on',on);on?b.setAttribute('aria-current','page'):b.removeAttribute('aria-current')});
  rMenu();
  document.querySelectorAll('.top [data-present]').forEach(b=>b.hidden=!presModoDaPagina());
- $('pageTitle').textContent=({inicio:'Visão Geral',qualidade:'Qualidade',operacoes:'Operações',palavra:'Palavra da Semana',agenda:'Agenda e Demandas','an-jornada':'Jornada do Cliente','an-diag':'Diagnósticos',config:'Configurações'})[page]||(EMB[page]||[])[0]||'';
+ $('pageTitle').textContent=({inicio:'Visão Geral',qualidade:'Qualidade',operacoes:'Operações',palavra:'Palavra da Semana',agenda:'Agenda e Demandas','an-jornada':'Jornada do Cliente','an-diag':'Diagnósticos','pm-proj':'Projetos e Iniciativas','pm-fut':'Planejamento Futuro',config:'Configurações'})[page]||(EMB[page]||[])[0]||'';
  document.querySelectorAll('.page').forEach(p=>p.classList.toggle('on',p.id==='p-'+(EMB[page]?'embreve':page)));
- document.querySelector('.wsel').hidden=page==='agenda'||page==='an-jornada'||page==='an-diag'||!!EMB[page];
- if(EMB[page])rEmBreve();else if(page==='an-jornada')rJornada();else if(page==='an-diag')rDiag();else if(page==='inicio')rInicio(w);else if(page==='palavra')rPalavra(w);else if(page==='agenda')rAgenda();else if(page==='config'){if(!(['setores','jornada','exportacao'].includes(cfgView)&&render.cfgShown===cfgView&&!render.force))rConfig();render.cfgShown=cfgView}else rFrente(w,page==='qualidade'?'q':'o');
+ document.querySelector('.wsel').hidden=page==='agenda'||page==='an-jornada'||page==='an-diag'||page==='pm-proj'||page==='pm-fut'||!!EMB[page];
+ if(EMB[page])rEmBreve();else if(page==='an-jornada')rJornada();else if(page==='an-diag')rDiag();else if(page==='pm-proj')rProj();else if(page==='pm-fut')rFut();else if(page==='inicio')rInicio(w);else if(page==='palavra')rPalavra(w);else if(page==='agenda')rAgenda();else if(page==='config'){if(!(['setores','jornada','exportacao'].includes(cfgView)&&render.cfgShown===cfgView&&!render.force))rConfig();render.cfgShown=cfgView}else rFrente(w,page==='qualidade'?'q':'o');
  if(ED)rEd();
 }
 
@@ -1074,9 +1101,7 @@ const PAG_COLAB=['qualidade','operacoes','palavra','agenda'];
 /* áreas ainda não construídas: [título, categoria, o que a área vai fazer] */
 const EMB={
  'an-perg':['Perguntas-chave','Análises','Respostas calculadas a partir dos dados reais, como onde estão os pontos de ruptura e quais problemas ainda não têm plano de ação.'],
- 'an-setor':['Análises por setor','Análises','Evolução de Qualidade e Operações por setor, comparação entre setores e problemas recorrentes, com filtro de período.'],
- 'pm-proj':['Projetos e Iniciativas','Projetos e Melhorias','Acompanhamento dos projetos: status, prioridade, responsável, setores, prazos e resultados.'],
- 'pm-fut':['Planejamento Futuro','Projetos e Melhorias','Ideias e iniciativas para depois, com previsão de atuação, justificativa e data para reavaliar.']};
+ 'an-setor':['Análises por setor','Análises','Evolução de Qualidade e Operações por setor, comparação entre setores e problemas recorrentes, com filtro de período.'],};
 function rEmBreve(){const[t,c,d]=EMB[page];
  $('p-embreve').innerHTML=`<header class="phead"><div><p class="kick">${c}</p><h1>${t}</h1><p class="sub">${d}</p></div></header><div class="panel embreve"><span class="chip ln">Em breve</span><p class="muted">Esta área ainda está em construção. Nenhum dado é exibido aqui até ela ficar pronta.</p></div>`}
 /* trilho: cada ícone é uma área; o painel ao lado mostra as páginas da área escolhida.
@@ -1291,7 +1316,7 @@ async function delAg(id,cancelar){const x=agAchar(id);if(!x)return;
 document.addEventListener('click',e=>{
  const t=e.target.closest('button');if(!t)return;
  /* ao sair, a agenda da conta anterior é apagada da memória e da tela */
- if(t.id==='logout'){AG=agVazio(null);$('p-agenda').innerHTML='';JR=jrVazio(null);$('p-an-jornada').innerHTML='';DG=dgVazio(null);$('p-an-diag').innerHTML='';return}
+ if(t.id==='logout'){AG=agVazio(null);$('p-agenda').innerHTML='';JR=jrVazio(null);$('p-an-jornada').innerHTML='';DG=dgVazio(null);$('p-an-diag').innerHTML='';PJ=pjVazio(null);$('p-pm-proj').innerHTML='';$('p-pm-fut').innerHTML='';return}
  if(t.getAttribute('aria-disabled')==='true')return;const d=t.dataset;let foco=null;
  if(d.agaba){AG.aba=d.agaba;foco=`[data-agaba="${d.agaba}"]`}
  else if('agenc' in d){AG.encerradas=!AG.encerradas;foco='[data-agenc]'}
@@ -1348,7 +1373,7 @@ const jrSugestoes=()=>{const m=new Map(),add=s=>{const k=s.trim().toLowerCase();
 const jrFluxos=()=>JR.fluxos.filter(f=>jrEtapa(f.data.de)&&jrEtapa(f.data.para));
 const jrLigados=id=>jrFluxos().filter(f=>f.data.de===id||f.data.para===id);
 /* a aba de Configurações só é refeita quando os dados da jornada mudam (como a de Setores), para não tirar o foco a cada atualização */
-const jrRedesenhar=()=>{if(page==='an-diag')return render();if(page==='an-jornada'||(page==='config'&&cfgView==='jornada')){
+const jrRedesenhar=()=>{if(page==='an-diag'||page==='pm-proj'||page==='pm-fut')return render();if(page==='an-jornada'||(page==='config'&&cfgView==='jornada')){
  /* mantém a rolagem lateral da linha do tempo de Configurações ao redesenhar */
  const t=document.querySelector('#p-config .jrtrilho'),x=t?t.scrollLeft:0;render.cfgShown=null;render();const n=document.querySelector('#p-config .jrtrilho');if(n)n.scrollLeft=x}};
 /* uma leitura por vez; se outra for pedida no meio, roda de novo no fim. Resposta de outra conta é descartada */
@@ -1545,7 +1570,7 @@ const dgAtivo=x=>x.data.situacao==='ativo'||x.data.situacao==='investigacao';
 const dgChip=(M,k)=>{const v=dgM(M,k);return v?`<span class="chip ${v[1]}">${esc(v[0])}</span>`:''};
 /* nomes das etapas só depois de a Jornada carregar (antes disso, não dá para saber se foi excluída) */
 const dgEtapas=x=>JR.etapas?[...new Set(x.data.etapas.map(jrNome))].join(', '):x.data.etapas.length?(JR.erro?'Não carregadas':'…'):'';
-const dgRedesenhar=()=>{if(page==='an-diag'||page==='an-jornada')render()};
+const dgRedesenhar=()=>{if(page==='an-diag'||page==='an-jornada'||page==='pm-proj'||page==='pm-fut')render()};
 async function dgCarregar(){
  if(!isAdmin())return;
  if(DG.dono!==meId)DG=dgVazio(meId);
@@ -1575,7 +1600,7 @@ function dgResultado(){
  const causa=d=>d.causa&&d.causa.trim()?`<span class="none">${d.causaTipo==='confirmada'?'Confirmada':'Hipótese'}:</span> ${esc(corta(d.causa.trim(),90))}`:'—';
  /* detalhes completos, abertos e fechados pela própria linha; editar continua no painel lateral */
  const campo=(l,v)=>`<div><div class="lab">${l}</div><p>${v&&v.trim()?esc(v.trim()):'<span class="none">Não informado</span>'}</p></div>`;
- const detalhes=x=>{const d=x.data;return `<tr class="dgdet"><td colspan="7"><div class="dgdb" id="dgd_${esc(x.id)}">${campo('O que está acontecendo',d.descricao)}${campo('Impacto para o cliente',d.impacto)}${campo(d.causaTipo==='confirmada'?'Causa identificada':'Causa (hipótese a validar)',d.causa)}${campo('Evidências',d.evidencias)}${campo('Próxima ação necessária',d.proxima)}${campo('Tema',d.tema)}${campo('Data de registro',dfmt(d.data||''))}</div>
+ const detalhes=x=>{const d=x.data;return `<tr class="dgdet"><td colspan="7"><div class="dgdb" id="dgd_${esc(x.id)}">${campo('O que está acontecendo',d.descricao)}${campo('Impacto para o cliente',d.impacto)}${campo(d.causaTipo==='confirmada'?'Causa identificada':'Causa (hipótese a validar)',d.causa)}${campo('Evidências',d.evidencias)}${campo('Próxima ação necessária',d.proxima)}${dgProjetos(x)}${campo('Tema',d.tema)}${campo('Data de registro',dfmt(d.data||''))}</div>
  <div class="dgda"><span class="muted">Registrado em ${tsTxt(x.criado)}${x.atualizado!==x.criado?` · alterado em ${tsTxt(x.atualizado)}`:''}</span><button class="btn sm" data-dgabrir="${esc(x.id)}">${ICO.edit}Editar</button></div></td></tr>`};
  const linha=x=>{const d=x.data,ab=DG.abertos.has(x.id);return `<tr data-dgrow="${esc(x.id)}"${ab?' class="dgopen"':''}><td><button class="dglink" data-dgtog="${esc(x.id)}" aria-expanded="${ab}"${ab?` aria-controls="dgd_${esc(x.id)}"`:''}>${ICO.chev}<span>${esc(d.titulo)}</span></button>${d.tema?`<span class="by">Tema: ${esc(d.tema)}</span>`:''}</td><td>${dgChip(DG_GRAV,d.gravidade)}</td><td class="dgsm">${esc(dgM(DG_FREQ,d.frequencia)||'—')}</td><td class="dgsm">${esc(dgEtapas(x)||'—')}</td><td class="dgsm">${esc(d.setores.join(', ')||'—')}</td><td class="dgsm">${causa(d)}</td><td>${dgChip(DG_SIT,d.situacao)}</td></tr>${ab?detalhes(x):''}`};
  /* em "Todos os meses", agrupa por mês (mais recente primeiro), mantendo a ordem por gravidade dentro de cada mês */
@@ -1597,7 +1622,7 @@ function dgFiltros(){const f=DG.f,o=(v,t,cur)=>`<option value="${esc(v)}"${v===c
  <select id="dg_etapa" aria-label="Etapa da jornada">${o('','Todas as etapas',f.etapa)}${(JR.etapas||[]).map((e,i)=>o(e.id,`${i+1}. ${e.data.nome}`,f.etapa)).join('')}</select>
  <select id="dg_setor" aria-label="Setor">${o('','Todos os setores',f.setor)}${setores.map(s=>o(s,s,f.setor)).join('')}</select></div>`}
 function rDiag(){
- if(DG.dono!==meId)dgCarregar();if(JR.dono!==meId)jrCarregar();
+ if(DG.dono!==meId)dgCarregar();if(JR.dono!==meId)jrCarregar();if(PJ.dono!==meId)pjCarregar();
  const L=DG.itens;let h;
  if(!L)h=DG.erro?`<div class="panel cfgp"><p class="muted">Não foi possível carregar os diagnósticos.</p><div><button class="btn sm" data-dgrecarregar>Tentar de novo</button></div></div>`:'<div class="panel"><p class="muted" role="status">Carregando…</p></div>';
  else{const A=L.filter(dgAtivo),n=(t,v,f,c)=>`<button class="kpi dgn" data-dgfiltro="${f}"><span class="l">${t}</span><span class="v${c&&v?' '+c:''}">${v}</span></button>`;
@@ -1672,6 +1697,226 @@ document.addEventListener('click',e=>{
  else if('dgsalvar' in d)saveDiag(t);
  else if('dgexcluir' in d)delDiag(t);
 });
+
+/* ---------- projetos e iniciativas / planejamento futuro ----------
+   só administradores. Setores são etiquetas digitadas (as mesmas sugestões da Jornada e dos Diagnósticos);
+   etapas e problemas são ids da Jornada e dos Diagnósticos (um excluído depois continua guardado e aparece como excluído).
+   Toda mudança de status entra sozinha no histórico do projeto */
+const PJ_ST={ideia:['Ideia','ln'],planejado:['Planejado',''],andamento:['Em andamento','in'],standby:['Em stand-by','wa'],aguardando:['Aguardando dependência','wa'],concluido:['Concluído','ok'],cancelado:['Cancelado','ln']};
+const PJ_VAL={nao_avaliado:'Não avaliado',aguardando:'Aguardando medição',comprovada:'Melhoria comprovada',parcial:'Melhoria parcial',sem_efeito:'Sem efeito',piorou:'Piorou'};
+const PJ_HT={atualizacao:['Atualização','in'],decisao:['Decisão',''],marco:['Etapa concluída','ok'],status:['Mudança de status','ln']};
+const PJ_FUT=['ideia','planejado','standby','aguardando'];
+const pjVazio=dono=>({itens:null,hist:null,limitado:false,dono,carregando:false,denovo:false,erro:false,html:null,fhtml:null,adiado:false,vista:'quadro',movendo:new Set(),f:{q:'',status:'',prio:'',setor:'',resp:''}});
+let PJ=pjVazio(null);
+const pjAberto=x=>x.data.status!=='concluido'&&x.data.status!=='cancelado';
+const pjAtrasado=x=>pjAberto(x)&&!!x.data.prazo&&x.data.prazo<today();
+const pjPeso=x=>(dgM(DG_GRAV,x.data.prioridade)||[0,0,0])[2];
+const pjHist=id=>(PJ.hist||[]).filter(h=>h.data.projeto===id).sort((a,b)=>b.data.dia.localeCompare(a.data.dia)||b.criado-a.criado);
+const pjProbNome=id=>{const x=(DG.itens||[]).find(y=>y.id===id);return x?x.data.titulo:DG.itens?'Problema excluído':'…'};
+const pjDoProblema=id=>(PJ.itens||[]).filter(x=>x.data.status!=='cancelado'&&x.data.problemas.includes(id));
+const pjRedesenhar=()=>{if(page==='pm-proj'||page==='pm-fut'||page==='an-diag')render();
+ /* o painel aberto não é redesenhado (perderia o que está sendo digitado): só a lista do histórico */
+ if(ED&&ED.kind==='proj'&&ED.id&&$('pj_hist'))$('pj_hist').innerHTML=pjHistHtml(ED.id)};
+async function pjCarregar(){
+ if(!isAdmin())return;
+ if(PJ.dono!==meId)PJ=pjVazio(meId);
+ const j=PJ;if(j.carregando){j.denovo=true;return}j.carregando=true;
+ try{const[p,h]=await Promise.all([DB.regList('projeto'),DB.regList('projeto_hist')]);if(j!==PJ)return;
+  const novo={itens:p.itens||[],hist:h.itens||[]},mudou=JSON.stringify([j.itens,j.hist])!==JSON.stringify([novo.itens,novo.hist]);
+  Object.assign(j,novo,{limitado:!!(p.limitado||h.limitado),erro:false});if(mudou)pjRedesenhar();
+ }catch(e){if(j===PJ&&!j.itens){j.erro=true;pjRedesenhar()}}
+ finally{j.carregando=false;if(j.denovo&&j===PJ){j.denovo=false;pjCarregar()}}
+}
+const pjCarregarTudo=()=>{if(PJ.dono!==meId)pjCarregar();if(JR.dono!==meId)jrCarregar();if(DG.dono!==meId)dgCarregar()};
+const pjEstado=()=>PJ.erro?`<div class="panel cfgp"><p class="muted">Não foi possível carregar os projetos.</p><div><button class="btn sm" data-pjrecarregar>Tentar de novo</button></div></div>`:'<div class="panel"><p class="muted" role="status">Carregando…</p></div>';
+const pjAviso=()=>PJ.limitado?'<div class="banner"><span class="dot wa"></span><div>Há muitos registros: parte deles não está sendo exibida.</div></div>':'';
+function pjLista(){const f=PJ.f,q=f.q.trim().toLowerCase(),st=f.setor.toLowerCase(),rp=f.resp.toLowerCase();
+ return PJ.itens.filter(x=>{const d=x.data;
+  if(f.status==='abertos'&&!pjAberto(x))return false;
+  if(f.status==='parados'&&d.status!=='standby'&&d.status!=='aguardando')return false;
+  if(f.status==='atrasados'&&!pjAtrasado(x))return false;
+  if(Object.hasOwn(PJ_ST,f.status)&&d.status!==f.status)return false;
+  if(f.prio&&d.prioridade!==f.prio)return false;
+  if(st&&!d.setores.some(s=>s.toLowerCase()===st))return false;
+  if(rp&&d.responsavel.toLowerCase()!==rp)return false;
+  return !q||[d.nome,d.objetivo,d.acao,d.proxima,d.responsavel,d.impedimentos,d.dependeDe].join(' ').toLowerCase().includes(q)})
+ /* mais importantes primeiro; depois o prazo mais próximo */
+ .sort((a,b)=>pjPeso(b)-pjPeso(a)||(a.data.prazo||'9999').localeCompare(b.data.prazo||'9999')||a.criado-b.criado)}
+const pjPrazo=x=>x.data.prazo?`<span class="chip ${pjAtrasado(x)?'er':'ln'}">${pjAtrasado(x)?'Atrasado · ':'Prazo '}${esc(dshort(x.data.prazo))}</span>`:'';
+function pjCartao(x){const d=x.data,mv=PJ.movendo.has(x.id),S_=d.setores;
+ return `<div class="panel agc pjc" data-pjabrir="${esc(x.id)}"${mv?' aria-busy="true"':` draggable="true" data-pjcard="${esc(x.id)}"`} tabindex="0" role="button" aria-label="Abrir projeto ${esc(d.nome)}">
+  <div class="agch">${dgChip(DG_GRAV,d.prioridade)}${pjPrazo(x)}</div><h3>${esc(d.nome)}</h3>
+  ${d.proxima?`<p>Próxima ação: ${esc(d.proxima)}</p>`:''}
+  <small class="muted">${esc(d.responsavel||'Sem responsável')}${S_.length?` · ${esc(S_.slice(0,2).join(', '))}${S_.length>2?` +${S_.length-2}`:''}`:''}</small></div>`}
+function pjResultado(){
+ if(!PJ.itens.length)return `<div class="panel embreve"><p class="muted">Nenhum projeto cadastrado ainda. Registre as iniciativas, quem cuida de cada uma, os prazos e os problemas que elas resolvem.</p><button class="btn pri" data-pjnovo="">${ICO.plus}Novo projeto</button></div>`;
+ const R=pjLista();
+ const cont=`<p class="muted dgcont">${R.length} de ${PJ.itens.length} ${PJ.itens.length===1?'projeto':'projetos'}</p>`;
+ if(PJ.vista==='quadro'){
+  /* com um status escolhido no filtro, mostra só essa coluna */
+  const cols=Object.hasOwn(PJ_ST,PJ.f.status)?[PJ.f.status]:Object.keys(PJ_ST);
+  return cont+`<div class="pjquadro">${cols.map(k=>{const L=R.filter(x=>x.data.status===k);return `<section class="agcol" data-pjcol="${k}" aria-label="${esc(PJ_ST[k][0])}"><h2>${esc(PJ_ST[k][0])} <span class="muted">${L.length}</span></h2>${L.map(pjCartao).join('')||'<p class="muted pjvazio">Nenhum projeto.</p>'}</section>`}).join('')}</div>`}
+ if(!R.length)return cont+'<div class="panel"><p class="muted">Nenhum projeto com esses filtros.</p></div>';
+ return cont+`<div class="panel dgpan"><div class="tw"><table class="dgtab"><thead><tr><th>Projeto</th><th>Status</th><th>Prioridade</th><th>Responsável</th><th>Setores</th><th>Prazo</th><th>Próxima ação</th></tr></thead><tbody>${R.map(x=>{const d=x.data;
+  return `<tr data-pjrow="${esc(x.id)}"><td><button class="dglink" data-pjabrir="${esc(x.id)}"><span>${esc(d.nome)}</span></button></td><td>${dgChip(PJ_ST,d.status)}</td><td>${dgChip(DG_GRAV,d.prioridade)}</td><td class="dgsm">${esc(d.responsavel||'—')}</td><td class="dgsm">${esc(d.setores.join(', ')||'—')}</td><td>${pjPrazo(x)||'—'}</td><td class="dgsm">${esc(d.proxima||'—')}</td></tr>`}).join('')}</tbody></table></div></div>`}
+function pjFiltros(){const f=PJ.f,o=(v,t,cur)=>`<option value="${esc(v)}"${v===cur?' selected':''}>${esc(t)}</option>`;
+ const unicos=L=>[...new Map(L.filter(Boolean).map(s=>[s.toLowerCase(),s])).values()].sort((a,b)=>a.localeCompare(b));
+ const setores=unicos(PJ.itens.flatMap(x=>x.data.setores)),resp=unicos(PJ.itens.map(x=>x.data.responsavel));
+ /* filtro de um setor ou responsável que deixou de existir não pode continuar valendo escondido */
+ if(f.setor&&!setores.some(s=>s.toLowerCase()===f.setor.toLowerCase()))f.setor='';
+ if(f.resp&&!resp.some(s=>s.toLowerCase()===f.resp.toLowerCase()))f.resp='';
+ return `<div class="dgfil"><input id="pjf_q" type="search" maxlength="100" placeholder="Buscar projeto, ação, responsável…" aria-label="Buscar projeto" value="${esc(f.q)}" autocomplete="off">
+ <select id="pjf_status" aria-label="Status">${o('','Todos os status',f.status)}${o('abertos','Em aberto (sem concluídos e cancelados)',f.status)}${o('parados','Parados (stand-by ou aguardando)',f.status)}${o('atrasados','Atrasados',f.status)}${Object.entries(PJ_ST).map(([k,[t]])=>o(k,t,f.status)).join('')}</select>
+ <select id="pjf_prio" aria-label="Prioridade">${o('','Todas as prioridades',f.prio)}${Object.entries(DG_GRAV).map(([k,[t]])=>o(k,t,f.prio)).join('')}</select>
+ <select id="pjf_setor" aria-label="Setor">${o('','Todos os setores',f.setor)}${setores.map(s=>o(s,s,f.setor)).join('')}</select>
+ <select id="pjf_resp" aria-label="Responsável">${o('','Todos os responsáveis',f.resp)}${resp.map(s=>o(s,s,f.resp)).join('')}</select></div>
+ <div class="pjbar"><div class="pjvis" role="group" aria-label="Forma de ver">${[['quadro','Quadro'],['tabela','Tabela']].map(([k,t])=>`<button class="${PJ.vista===k?'on':''}" data-pjvista="${k}" aria-pressed="${PJ.vista===k}">${t}</button>`).join('')}</div></div>`}
+function rProj(){pjCarregarTudo();
+ const L=PJ.itens;let h;
+ if(!L)h=pjEstado();
+ else{const A=L.filter(pjAberto),n=(t,v,f,c)=>`<button class="kpi dgn" data-pjfiltro="${f}"><span class="l">${t}</span><span class="v${c&&v?' '+c:''}">${v}</span></button>`;
+  h=`${pjAviso()}<div class="kpis dgnums">${n('Em andamento',L.filter(x=>x.data.status==='andamento').length,'andamento','')}${n('Parados',L.filter(x=>x.data.status==='standby'||x.data.status==='aguardando').length,'parados','wa')}${n('Atrasados',A.filter(pjAtrasado).length,'atrasados','er')}${n('Concluídos',L.filter(x=>x.data.status==='concluido').length,'concluido','')}</div>${pjFiltros()}<div id="pj_res">${pjResultado()}</div>`}
+ const html=`<header class="phead"><div><p class="kick">Projetos e Melhorias</p><h1>Projetos e Iniciativas</h1><p class="sub">As iniciativas para melhorar a experiência do cliente: quem cuida, prazos, o que depende de quem e o resultado alcançado. Arraste um cartão para mudar o status.</p></div><div class="tools"><button class="btn pri" data-pjnovo="">${ICO.plus}Novo projeto</button></div></header>${h}`;
+ if(html===PJ.html)return;
+ /* não redesenha enquanto a pessoa usa a busca ou os filtros; redesenha ao sair deles */
+ const a=document.activeElement;if(a&&a.closest&&a.closest('#p-pm-proj .dgfil')){PJ.adiado=true;pjAtualizar();return}
+ PJ.html=html;$('p-pm-proj').innerHTML=html}
+const pjAtualizar=()=>{const r=$('pj_res');if(r&&PJ.itens)r.innerHTML=pjResultado()};
+document.addEventListener('input',e=>{if(e.target.id==='pjf_q'){PJ.f.q=e.target.value;pjAtualizar()}});
+document.addEventListener('change',e=>{const k={pjf_status:'status',pjf_prio:'prio',pjf_setor:'setor',pjf_resp:'resp'}[e.target.id];if(k){PJ.f[k]=e.target.value;pjAtualizar()}});
+document.addEventListener('focusout',e=>{if(e.target.closest&&e.target.closest('#p-pm-proj .dgfil')&&PJ.adiado){PJ.adiado=false;setTimeout(()=>page==='pm-proj'&&rProj())}});
+/* planejamento futuro: ideias, planejados, em stand-by e aguardando; reavaliação vencida primeiro, depois pelo mês previsto */
+function rFut(){pjCarregarTudo();
+ const L=PJ.itens;let h;
+ if(!L)h=pjEstado();
+ else{const F=L.filter(x=>PJ_FUT.includes(x.data.status)),hoje=today(),venc=F.filter(x=>x.data.reavaliar&&x.data.reavaliar<=hoje),resto=F.filter(x=>!venc.includes(x));
+  const G=new Map();resto.slice().sort((a,b)=>(a.data.previsao||'9999').localeCompare(b.data.previsao||'9999')||pjPeso(b)-pjPeso(a)).forEach(x=>{const k=x.data.previsao||'';G.has(k)?G.get(k).push(x):G.set(k,[x])});
+  const card=x=>{const d=x.data;return `<div class="panel agc pjc" data-pjabrir="${esc(x.id)}" tabindex="0" role="button" aria-label="Abrir ${esc(d.nome)}"><div class="agch">${dgChip(PJ_ST,d.status)}${dgChip(DG_GRAV,d.prioridade)}</div><h3>${esc(d.nome)}</h3>
+   <p><span class="muted">Por que aguardar:</span> ${d.motivoAguardar?esc(d.motivoAguardar):'<span class="pjfalta">não registrado</span>'}</p>
+   <p><span class="muted">Condição para reavaliar:</span> ${d.condicao?esc(d.condicao):'não definida'}</p>
+   <small class="muted">Previsão: ${d.previsao?esc(dgMesNome(d.previsao)):'—'} · Reavaliar em: <span class="${d.reavaliar&&d.reavaliar<=hoje?'pjfalta':''}">${d.reavaliar?esc(dfmt(d.reavaliar)):'—'}</span></small></div>`};
+  const bloco=(t,L_,destaque)=>`<section class="pjfb${destaque?' venc':''}"><h2>${t} <span class="muted">${L_.length}</span></h2><div class="pjgrade">${L_.map(card).join('')}</div></section>`;
+  h=pjAviso()+(F.length?(venc.length?bloco('Reavaliação vencida',venc,true):'')+[...G.entries()].map(([k,L_])=>bloco(k?'Previsão: '+esc(dgMesNome(k)):'Sem previsão de atuação',L_)).join('')
+   :`<div class="panel embreve"><p class="muted">Nada no radar futuro. Cadastre uma ideia ou um projeto planejado, com a previsão de quando atuar e por que aguardar.</p><button class="btn pri" data-pjnovo="ideia">${ICO.plus}Nova iniciativa futura</button></div>`)}
+ const html=`<header class="phead"><div><p class="kick">Projetos e Melhorias</p><h1>Planejamento Futuro</h1><p class="sub">O que ainda não é agora: ideias, iniciativas planejadas e pausadas, com a previsão de atuação, a justificativa para aguardar e quando reavaliar.</p></div><div class="tools"><button class="btn pri" data-pjnovo="ideia">${ICO.plus}Nova iniciativa futura</button></div></header>${h}`;
+ if(html===PJ.fhtml)return;PJ.fhtml=html;$('p-pm-fut').innerHTML=html}
+/* painel do projeto: tudo num formulário só; o histórico aparece ao editar */
+function openProj(id,status){
+ const x=id?(PJ.itens||[]).find(y=>y.id===id):{data:{nome:'',status:status||'planejado',prioridade:'media',responsavel:'',setores:[],etapas:[],problemas:[],objetivo:'',acao:'',proxima:'',inicio:'',prazo:'',concluidoEm:'',dependeDe:'',impedimentos:'',indicador:'',linhaBase:'',meta:'',atual:'',resultado:'',validacao:'nao_avaliado',previsao:'',reavaliar:'',motivoAguardar:'',condicao:''}};
+ if(!x)return;ED={kind:'proj',id,x:clone(x),setores:x.data.setores.slice()};rEd();showEd()}
+const pjHistHtml=id=>{const L=pjHist(id);return `<div class="pjhist">${L.length?L.map(h=>`<div class="pjhi"><div class="agch">${dgChip(PJ_HT,h.data.tipo)}<span class="muted">${esc(dfmt(h.data.dia))}</span><button class="ico" data-pjhdel="${esc(h.id)}" aria-label="Excluir este registro do histórico">${ICO.del}</button></div><p>${esc(h.data.texto)}</p></div>`).join(''):'<p class="muted">Nada registrado ainda.</p>'}</div>`};
+function rEdProj(){const{id,x}=ED,d=x.data;if(ED.rendered)return;ED.rendered=true;
+ const sel=(k,l,M)=>`<div class="f"><label for="pj_${k}">${l}</label><select id="pj_${k}">${Object.entries(M).map(([v,t])=>`<option value="${v}"${d[k]===v?' selected':''}>${esc(Array.isArray(t)?t[0]:t)}</option>`).join('')}</select></div>`;
+ const ta=(k,l,ph,max)=>`<div class="f"><label for="pj_${k}">${l}</label><textarea id="pj_${k}" maxlength="${max||2000}"${ph?` placeholder="${ph}"`:''}>${esc(d[k]||'')}</textarea></div>`;
+ const inp=(k,l,max,tipo,extra)=>`<div class="f"><label for="pj_${k}">${l}</label><input id="pj_${k}"${tipo?` type="${tipo}"`:''} maxlength="${max||200}" value="${esc(d[k]||'')}" autocomplete="off"${extra||''}><span class="msg"></span></div>`;
+ /* guarda quais etapas e problemas viraram caixas nesta tela: ao salvar, os que não apareceram (ainda carregando ou excluídos) continuam no projeto */
+ const E=JR.etapas||[],P=(DG.itens||[]).slice().sort((a,b)=>(dgAtivo(b)-dgAtivo(a))||a.data.titulo.localeCompare(b.data.titulo));ED.mostradas=new Set(E.map(e=>e.id));ED.probMostrados=new Set(P.map(p=>p.id));
+ const etapas=E.length?`<div class="dgchks" id="pj_etapas">${E.map((e,i)=>`<label class="dgchk"><input type="checkbox" value="${esc(e.id)}"${d.etapas.includes(e.id)?' checked':''}>${i+1}. ${esc(e.data.nome)}</label>`).join('')}</div>`:`<p class="muted">${!JR.etapas?'Carregando as etapas da Jornada… As já ligadas a este projeto serão mantidas.':'Nenhuma etapa cadastrada na Jornada do Cliente.'}</p>`;
+ const probs=P.length?`<div class="dgchks pjprobs" id="pj_probs">${P.map(p=>`<label class="dgchk"><input type="checkbox" value="${esc(p.id)}"${d.problemas.includes(p.id)?' checked':''}>${esc(p.data.titulo)}${dgAtivo(p)?'':` <span class="muted">(${esc((dgM(DG_SIT,p.data.situacao)||['—'])[0].toLowerCase())})</span>`}</label>`).join('')}</div>`:`<p class="muted">${!DG.itens?'Carregando os diagnósticos… Os já ligados a este projeto serão mantidos.':'Nenhum problema registrado nos Diagnósticos.'}</p>`;
+ const nomes=[...new Set([...S.users.map(u=>u.nome),...(PJ.itens||[]).map(y=>y.data.responsavel)].filter(Boolean))].sort((a,b)=>a.localeCompare(b));
+ $('ed').innerHTML=`<div class="edh"><div class="row"><span>Projetos e Melhorias</span><button class="ico" data-edclose aria-label="Fechar">${ICO.x}</button></div><div><div class="k">${id?'Editar projeto':'Novo projeto'}</div><h3>${id?esc(d.nome):'Novo projeto'}</h3></div></div>
+ <div class="edb">
+ <h4 class="pjsec">Identificação</h4>
+ ${inp('nome','Nome do projeto',150)}
+ <div class="g2">${sel('status','Status',PJ_ST)}${sel('prioridade','Prioridade',DG_GRAV)}</div>
+ ${inp('responsavel','Responsável',120,'',' list="pj_nomes"')}<datalist id="pj_nomes">${nomes.map(n=>`<option value="${esc(n)}">`).join('')}</datalist>
+ <div class="f"><label for="jr_setor">Setores envolvidos</label><div class="jrtags" id="jr_tags"></div><input id="jr_setor" list="jr_sug" maxlength="100" placeholder="Digite o setor e aperte Enter" autocomplete="off"><datalist id="jr_sug"></datalist><span class="msg" data-h="Ao digitar, aparecem os setores já usados na Jornada e nos Diagnósticos.">Ao digitar, aparecem os setores já usados na Jornada e nos Diagnósticos.</span></div>
+ <fieldset class="dgset"><legend>Etapas da jornada impactadas</legend>${etapas}</fieldset>
+ <fieldset class="dgset"><legend>Problemas dos Diagnósticos que o projeto resolve</legend>${probs}</fieldset>
+ <h4 class="pjsec">Plano</h4>
+ ${ta('objetivo','Objetivo')}${ta('acao','Ação proposta','',4000)}${inp('proxima','Próxima ação',1000)}
+ <div class="g2">${inp('inicio','Início previsto',10,'date')}${inp('prazo','Prazo',10,'date')}</div>
+ <h4 class="pjsec">Dependências</h4>
+ ${inp('dependeDe','Depende de',1000,'',' placeholder="Setor, pessoa, aprovação ou informação"')}${ta('impedimentos','Impedimentos')}
+ <h4 class="pjsec">Resultado</h4>
+ ${inp('indicador','Indicador de sucesso',500,'',' placeholder="Ex.: tempo médio de espera na fila"')}
+ <div class="g2">${inp('linhaBase','Valor de antes',100)}${inp('meta','Meta',100)}</div>
+ <div class="g2">${inp('atual','Valor atual',100)}${sel('validacao','Validação do resultado',PJ_VAL)}</div>
+ ${ta('resultado','Resultado alcançado')}
+ <h4 class="pjsec">Planejamento futuro</h4>
+ <div class="g2">${inp('previsao','Previsão de atuação (mês)',7,'month')}${inp('reavaliar','Reavaliar em',10,'date')}</div>
+ ${ta('motivoAguardar','Por que aguardar')}${inp('condicao','Condição para reavaliar',1000)}
+ ${id?`<h4 class="pjsec">Histórico</h4>
+ <div class="pjhadd"><div class="g2"><div class="f"><label for="pj_htipo">Tipo</label><select id="pj_htipo">${Object.entries(PJ_HT).filter(([k])=>k!=='status').map(([k,[t]])=>`<option value="${k}">${t}</option>`).join('')}</select></div><div class="f"><label for="pj_hdia">Data</label><input id="pj_hdia" type="date" value="${today()}"></div></div>
+ <div class="f"><label for="pj_htexto">O que aconteceu</label><textarea id="pj_htexto" maxlength="1000"></textarea></div><div><button class="btn sm" data-pjhadd>${ICO.plus}Adicionar ao histórico</button></div></div>
+ <div id="pj_hist">${pjHistHtml(id)}</div>`:''}
+ ${id?`<div class="last">Registrado em ${esc(tsTxt(x.criado))}${x.atualizado!==x.criado?` · alterado em ${esc(tsTxt(x.atualizado))}`:''}${d.concluidoEm?` · concluído em ${esc(dfmt(d.concluidoEm))}`:''}</div>`:''}
+ <div class="eda"><button class="btn pri" data-pjsalvar>${id?'Salvar':'Criar projeto'}</button><button class="btn" data-edclose>Cancelar</button>${id?`<button class="btn dan" data-pjexcluir>${ICO.del}Excluir</button>`:''}</div></div>`;
+ jrTags()}
+const pjDados=(d,status,antes)=>({...d,status,concluidoEm:status==='concluido'?(antes==='concluido'&&d.concluidoEm?d.concluidoEm:today()):''});
+const pjHistStatus=(id,de,para)=>DB.regSave({area:'projeto_hist',data:{projeto:id,tipo:'status',dia:today(),texto:de?`${PJ_ST[de][0]} → ${PJ_ST[para][0]}`:`Criado como ${PJ_ST[para][0]}`}});
+async function saveProj(btn){const ed=ED,{id,x}=ed,v=k=>$('pj_'+k).value;
+ const erro=(k,m)=>{const b=$('pj_'+k).closest('.f');b.classList.add('bad');b.querySelector('.msg').textContent=m;$('pj_'+k).focus()};
+ const nome=v('nome').trim();if(!nome)return erro('nome','Digite o nome do projeto.');
+ if(!jrAddSetor())return $('jr_setor').focus();
+ for(const k of ['inicio','prazo','reavaliar'])if($('pj_'+k).validity&&!$('pj_'+k).validity.valid)return erro(k,'Data incompleta.');
+ const marc=s=>[...$('ed').querySelectorAll(s+' input:checked')].map(i=>i.value);
+ /* etapas e problemas que não viraram caixa na tela (excluídos ou ainda não carregados) continuam guardados */
+ const etapas=[...new Set([...marc('#pj_etapas'),...x.data.etapas.filter(e=>!ED.mostradas.has(e))])],problemas=[...new Set([...marc('#pj_probs'),...x.data.problemas.filter(p=>!ED.probMostrados.has(p))])];
+ const status=v('status'),antes=id?x.data.status:null;
+ const data=pjDados({...x.data,nome,prioridade:v('prioridade'),responsavel:v('responsavel').trim(),setores:ED.setores.slice(),etapas,problemas,
+  objetivo:v('objetivo'),acao:v('acao'),proxima:v('proxima'),inicio:v('inicio'),prazo:v('prazo'),dependeDe:v('dependeDe'),impedimentos:v('impedimentos'),
+  indicador:v('indicador'),linhaBase:v('linhaBase'),meta:v('meta'),atual:v('atual'),validacao:v('validacao'),resultado:v('resultado'),
+  previsao:v('previsao'),reavaliar:v('reavaliar'),motivoAguardar:v('motivoAguardar'),condicao:v('condicao')},status,antes);
+ const lbl=btn.innerHTML;btn.textContent='Salvando…';btn.setAttribute('aria-disabled','true');
+ try{const r=await DB.regSave(id?{area:'projeto',id,versao:x.atualizado,data}:{area:'projeto',data});
+  if(antes!==status)try{await pjHistStatus(r.item.id,antes,status)}catch(e){}
+  if(ED===ed)closeEd();toast(id?'Projeto salvo':'Projeto criado')}
+ catch(e){btn.innerHTML=lbl;btn.removeAttribute('aria-disabled');const c=agConflito(e);toast(c||e.message,true);if(c&&ED===ed)closeEd()}
+ pjCarregar()}
+async function delProj(btn){const ed=ED,{id,x}=ed;
+ if(!await confirmBox('Excluir projeto?',`O projeto "${x.data.nome}" e todo o histórico dele serão excluídos. Isso não pode ser desfeito.`,'Excluir projeto',true))return;
+ btn.setAttribute('aria-disabled','true');
+ try{await DB.regDelete('projeto',id);if(ED===ed)closeEd();toast('Projeto excluído')}
+ catch(e){btn.removeAttribute('aria-disabled');const c=agConflito(e);toast(c||e.message,true);if(c&&ED===ed)closeEd()}
+ pjCarregar()}
+/* histórico: grava na hora e atualiza só a lista do painel, sem perder o que está sendo editado no formulário */
+async function pjHistAdd(btn){const ed=ED,id=ed.id,t=$('pj_htexto'),texto=t.value.trim(),dia=$('pj_hdia').value;
+ if(!texto){t.focus();return toast('Escreva o que aconteceu.',true)}if(!dia)return toast('Informe a data.',true);
+ btn.setAttribute('aria-disabled','true');
+ try{await DB.regSave({area:'projeto_hist',data:{projeto:id,tipo:$('pj_htipo').value,dia,texto}});await pjCarregar();t.value='';toast('Registrado no histórico')}
+ catch(e){toast(e.message,true)}
+ btn.removeAttribute('aria-disabled');if(ED===ed&&$('pj_hist'))$('pj_hist').innerHTML=pjHistHtml(id)}
+async function pjHistDel(hid){const ed=ED;if(!await confirmBox('Excluir do histórico?','Este registro do histórico será excluído.','Excluir',true))return;
+ try{await DB.regDelete('projeto_hist',hid);await pjCarregar();toast('Registro excluído')}catch(e){toast(e.message,true)}
+ if(ED===ed&&$('pj_hist'))$('pj_hist').innerHTML=pjHistHtml(ed.id)}
+/* mudar o status arrastando o cartão (computador); uma mudança por projeto de cada vez */
+async function moverPj(id,status){const x=(PJ.itens||[]).find(y=>y.id===id),j=PJ;
+ if(!x||x.data.status===status||!Object.hasOwn(PJ_ST,status)||j.movendo.has(id))return;
+ const antes=x.data.status;j.movendo.add(id);pjAtualizar();
+ try{const r=await DB.regSave({area:'projeto',id,versao:x.atualizado,data:pjDados(x.data,status,antes)});
+  /* aplica na hora a versão gravada: o cartão já aparece na coluna nova com a versão certa */
+  if(r&&r.item)Object.assign(x,{data:r.item.data,atualizado:r.item.atualizado});try{await pjHistStatus(id,antes,status)}catch(e){}toast(`Movido para ${PJ_ST[status][0]}`)}
+ catch(e){toast(agConflito(e)||e.message,true)}
+ finally{j.movendo.delete(id);if(j===PJ){pjAtualizar();pjCarregar()}}}
+const PJ_DND='application/x-cp-projeto';
+/* só aceita cartões arrastados desta página (outro site não consegue imitar) */
+let pjArrastando=null;
+const pjColDe=e=>e.dataTransfer&&[...e.dataTransfer.types].includes(PJ_DND)&&e.target.closest&&e.target.closest('[data-pjcol]');
+const pjLimparAlvo=()=>document.querySelectorAll('[data-pjcol].alvo').forEach(c=>c.classList.remove('alvo'));
+document.addEventListener('dragstart',e=>{const c=e.target.closest&&e.target.closest('[data-pjcard]');if(!c)return;pjArrastando=c.dataset.pjcard;e.dataTransfer.setData(PJ_DND,c.dataset.pjcard);e.dataTransfer.effectAllowed='move';c.classList.add('arr')});
+document.addEventListener('dragend',e=>{const c=e.target.closest&&e.target.closest('[data-pjcard]');c&&c.classList.remove('arr');pjLimparAlvo();setTimeout(()=>{pjArrastando=null})});
+document.addEventListener('dragover',e=>{const col=pjColDe(e);if(!col)return;e.preventDefault();e.dataTransfer.dropEffect='move';if(!col.classList.contains('alvo')){pjLimparAlvo();col.classList.add('alvo')}});
+document.addEventListener('drop',e=>{const col=pjColDe(e);if(!col)return;e.preventDefault();pjLimparAlvo();const id=e.dataTransfer.getData(PJ_DND);if(id&&id===pjArrastando)moverPj(id,col.dataset.pjcol);pjArrastando=null});
+/* atalhos dos números do topo: aplicam um filtro e limpam os outros */
+const PJ_ATALHO={andamento:'andamento',parados:'parados',atrasados:'atrasados',concluido:'concluido'};
+document.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.matches&&e.target.matches('.pjc[data-pjabrir]')){e.preventDefault();openProj(e.target.dataset.pjabrir)}});
+document.addEventListener('click',e=>{
+ const tr=e.target.closest&&e.target.closest('tr[data-pjrow]');if(tr&&!e.target.closest('button')){openProj(tr.dataset.pjrow);return}
+ const card=e.target.closest&&e.target.closest('.pjc[data-pjabrir]');if(card&&!e.target.closest('button')){openProj(card.dataset.pjabrir);return}
+ const t=e.target.closest&&e.target.closest('button');if(!t||t.getAttribute('aria-disabled')==='true')return;const d=t.dataset;
+ if(d.pjnovo!==undefined)openProj(null,d.pjnovo||null);
+ else if(d.pjabrir)openProj(d.pjabrir);
+ else if((d.pjvista==='quadro'||d.pjvista==='tabela')&&PJ.vista!==d.pjvista){PJ.vista=d.pjvista;rProj();const b=document.querySelector(`[data-pjvista="${d.pjvista}"]`);b&&b.focus()}
+ else if(d.pjfiltro&&Object.hasOwn(PJ_ATALHO,d.pjfiltro)){Object.assign(PJ.f,{q:'',status:PJ_ATALHO[d.pjfiltro],prio:'',setor:'',resp:''});rProj();const b=document.querySelector(`[data-pjfiltro="${d.pjfiltro}"]`);b&&b.focus()}
+ else if('pjrecarregar' in d){PJ=pjVazio(null);render()}
+ else if('pjsalvar' in d)saveProj(t);
+ else if('pjexcluir' in d)delProj(t);
+ else if('pjhadd' in d)pjHistAdd(t);
+ else if(d.pjhdel)pjHistDel(d.pjhdel);
+});
+/* projetos ligados a um problema, nos detalhes dos Diagnósticos */
+const dgProjetos=x=>{const L=pjDoProblema(x.id);return `<div><div class="lab">Projetos ligados</div>${L.length?`<div class="pjlig">${L.map(p=>`<button class="dglink" data-pjabrir="${esc(p.id)}"><span>${esc(p.data.nome)}</span></button>${dgChip(PJ_ST,p.data.status)}`).join('')}</div>`:`<p>${PJ.itens?'<span class="none">Nenhum projeto ligado</span>':'…'}</p>`}</div>`};
 
 /* ---------- seletor de ano, mês e semana ---------- */
 function rWsel(){const w=Wk();$('wTxt').textContent=`${wkTxt(w)} ${w.inicio.slice(0,4)}`;const old=$('wBtn').querySelector('.lk');old&&old.remove();if(w.fechada){const s=document.createElement('span');s.className='lk';s.title='Semana fechada';$('wBtn').insertBefore(s,$('wBtn').querySelector('.ch'))}$('wNow').hidden=sel===curWeek();if(!$('wp').hidden)rWp()}
@@ -1795,7 +2040,7 @@ async function saveColab(){const{id}=ED,nome=$('c_nome').value.trim().replace(/\
  const k=x=>norm(x).normalize('NFD').replace(/[\u0300-\u036f]/g,'');if(COLS_().some(c=>c.id!==id&&k(c.nome)===k(nome))){box.classList.add('bad');box.querySelector('.msg').textContent='Já existe um colaborador com esse nome.';return}
  await saveSettings(s=>{s.colaboradores=(s.colaboradores||[]).slice();if(id){const c=s.colaboradores.find(x=>x.id===id);if(c){c.nome=nome;c.ativo=ativo}}else s.colaboradores.push({id:'c'+uid(),nome,ativo,criado:Date.now()})},id?'Colaborador salvo':'Colaborador adicionado');closeEd()}
 function openUser(id){const u=id?S.users.find(x=>x.id===id):{nome:'',usuario:'',admin:false};if(!u)return;ED={kind:'user',id,u:clone(u)};rEd();showEd()}
-function rEd(){if(!ED)return;if(ED.kind==='agenda')return rEdAg();if(ED.kind==='jretapa')return rEdJrEtapa();if(ED.kind==='jrfluxo')return rEdJrFluxo();if(ED.kind==='diag')return rEdDiag();if(ED.kind==='plan')return rEdPlan();if(ED.kind==='user')return rEdUser();if(ED.kind==='colab')return rEdColab();
+function rEd(){if(!ED)return;if(ED.kind==='agenda')return rEdAg();if(ED.kind==='jretapa')return rEdJrEtapa();if(ED.kind==='jrfluxo')return rEdJrFluxo();if(ED.kind==='diag')return rEdDiag();if(ED.kind==='proj')return rEdProj();if(ED.kind==='plan')return rEdPlan();if(ED.kind==='user')return rEdUser();if(ED.kind==='colab')return rEdColab();
  const w=Wk(),{f}=ED,st=steps(f);if(ED.i>=st.length)ED.i=st.length-1;const i=ED.i,id=st[i],ro=!canEdit(w),isS=id==='sla';const r=isS?{}:((f==='q'?w.q:w.o)[id]||{});
  if(document.activeElement&&$('ed').contains(document.activeElement)&&ED.rendered===`${sel}|${f}|${i}`)return;ED.rendered=`${sel}|${f}|${i}`;
  const done=k=>k==='sla'?isN(w.sla):rowDone(f,(f==='q'?w.q:w.o)[k]||{});
@@ -1851,7 +2096,7 @@ async function saveUser(btn){const{id}=ED,q=k=>{const x=$('ed').querySelector(`[
   closeEd();if(id===meId&&!admin){page='inicio';cfgView=null;toast('Usuário salvo. Você não é mais administrador.')}else toast(id?'Usuário salvo':'Usuário adicionado');render()}
  catch(e){toast(e.message||errMsg(e),true);btn.textContent=id?'Salvar':'Adicionar';btn.removeAttribute('aria-disabled')}}
 $('ed').addEventListener('input',e=>{const b=e.target.closest('.f.bad');if(b){b.classList.remove('bad');const m=b.querySelector('.msg');m.textContent=m.dataset.h||''}});
-$('ed').addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.matches('input')){e.preventDefault();const b=$('ed').querySelector('[data-edsave="1"],[data-usave],[data-plsave],[data-csave],[data-jrsalvar],[data-dgsalvar]');b&&b.click()}});
+$('ed').addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.matches('input')&&!e.target.closest('.pjhadd')){e.preventDefault();const b=$('ed').querySelector('[data-edsave="1"],[data-usave],[data-plsave],[data-csave],[data-jrsalvar],[data-dgsalvar],[data-pjsalvar]');b&&b.click()}});
 $('edScrim').onclick=closeEd;
 
 /* ---------- semanas: fechar, reabrir, excluir ---------- */
@@ -2226,6 +2471,7 @@ async function onData(d){
  if(page==='agenda')agCarregar(true);
  if(page==='an-jornada'||(page==='config'&&cfgView==='jornada'))jrCarregar();
  if(page==='an-diag'||page==='an-jornada')dgCarregar();if(page==='an-diag')jrCarregar();
+ if(page==='pm-proj'||page==='pm-fut'||page==='an-diag')pjCarregar();if(page==='pm-proj'||page==='pm-fut'){jrCarregar();dgCarregar()}
  render();
 }
 async function boot(){
