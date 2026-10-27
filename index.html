@@ -530,6 +530,27 @@ button.plc.miss:hover{background:var(--card2)}
 .cfgp{display:grid;gap:16px}
 /* perguntas-chave: cada pergunta abre e fecha a lista de itens que a respondem */
 .pqs{display:grid;gap:10px}
+/* configurações das monitorias */
+.mcsec{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;margin-bottom:12px}
+.mcsec .pc-s .muted{font-weight:400}
+.mclink{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:end}
+.mclink .f .msg:empty{display:none}
+.mcform .g3{display:grid;grid-template-columns:140px 1fr auto;gap:12px;align-items:end}
+.mczm{height:42px}
+.mcexp{font-size:13px;margin:0}
+.mcaviso{color:var(--wa);font-size:13px;margin:0}
+.mclist{display:grid;gap:10px}
+.mcrow{display:grid;gap:8px;border:1px solid var(--bd);border-radius:12px;padding:12px;background:var(--bg)}
+.mcrow.zr{border-color:rgba(242,102,90,.45)}
+.mcrow.off{opacity:.6}
+.mcl{display:grid;grid-template-columns:auto 1fr 110px auto;gap:10px;align-items:end}
+.mcn{font-size:13px;font-weight:600;color:var(--mu);padding-bottom:12px;min-width:20px}
+.mcb{display:flex;gap:2px;padding-bottom:2px}
+.mco{display:flex;flex-wrap:wrap;gap:8px}
+.mcrow textarea{min-height:60px;height:auto}
+.mceda{grid-template-columns:repeat(auto-fit,minmax(200px,max-content));display:grid}
+.maacoes{margin-bottom:12px;gap:8px}
+@media (max-width:700px){.mcform .g3,.mclink{grid-template-columns:1fr}.mcl{grid-template-columns:auto 1fr}.mcl .mcp,.mcl .mcb{grid-column:2}}
 /* por setor: período, tabela de comparação e detalhe */
 .porbar{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;margin-bottom:12px}
 .porbar .muted{font-size:13px}
@@ -1134,7 +1155,7 @@ function render(){
  $('pageTitle').textContent=({inicio:'Visão Geral',qualidade:'Qualidade',operacoes:'Operações',palavra:'Palavra da Semana',agenda:'Agenda e Demandas','an-jornada':'Jornada do Cliente','an-diag':'Diagnósticos','an-perg':'Perguntas-chave','an-setor':'Por setor','pm-proj':'Projetos e Iniciativas','pm-fut':'Planejamento Futuro',config:'Configurações'})[page]||(EMB[page]||[])[0]||'';
  document.querySelectorAll('.page').forEach(p=>p.classList.toggle('on',p.id==='p-'+(EMB[page]?'embreve':page)));
  document.querySelector('.wsel').hidden=page==='agenda'||page==='an-jornada'||page==='an-diag'||page==='an-perg'||page==='an-setor'||page==='pm-proj'||page==='pm-fut'||!!EMB[page];
- if(EMB[page])rEmBreve();else if(page==='an-jornada')rJornada();else if(page==='an-diag')rDiag();else if(page==='an-perg')rPerg();else if(page==='an-setor')rSetor();else if(page==='pm-proj')rProj();else if(page==='pm-fut')rFut();else if(page==='inicio')rInicio(w);else if(page==='palavra')rPalavra(w);else if(page==='agenda')rAgenda();else if(page==='config'){if(!(['setores','jornada','exportacao'].includes(cfgView)&&render.cfgShown===cfgView&&!render.force))rConfig();render.cfgShown=cfgView}else rFrente(w,page==='qualidade'?'q':'o');
+ if(EMB[page])rEmBreve();else if(page==='an-jornada')rJornada();else if(page==='an-diag')rDiag();else if(page==='an-perg')rPerg();else if(page==='an-setor')rSetor();else if(page==='pm-proj')rProj();else if(page==='pm-fut')rFut();else if(page==='inicio')rInicio(w);else if(page==='palavra')rPalavra(w);else if(page==='agenda')rAgenda();else if(page==='config'){if(!(['setores','jornada','exportacao','monitcrit','monitag'].includes(cfgView)&&render.cfgShown===cfgView&&!render.force))rConfig();render.cfgShown=cfgView}else rFrente(w,page==='qualidade'?'q':'o');
  if(ED)rEd();
 }
 
@@ -1357,7 +1378,7 @@ async function delAg(id,cancelar){const x=agAchar(id);if(!x)return;
 document.addEventListener('click',e=>{
  const t=e.target.closest('button');if(!t)return;
  /* ao sair, a agenda da conta anterior é apagada da memória e da tela */
- if(t.id==='logout'){AG=agVazio(null);$('p-agenda').innerHTML='';JR=jrVazio(null);$('p-an-jornada').innerHTML='';DG=dgVazio(null);$('p-an-diag').innerHTML='';PJ=pjVazio(null);$('p-pm-proj').innerHTML='';$('p-pm-fut').innerHTML='';PQ.html=null;PQ.abertas.clear();$('p-an-perg').innerHTML='';Object.assign(POR,{sel:null,html:null});$('p-an-setor').innerHTML='';return}
+ if(t.id==='logout'){AG=agVazio(null);$('p-agenda').innerHTML='';JR=jrVazio(null);$('p-an-jornada').innerHTML='';DG=dgVazio(null);$('p-an-diag').innerHTML='';PJ=pjVazio(null);$('p-pm-proj').innerHTML='';$('p-pm-fut').innerHTML='';PQ.html=null;PQ.abertas.clear();$('p-an-perg').innerHTML='';Object.assign(POR,{sel:null,html:null});$('p-an-setor').innerHTML='';MON=monVazio(null);return}
  if(t.getAttribute('aria-disabled')==='true')return;const d=t.dataset;let foco=null;
  if(d.agaba){AG.aba=d.agaba;foco=`[data-agaba="${d.agaba}"]`}
  else if('agenc' in d){AG.encerradas=!AG.encerradas;foco='[data-agenc]'}
@@ -2130,6 +2151,220 @@ document.addEventListener('click',e=>{
 /* escolher o mesmo setor de novo fecha o detalhe; um setor novo abre o detalhe e rola até ele */
 function porEscolher(k){POR.sel=POR.sel===k?null:k;rSetor();const d=$('por_det');if(d){d.scrollIntoView({behavior:'smooth',block:'start'});d.setAttribute('tabindex','-1');d.focus({preventScroll:true})}}
 
+/* ---------- monitorias: dados e Configurações (critérios, agentes monitorados e link da planilha) ----------
+   todos os usuários leem; só administradores alteram critérios, agentes e link. Os setores são os de Configurações com Qualidade */
+/* modelo inicial dos critérios (documento de monitorias); vira registro só quando um administrador carrega e salva */
+const MON_MODELOS={
+ cliente:{total:125,modo:'erros',zerarManual:false,criterios:[
+  ['Abertura do atendimento',10,'- Realizar a primeira interação em até 5 segundos após o início da ligação.'],
+  ['Apresentação e identificação',5,'- Chamar o cliente pelo nome.\n- Apresentar-se adequadamente.\n- Identificar a iGreen.\n- Informar que poderá retornar o contato caso a ligação seja desconectada.'],
+  ['Encerramento e iGreen Club',25,'- Verificar a utilização do aplicativo iGreen Club.\n- Apresentar os benefícios e enviar o link quando necessário.\n- Perguntar se o cliente possui outras dúvidas.\n- Agradecer o contato e colocar-se à disposição.'],
+  ['Pesquisa de satisfação',30,'- Informar corretamente sobre a pesquisa de satisfação no encerramento do atendimento.'],
+  ['Comunicação, empatia e condução',5,'- Demonstrar cordialidade, empatia, interesse e engajamento.\n- Conduzir o atendimento com senso de urgência.\n- Praticar a escuta ativa e manter uma postura colaborativa.'],
+  ['Linguagem e pronúncia',10,'- Evitar erros de pronúncia, gírias, gerundismo, abreviações inadequadas e erros de linguagem.'],
+  ['Sondagem e domínio do produto',10,'- Fazer perguntas claras e relevantes.\n- Compreender a necessidade do cliente.\n- Demonstrar segurança e conhecimento sobre o produto.'],
+  ['Gestão do tempo de espera',15,'- Explicar o motivo da espera e informar uma previsão de retorno.\n- Quando a espera ultrapassar 3 minutos, retornar para atualizar o cliente.'],
+  ['Contorno de objeções',5,'- Utilizar argumentos adequados, criatividade e persuasão.\n- Identificar e tratar a causa principal da objeção.'],
+  ['Atendimento personalizado',10,'- Adaptar a abordagem às necessidades específicas do cliente.'],
+  ['Falta de respeito, ética ou postura profissional',0,'- Demonstrar grosseria, ironia, deboche ou irritação inadequada.\n- Utilizar palavrões.\n- Manter conversas paralelas com o canal aberto.\n- Difamar a iGreen ou seus parceiros, ou concordar com comentários dessa natureza.',1],
+  ['Atraso crítico na abertura ou desconexão inadequada',0,'- Não realizar a primeira interação em até 10 segundos.\n- Encerrar a ligação sem conclusão e sem tentativa de retorno.',1],
+  ['Informações incorretas ou inverídicas',0,'- Fornecer informações erradas, incompletas ou falsas que possam causar prejuízo financeiro ou de imagem.\n- Prometer ações que não foram realizadas.\n- Informar valores incorretos em faturas.',1],
+  ['Falha na consulta ao histórico ou abertura de chamados',0,'- Não consultar o histórico antes de abrir um novo chamado, ocasionando duplicidade ou atraso.\n- Abrir chamados com categoria incorreta ou informações incompletas e incoerentes.',1],
+  ['Alteração cadastral sem validação do titular',0,'- Alterar dados da conta por solicitação de terceiros sem validar a identidade ou a autorização do titular.',1],
+  ['Abandono do atendimento',0,'- Deixar de responder ao cliente quando ele solicitar informações durante uma espera ou consulta.',1],
+  ['Tabulação incorreta',0,'- Não registrar corretamente a causa principal do contato.\n- Tratar incorretamente a prioridade quando houver múltiplas solicitações.',1]]},
+ retencao:{total:125,modo:'erros',zerarManual:false,criterios:[
+  ['Saudação e finalização do atendimento',20,'- Realizar a saudação e o encerramento adequadamente.\n- Solicitar a avaliação do atendimento.\n- Explicar o processo de cancelamento e retenção.'],
+  ['Sondagem do motivo do cancelamento',25,'- Investigar o motivo da solicitação.\n- Praticar a escuta ativa.\n- Confirmar a causa principal do pedido de cancelamento.'],
+  ['Argumentação e reversão',35,'- Utilizar argumentos personalizados.\n- Contornar objeções.\n- Aplicar os recursos disponíveis para tentar reverter o cancelamento.'],
+  ['Valorização de benefícios',25,'- Apresentar e valorizar pelo menos um benefício da iGreen relacionado à necessidade do cliente.\n- Considerar benefícios como Clube de Descontos, cashback, seguros e telecomunicações.'],
+  ['Comunicação e postura',20,'- Demonstrar empatia, clareza, confiança e profissionalismo.\n- Respeitar os procedimentos de espera.\n- Evitar gírias, gerundismo, abreviações inadequadas, erros de pronúncia e erros de linguagem.'],
+  ['Falta de respeito, ética ou postura profissional',0,'- Demonstrar grosseria, ironia, deboche ou irritação inadequada.\n- Utilizar palavrões.\n- Manter conversas paralelas com o canal aberto.\n- Difamar a iGreen ou seus parceiros, ou concordar com comentários dessa natureza.',1],
+  ['Desconexão inadequada',0,'- Encerrar o atendimento sem conclusão e sem tentativa de retorno.',1],
+  ['Informações incorretas ou inverídicas',0,'- Fornecer informações erradas, incompletas ou falsas que possam causar prejuízo financeiro ou de imagem.\n- Prometer ações que não foram realizadas.\n- Informar valores incorretos em faturas.',1],
+  ['Falha na consulta ao histórico ou abertura de chamados',0,'- Não consultar o histórico antes de abrir um novo chamado, ocasionando duplicidade ou atraso.\n- Abrir chamados com categoria incorreta ou informações incompletas e incoerentes.',1],
+  ['Alteração cadastral sem validação do titular',0,'- Alterar dados da conta por solicitação de terceiros sem validar a identidade ou a autorização do titular.',1],
+  ['Abandono do atendimento',0,'- Deixar de responder ao cliente durante o atendimento.',1],
+  ['Tabulação incorreta',0,'- Não registrar corretamente a causa principal do contato ou realizar uma tabulação inadequada.',1]]},
+ inadimplencia:{total:100,modo:'erros',zerarManual:false,criterios:[
+  ['Abertura e identificação',5,'- Realizar a primeira interação em até 5 segundos.\n- Chamar o cliente pelo nome.\n- Apresentar-se e identificar a iGreen.'],
+  ['Comunicação e postura',30,'- Demonstrar cordialidade e empatia.\n- Manter interesse, engajamento e senso de urgência.\n- Praticar a escuta ativa e adotar uma postura colaborativa.\n- Utilizar linguagem clara.\n- Evitar erros de pronúncia, gírias, gerundismo e abreviações inadequadas.'],
+  ['Diagnóstico da dívida',25,'- Fazer perguntas claras, objetivas e relevantes.\n- Identificar o motivo da inadimplência.\n- Verificar se o cliente se recorda do contrato e se recebeu a fatura.\n- Investigar a previsão de pagamento e as demais informações necessárias.'],
+  ['Registros e procedimentos',5,'- Realizar corretamente os registros no sistema.\n- Classificar adequadamente o atendimento.'],
+  ['Conformidade e condução da retenção',10,'- Identificar a causa do cancelamento.\n- Conduzir o atendimento de forma assertiva.\n- Utilizar argumentos personalizados, criatividade, percepção e persuasão.\n- Tratar a causa principal da objeção.'],
+  ['iGreen Club: apresentação e benefícios',20,'- Verificar se o cliente utiliza o aplicativo.\n- Apresentar verbalmente pelo menos dois benefícios do iGreen Club.'],
+  ['Encerramento',5,'- Finalizar cordialmente.\n- Perguntar se o cliente necessita de algo mais.\n- Reforçar os termos da negociação quando aplicável.'],
+  ['Informação incorreta',0,'- Fornecer informações incorretas durante a ligação.',1],
+  ['Linguagem agressiva',0,'- Utilizar linguagem agressiva durante o atendimento.',1],
+  ['Contra-argumentação',0,'- Critério crítico de contra-argumentação, conforme a classificação do formulário de monitoria.',1],
+  ['Postura ríspida',0,'- Adotar postura ríspida durante o atendimento.',1],
+  ['Retenção de ligação',0,'- Critério crítico de retenção de ligação, conforme a classificação do formulário de monitoria.',1]]},
+ /* no Suporte ao Licenciado os critérios positivos começam marcados: desmarcar tira os pontos; os críticos começam desmarcados e zeram se marcados */
+ licenciado:{total:100,modo:'acertos',zerarManual:true,criterios:[
+  ['Explicação clara e completa',7,'- Fornecer todas as informações necessárias.\n- Garantir que a explicação seja compreensível, correta, completa e suficiente.'],
+  ['Atendente empático e atencioso',8,'- Demonstrar atenção e empatia.\n- Responder adequadamente às dúvidas do licenciado.'],
+  ['Informações corretas',10,'- Fornecer informações corretas ao licenciado e nos registros internos.\n- Garantir precisão, segurança e conformidade nas informações.'],
+  ['Mantém consistência nas respostas',4,'- Manter consistência durante o atendimento.\n- Evitar contradições nas informações fornecidas.'],
+  ['Segurança nas informações',6,'- Demonstrar clareza, confiança e domínio do assunto.\n- Evitar perguntas repetitivas desnecessárias.'],
+  ['Encerramento adequado',10,'- Seguir o procedimento de encerramento.\n- Aguardar 10 minutos após o retorno ou utilizar a mensagem “Te ajudo em algo mais?”, conforme o procedimento aplicável.'],
+  ['Resolução no primeiro contato',6,'- Resolver a demanda no primeiro contato sempre que aplicável.\n- Conduzir o atendimento de forma completa e objetiva, sem encaminhamentos ou questionamentos desnecessários.'],
+  ['Atendimento objetivo',3,'- Manter o atendimento direto e focado.\n- Fazer apenas as perguntas necessárias.'],
+  ['Verificação de histórico e demanda',3,'- Consultar a demanda no SOL.\n- Verificar a identificação e os dados do cliente.\n- Consultar os tickets antes de abrir novas solicitações.\n- Analisar a situação cadastral do cliente no BKO.'],
+  ['Anotação interna no atendimento',6,'- Registrar as informações internas necessárias.\n- Vincular o atendimento ao ClickUp ou ticket correspondente.\n- Registrar os motivos de correções, alterações ou reativações.'],
+  ['Tabulação correta da demanda',7,'- Realizar corretamente as tabulações do protocolo e do atendimento.\n- Incluir a tabulação de plantão para análise do BKO quando necessário.\n- Utilizar a tabulação correspondente às dúvidas gerais.'],
+  ['Registro no BackOffice',15,'- Realizar os registros completos no BackOffice.\n- Registrar protocolos, alterações e análises solicitadas no BKO.'],
+  ['Encaminhamento correto de demandas',5,'- Identificar corretamente as solicitações que não pertencem ao canal.\n- Encaminhar a demanda ao procedimento adequado.\n- Exemplo: solicitação de alteração de e-mail direcionada ao suporte ao cliente, iniciada pelo próprio cliente.'],
+  ['Envio correto do SLA',3,'- Informar o prazo correto de tratamento conforme o SLA e o POP vigente.'],
+  ['Cumprimento de políticas internas e conformidade',7,'- Seguir os procedimentos, as políticas internas, as regras e as orientações da gestão.'],
+  ['Omissão de Atendimento',0,'',1],['Falta de Empatia',0,'',1],['Procedimento Incorreto',0,'',1],['Procedimento não realizado',0,'',1],['Ticket indevido',0,'',1]]}};
+const monModelo=setor=>{const m=MON_MODELOS[setor];return m?{_id:null,_v:null,total:m.total,modo:m.modo,zerarManual:m.zerarManual,criterios:m.criterios.map(([nome,peso,descricao,zera])=>({id:'c'+uid(),nome,peso,descricao:descricao||'',zera:!!zera,ativo:true}))}:null};
+const monVazio=dono=>({setores:null,agentes:null,geral:null,limitado:false,dono,carregando:false,denovo:false,erro:false,setorCfg:null,setorAg:null,rasc:{},salvando:false});
+let MON=monVazio(null);
+const monSetores=()=>SETF('q');
+const monCfgDe=setor=>(MON.setores||[]).find(x=>x.data.setor===setor)||null;
+const monNaTela=()=>page==='config'&&(cfgView==='monitcrit'||cfgView==='monitag');
+const monRedesenhar=()=>{if(monNaTela()){const a=document.activeElement;if(a&&a.closest&&a.closest('#p-config')&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)){MON.adiado=true;return}render.cfgShown=null;render()}else if(page==='monitorias')render()};
+document.addEventListener('focusout',e=>{if(MON.adiado&&e.target.closest&&e.target.closest('#p-config'))setTimeout(()=>{const a=document.activeElement;if(MON.adiado&&!(a&&a.closest&&a.closest('#p-config')&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName))){MON.adiado=false;if(monNaTela()){render.cfgShown=null;render()}}})});
+async function monCarregar(){
+ if(!meId)return;
+ if(MON.dono!==meId)MON=monVazio(meId);
+ const j=MON;if(j.carregando){j.denovo=true;return}j.carregando=true;
+ try{const[s,a,g]=await Promise.all([DB.regList('monit_setor'),DB.regList('monit_agente'),DB.regList('monit_geral')]);if(j!==MON)return;
+  const novo={setores:s.itens||[],agentes:a.itens||[],geral:(g.itens||[])[0]||null},mudou=JSON.stringify([j.setores,j.agentes,j.geral])!==JSON.stringify([novo.setores,novo.agentes,novo.geral]);
+  Object.assign(j,novo,{limitado:!!(s.limitado||a.limitado),erro:false});if(mudou)monRedesenhar();
+ }catch(e){if(j===MON&&!j.setores){j.erro=true;monRedesenhar()}}
+ finally{j.carregando=false;if(j.denovo&&j===MON){j.denovo=false;monCarregar()}}
+}
+const monEstado=()=>MON.erro?`<div class="panel cfgp"><p class="muted">Não foi possível carregar as monitorias.</p><div><button class="btn sm" data-monrecarregar>Tentar de novo</button></div></div>`:'<div class="panel"><p class="muted" role="status">Carregando…</p></div>';
+const monAbas=(sel,attr,conta)=>`<div class="pc-s" role="group" aria-label="Setor">${monSetores().map(s=>`<button class="${sel===s.id?'on':''}" ${attr}="${esc(s.id)}" aria-pressed="${sel===s.id}">${esc(s.nome)}${conta?` <span class="muted">${conta(s.id)}</span>`:''}</button>`).join('')}</div>`;
+/* rascunho do formulário de critérios de um setor: o que está gravado (ou nada) até a pessoa mexer */
+const monRascBase=setor=>{const r=monCfgDe(setor);return r?{...clone(r.data),modo:r.data.modo||'erros',zerarManual:!!r.data.zerarManual,criterios:r.data.criterios.map(c=>({descricao:'',...c})),_id:r.id,_v:r.atualizado}:null};
+const monRasc=setor=>Object.hasOwn(MON.rasc,setor)?MON.rasc[setor]:monRascBase(setor);
+const monAlterado=setor=>Object.hasOwn(MON.rasc,setor)&&JSON.stringify(MON.rasc[setor])!==JSON.stringify(monRascBase(setor));
+function rCfgMonCrit(){if(MON.dono!==meId)monCarregar();if(!MON.setores)return monEstado();
+ const S_=monSetores();if(!S_.some(s=>s.id===MON.setorCfg))MON.setorCfg=S_.length?S_[0].id:null;
+ const g=MON.linkRasc!=null?MON.linkRasc:MON.geral?MON.geral.data.planilha:'';
+ const link=`<div class="panel cfgp"><h3>Planilha de preenchimento</h3><p class="muted">O botão "Planilha de preenchimento" da área de Monitorias abre este link numa nova aba.</p>
+  <div class="mclink"><div class="f"><label for="mc_planilha">Link (https://)</label><input id="mc_planilha" type="url" maxlength="1000" value="${esc(g)}" placeholder="https://…" autocomplete="off"><span class="msg"></span></div><button class="btn" data-mcplanilha>Salvar link</button></div></div>`;
+ if(!S_.length)return link+'<div class="panel"><p class="muted">Nenhum setor de Qualidade em Configurações › Setores.</p></div>';
+ const setor=MON.setorCfg,R=monRasc(setor),rec=monCfgDe(setor),nome=(S_.find(s=>s.id===setor)||{}).nome||'';
+ let corpo;
+ if(!R)corpo=`<div class="panel embreve"><p class="muted">${esc(nome)} ainda não tem critérios de monitoria.</p><div class="row">${MON_MODELOS[setor]?`<button class="btn pri" data-mcmodelo>Carregar critérios do documento</button>`:''}<button class="btn" data-mcnovo>Começar do zero</button></div></div>`;
+ else{const ativos=R.criterios.filter(c=>c.ativo),soma=ativos.filter(c=>!c.zera).reduce((t,c)=>t+(+c.peso||0),0),bate=soma===+R.total;
+  corpo=`<div class="panel cfgp mcform">
+   <div class="g3"><div class="f"><label for="mc_total">Total de pontos</label><input id="mc_total" type="number" min="1" step="any" data-mcg="total" value="${esc(R.total)}"></div>
+   <div class="f"><label for="mc_modo">Como o avaliador marca</label><select id="mc_modo" data-mcg="modo"><option value="erros"${R.modo==='erros'?' selected':''}>Marca o erro (perde os pontos)</option><option value="acertos"${R.modo==='acertos'?' selected':''}>Começa marcado (desmarcar tira os pontos)</option></select></div>
+   <label class="dgchk mczm"><input type="checkbox" data-mcg="zerarManual"${R.zerarManual?' checked':''}>Mostrar o botão "Zerar monitoria"</label></div>
+   <p class="muted mcexp">${R.modo==='acertos'?'Os critérios comuns começam marcados no formulário; desmarcar tira os pontos. Os críticos começam desmarcados e zeram a monitoria se forem marcados.':'O avaliador marca o que deu errado e perde os pontos do critério. Marcar um crítico zera a monitoria.'} A monitoria também zera quando a nota chega a 0.</p>
+   <p id="mc_soma" class="${bate?'muted':'mcaviso'}">${monSomaTxt(R)}</p>
+   <div class="mclist">${R.criterios.map((c,i)=>`<div class="mcrow${c.ativo?'':' off'}${c.zera?' zr':''}">
+    <div class="mcl"><span class="mcn">${i+1}</span><div class="f"><label for="mc_n${i}">Critério</label><input id="mc_n${i}" maxlength="200" data-mc="${i}|nome" value="${esc(c.nome)}" autocomplete="off"></div>
+    <div class="f mcp"><label for="mc_p${i}">Peso</label><input id="mc_p${i}" type="number" min="0" step="any" data-mc="${i}|peso" value="${esc(c.peso)}"${c.zera?' disabled':''}></div>
+    <div class="mcb"><button class="ico" data-mcmv="${i}|-1" aria-label="Subir"${i===0?' aria-disabled="true"':''}>${ICO.up}</button><button class="ico" data-mcmv="${i}|1" aria-label="Descer"${i===R.criterios.length-1?' aria-disabled="true"':''}>${ICO.down}</button><button class="ico" data-mcrm="${i}" aria-label="Remover ${esc(c.nome)}">${ICO.del}</button></div></div>
+    <div class="f"><label for="mc_d${i}">Descrição (o que é avaliado)</label><textarea id="mc_d${i}" maxlength="2000" rows="2" data-mc="${i}|descricao">${esc(c.descricao)}</textarea></div>
+    <div class="mco"><label class="dgchk"><input type="checkbox" data-mc="${i}|zera"${c.zera?' checked':''}>Crítico: zera a monitoria</label><label class="dgchk"><input type="checkbox" data-mc="${i}|ativo"${c.ativo?' checked':''}>Ativo</label></div></div>`).join('')}</div>
+   <div><button class="btn sm" data-mcadd>${ICO.plus}Adicionar critério</button></div>
+   <div class="eda mceda"><button class="btn pri" data-mcsalvar${MON.salvando?' aria-disabled="true"':''}>${MON.salvando?'Salvando…':rec?'Salvar critérios':'Criar critérios'}</button>${monAlterado(setor)?`<button class="btn" data-mcdescartar>Descartar alterações</button>`:''}</div>
+   <p class="muted mcexp">Mudar ou remover um critério não altera as monitorias já feitas: cada uma guarda os critérios e os pesos do dia.</p></div>`}
+ return `${MON.limitado?'<div class="banner"><span class="dot wa"></span><div>Há muitos registros: parte deles não está sendo exibida.</div></div>':''}${link}<div class="mcsec">${monAbas(setor,'data-mcsetor')}${monAlterado(setor)?'<span class="mcaviso">Alterações não salvas</span>':''}</div>${corpo}`}
+/* soma dos pesos dos critérios ativos que não zeram, comparada com o total */
+const monSomaTxt=R=>{const s=R.criterios.filter(c=>c.ativo&&!c.zera).reduce((t,c)=>t+(+c.peso||0),0),ok=s===+R.total;return `Soma dos pesos dos critérios ativos: <b>${nf(s)}</b> de ${nf(+R.total||0)} pontos${ok?'':' — a soma não bate com o total'}.`};
+const monSomaAtualizar=()=>{const p=$('mc_soma'),R=monRasc(MON.setorCfg);if(!p||!R)return;const s=R.criterios.filter(c=>c.ativo&&!c.zera).reduce((t,c)=>t+(+c.peso||0),0);p.innerHTML=monSomaTxt(R);p.className=s===+R.total?'muted':'mcaviso'};
+const monRedesenharCfg=foco=>{if(!monNaTela())return;render.cfgShown=null;rConfig();render.cfgShown=cfgView;if(foco){const n=document.querySelector(foco);n&&n.focus()}};
+/* digitar no formulário só atualiza o rascunho (sem redesenhar), para não perder o cursor */
+document.addEventListener('input',e=>{if(e.target.id==='mc_planilha'){MON.linkRasc=e.target.value;const f=e.target.closest('.f');f.classList.remove('bad');f.querySelector('.msg').textContent='';return}});
+document.addEventListener('input',e=>{const t=e.target;if(!t.closest||!t.closest('#p-config .mcform'))return;const setor=MON.setorCfg,R=MON.rasc[setor]||(MON.rasc[setor]=monRascBase(setor));if(!R)return;
+ if(t.dataset.mc){const[i,k]=t.dataset.mc.split('|'),c=R.criterios[+i];if(!c)return;if(t.type==='checkbox')return;c[k]=k==='peso'?(t.value===''?'':+t.value):t.value}
+ else if(t.dataset.mcg&&t.type!=='checkbox'&&t.tagName!=='SELECT')R[t.dataset.mcg]=t.value===''?'':+t.value;
+ monSomaAtualizar()});
+/* caixas e listas mudam a tela (soma, explicação, peso travado nos críticos): atualiza e redesenha */
+document.addEventListener('change',e=>{const t=e.target;if(!t.closest||!t.closest('#p-config .mcform'))return;const setor=MON.setorCfg,R=MON.rasc[setor]||(MON.rasc[setor]=monRascBase(setor));if(!R)return;
+ if(t.dataset.mc){const[i,k]=t.dataset.mc.split('|'),c=R.criterios[+i];if(!c)return;if(t.type==='checkbox'){c[k]=t.checked;if(k==='zera'&&t.checked)c.peso=0}else return}
+ else if(t.dataset.mcg){const k=t.dataset.mcg;if(k==='total')return;R[k]=t.type==='checkbox'?t.checked:t.value}
+ else return;
+ monRedesenharCfg(t.id?'#'+CSS.escape(t.id):`[data-mc="${CSS.escape(t.dataset.mc||'')}"],[data-mcg="${CSS.escape(t.dataset.mcg||'')}"]`)});
+async function monSalvarCrit(){const setor=MON.setorCfg,R=monRasc(setor),rec=monCfgDe(setor);if(!R||MON.salvando)return;
+ /* outra pessoa criou os critérios deste setor enquanto este rascunho era montado do zero */
+ if(!R._id&&rec)return toast('Outra pessoa salvou critérios para este setor enquanto você editava. Descarte as alterações para ver a versão atual.',true);
+ const total=+R.total;if(!(total>0))return toast('Informe o total de pontos.',true);
+ for(const c of R.criterios){if(!String(c.nome||'').trim())return toast('Todo critério precisa de nome.',true);if(!(+c.peso>=0))return toast(`Peso inválido em "${c.nome}".`,true)}
+ const data={setor,total,modo:R.modo==='acertos'?'acertos':'erros',zerarManual:!!R.zerarManual,criterios:R.criterios.map(c=>({id:c.id,nome:String(c.nome).trim(),descricao:c.descricao||'',peso:+c.peso||0,zera:!!c.zera,ativo:!!c.ativo}))};
+ MON.salvando=true;monRedesenharCfg();
+ try{await DB.regSave(R._id?{area:'monit_setor',id:R._id,versao:R._v,data}:{area:'monit_setor',data});delete MON.rasc[setor];toast('Critérios salvos')}
+ catch(e){toast(agConflito(e)||e.message,true)}
+ finally{MON.salvando=false;await monCarregar();monRedesenharCfg()}}
+async function monSalvarLink(btn){const i=$('mc_planilha'),v=i.value.trim(),rec=MON.geral;
+ if(v&&!/^https:\/\/[^\s<>"']+$/i.test(v)){i.closest('.f').classList.add('bad');i.closest('.f').querySelector('.msg').textContent='Use um endereço https:// sem espaços ou aspas.';return i.focus()}
+ btn.setAttribute('aria-disabled','true');
+ try{await DB.regSave(rec?{area:'monit_geral',id:rec.id,versao:rec.atualizado,data:{planilha:v}}:{area:'monit_geral',data:{planilha:v}});MON.linkRasc=null;toast('Link salvo')}
+ catch(e){toast(agConflito(e)||e.message,true)}
+ btn.removeAttribute('aria-disabled');await monCarregar();monRedesenharCfg()}
+/* agentes monitorados: por setor, um por um ou vários de uma vez */
+const monAgentesDe=setor=>(MON.agentes||[]).filter(a=>a.data.setor===setor).sort((a,b)=>a.data.nome.localeCompare(b.data.nome));
+function rCfgMonAg(){if(MON.dono!==meId)monCarregar();if(!MON.agentes)return monEstado();
+ const S_=monSetores();if(!S_.some(s=>s.id===MON.setorAg))MON.setorAg=S_.length?S_[0].id:null;if(!S_.length)return '<div class="panel"><p class="muted">Nenhum setor de Qualidade em Configurações › Setores.</p></div>';
+ const setor=MON.setorAg,L=monAgentesDe(setor);
+ return `<div class="mcsec">${monAbas(setor,'data-masetor',s=>monAgentesDe(s).length)}</div>
+ <div class="row maacoes"><button class="btn pri" data-manovo>${ICO.plus}Novo agente</button><button class="btn" data-mavarios>${ICO.plus}Adicionar vários</button></div>
+ ${L.length?`<div class="panel dgpan"><div class="tw"><table class="dgtab matab"><thead><tr><th>Agente</th><th>Situação</th><th></th></tr></thead><tbody>${L.map(a=>`<tr data-marow="${esc(a.id)}"><td><button class="dglink" data-maabrir="${esc(a.id)}"><span>${esc(a.data.nome)}</span></button></td><td>${a.data.ativo===false?'<span class="chip ln">Inativo</span>':'<span class="chip ok">Ativo</span>'}</td><td class="act">${ICO.edit}</td></tr>`).join('')}</tbody></table></div></div>`
+  :'<div class="panel embreve"><p class="muted">Nenhum agente cadastrado neste setor. Use "Novo agente" para cadastrar um por um ou "Adicionar vários" para colar uma lista de nomes.</p></div>'}`}
+function openMonAg(id){const a=id?(MON.agentes||[]).find(x=>x.id===id):{data:{nome:'',setor:MON.setorAg,ativo:true}};if(!a)return;ED={kind:'monag',id,x:clone(a)};rEd();showEd()}
+const monSetorOpts=sel=>{const L=monSetores().slice();if(sel&&!L.some(s=>s.id===sel))L.push(SET().find(s=>s.id===sel)||{id:sel,nome:'Setor removido'});return L.map(s=>`<option value="${esc(s.id)}"${s.id===sel?' selected':''}>${esc(s.nome)}</option>`).join('')};
+function rEdMonAg(){const{id,x}=ED,d=x.data;if(ED.rendered)return;ED.rendered=true;
+ $('ed').innerHTML=`<div class="edh"><div class="row"><span>Configurações · Agentes monitorados</span><button class="ico" data-edclose aria-label="Fechar">${ICO.x}</button></div><div><div class="k">${id?'Editar agente':'Novo agente'}</div><h3>${id?esc(d.nome):'Novo agente'}</h3></div></div>
+ <div class="edb"><div class="f"><label for="ma_nome">Nome</label><input id="ma_nome" maxlength="120" value="${esc(d.nome)}" autocomplete="off"><span class="msg"></span></div>
+ <div class="f"><label for="ma_setor">Setor</label><select id="ma_setor">${monSetorOpts(d.setor)}</select></div>
+ <label class="swl"><span>Ativo<small>Agentes inativos não aparecem para novas monitorias; as monitorias já feitas continuam guardadas</small></span><span class="sw"><input type="checkbox" id="ma_ativo"${d.ativo!==false?' checked':''}><i></i></span></label>
+ <div class="eda"><button class="btn pri" data-masalvar>${id?'Salvar':'Cadastrar'}</button><button class="btn" data-edclose>Cancelar</button>${id?`<button class="btn dan" data-maexcluir>${ICO.del}Excluir</button>`:''}</div></div>`}
+async function monSalvarAg(btn){const ed=ED,{id,x}=ed,nome=$('ma_nome').value.trim(),setor=$('ma_setor').value;
+ if(!nome){const f=$('ma_nome').closest('.f');f.classList.add('bad');f.querySelector('.msg').textContent='Digite o nome do agente.';return $('ma_nome').focus()}
+ const rep=(MON.agentes||[]).find(a=>a.id!==id&&a.data.setor===setor&&a.data.nome.trim().toLowerCase()===nome.toLowerCase());
+ if(rep&&!await confirmBox('Já existe um agente com esse nome neste setor','Cadastrar mesmo assim?','Cadastrar'))return;
+ btn.setAttribute('aria-disabled','true');
+ try{const data={nome,setor,ativo:$('ma_ativo').checked};await DB.regSave(id?{area:'monit_agente',id,versao:x.atualizado,data}:{area:'monit_agente',data});MON.setorAg=setor;if(ED===ed)closeEd();toast(id?'Agente salvo':'Agente cadastrado')}
+ catch(e){btn.removeAttribute('aria-disabled');toast(agConflito(e)||e.message,true)}
+ await monCarregar()}
+async function monExcluirAg(btn){const ed=ED,{id,x}=ed;
+ if(!await confirmBox('Excluir agente?',`"${x.data.nome}" sai da lista. As monitorias já feitas com ele continuam guardadas. Para só esconder dos próximos registros, prefira desativar.`,'Excluir agente',true))return;
+ btn.setAttribute('aria-disabled','true');
+ try{await DB.regDelete('monit_agente',id);if(ED===ed)closeEd();toast('Agente excluído')}catch(e){btn.removeAttribute('aria-disabled');toast(agConflito(e)||e.message,true)}
+ await monCarregar()}
+function openMonVarios(){ED={kind:'monvarios',setor:MON.setorAg};rEd();showEd()}
+function rEdMonVarios(){if(ED.rendered)return;ED.rendered=true;
+ $('ed').innerHTML=`<div class="edh"><div class="row"><span>Configurações · Agentes monitorados</span><button class="ico" data-edclose aria-label="Fechar">${ICO.x}</button></div><div><div class="k">Adicionar vários</div><h3>Colar uma lista de nomes</h3></div></div>
+ <div class="edb"><div class="f"><label for="mv_setor">Setor</label><select id="mv_setor">${monSetorOpts(ED.setor)}</select></div>
+ <div class="f"><label for="mv_nomes">Nomes (um por linha)</label><textarea id="mv_nomes" rows="14" maxlength="20000" placeholder="Um nome por linha"></textarea><span class="msg" data-h="Nomes repetidos ou que já existem no setor são ignorados. Números no começo da linha (1., 2.) são removidos.">Nomes repetidos ou que já existem no setor são ignorados. Números no começo da linha (1., 2.) são removidos.</span></div>
+ <div class="eda"><button class="btn pri" data-mvsalvar>Adicionar</button><button class="btn" data-edclose>Cancelar</button></div></div>`}
+async function monSalvarVarios(btn){const ed=ED,setor=$('mv_setor').value;
+ const ja=new Set(monAgentesDe(setor).map(a=>a.data.nome.trim().toLowerCase())),vistos=new Set();
+ const nomes=$('mv_nomes').value.split('\n').map(s=>s.replace(/^\s*\d+[.)\-–]?\s*/,'').replace(/\s+/g,' ').trim().slice(0,120)).filter(s=>{const k=s.toLowerCase();if(!s||ja.has(k)||vistos.has(k))return false;vistos.add(k);return true});
+ if(!nomes.length)return toast('Nenhum nome novo para adicionar.',true);
+ btn.setAttribute('aria-disabled','true');let n=0;
+ try{for(const nome of nomes){await DB.regSave({area:'monit_agente',data:{nome,setor,ativo:true}});n++;btn.textContent=`Adicionando… ${n} de ${nomes.length}`}
+  MON.setorAg=setor;if(ED===ed)closeEd();toast(`${n} ${n===1?'agente adicionado':'agentes adicionados'}`)}
+ catch(e){btn.removeAttribute('aria-disabled');btn.textContent='Adicionar';toast(`${n} adicionados antes do erro: ${e.message}`,true)}
+ await monCarregar()}
+document.addEventListener('click',e=>{
+ const tr=e.target.closest&&e.target.closest('tr[data-marow]');if(tr&&!e.target.closest('button')){openMonAg(tr.dataset.marow);return}
+ const t=e.target.closest&&e.target.closest('button');if(!t||t.getAttribute('aria-disabled')==='true')return;const d=t.dataset;
+ if(d.mcsetor){if(MON.setorCfg!==d.mcsetor){MON.setorCfg=d.mcsetor;monRedesenharCfg(`[data-mcsetor="${CSS.escape(d.mcsetor)}"]`)}}
+ else if('mcmodelo' in d){MON.rasc[MON.setorCfg]=monModelo(MON.setorCfg);monRedesenharCfg('[data-mcsalvar]')}
+ else if('mcnovo' in d){MON.rasc[MON.setorCfg]={_id:null,_v:null,total:100,modo:'erros',zerarManual:false,criterios:[]};monRedesenharCfg('[data-mcadd]')}
+ else if('mcadd' in d){const R=MON.rasc[MON.setorCfg]||(MON.rasc[MON.setorCfg]=monRascBase(MON.setorCfg));R.criterios.push({id:'c'+uid(),nome:'',descricao:'',peso:0,zera:false,ativo:true});monRedesenharCfg(`#mc_n${R.criterios.length-1}`)}
+ else if(d.mcrm!==undefined){const R=MON.rasc[MON.setorCfg]||(MON.rasc[MON.setorCfg]=monRascBase(MON.setorCfg));R.criterios.splice(+d.mcrm,1);monRedesenharCfg('[data-mcadd]')}
+ else if(d.mcmv){const R=MON.rasc[MON.setorCfg]||(MON.rasc[MON.setorCfg]=monRascBase(MON.setorCfg)),[i,dir]=d.mcmv.split('|').map(Number),j=i+dir;if(j<0||j>=R.criterios.length)return;[R.criterios[i],R.criterios[j]]=[R.criterios[j],R.criterios[i]];monRedesenharCfg(`[data-mcmv="${j}|${dir}"]`)}
+ else if('mcdescartar' in d){delete MON.rasc[MON.setorCfg];monRedesenharCfg()}
+ else if('mcsalvar' in d)monSalvarCrit();
+ else if('mcplanilha' in d)monSalvarLink(t);
+ else if(d.masetor){MON.setorAg=d.masetor;monRedesenharCfg(`[data-masetor="${CSS.escape(d.masetor)}"]`)}
+ else if('manovo' in d)openMonAg(null);
+ else if(d.maabrir)openMonAg(d.maabrir);
+ else if('mavarios' in d)openMonVarios();
+ else if('masalvar' in d)monSalvarAg(t);
+ else if('maexcluir' in d)monExcluirAg(t);
+ else if('mvsalvar' in d)monSalvarVarios(t);
+ else if('monrecarregar' in d){MON=monVazio(null);render.cfgShown=null;render()}});
+
 /* ---------- seletor de ano, mês e semana ---------- */
 function rWsel(){const w=Wk();$('wTxt').textContent=`${wkTxt(w)} ${w.inicio.slice(0,4)}`;const old=$('wBtn').querySelector('.lk');old&&old.remove();if(w.fechada){const s=document.createElement('span');s.className='lk';s.title='Semana fechada';$('wBtn').insertBefore(s,$('wBtn').querySelector('.ch'))}$('wNow').hidden=sel===curWeek();if(!$('wp').hidden)rWp()}
 function rWp(){const L=ids(),ys=[...new Set(L.map(x=>+x.slice(0,4)))],yi=ys.indexOf(pickY);const ms=new Set(L.filter(x=>+x.slice(0,4)===pickY).map(x=>x.slice(0,7)));
@@ -2195,7 +2430,7 @@ function rPalavra(w){const L=pessoasDaSemana(w);
  <div class="pwl">${L.map((x,i)=>`<button data-pwi="${i}" class="${i===pIdx?'on':''}"><span class="k">${i+1}</span>${esc(x.nome)}${x.palavra?'':' <span class="none" style="margin-left:auto;font-size:12px">sem palavra</span>'}</button>`).join('')}</div></div>`}
 
 /* ---------- configurações ---------- */
-const CFGT=[['usuarios','Usuários','users','Quem acessa o sistema e quem é administrador'],['setores','Setores','build','Equipes e setores do sistema'],['semanas','Semanas','cal','Criar, fechar, reabrir e excluir semanas'],['colaboradores','Colaboradores','person','Cadastro permanente para a Palavra da Semana'],['jornada','Jornada do Cliente','target','Etapas da jornada e caminhos fora da ordem'],['backup','Backup','save','Baixar ou restaurar uma cópia dos dados'],['exportacao','Exportar dados','save','Baixar em Excel os dados das áreas que você escolher']];
+const CFGT=[['usuarios','Usuários','users','Quem acessa o sistema e quem é administrador'],['setores','Setores','build','Equipes e setores do sistema'],['semanas','Semanas','cal','Criar, fechar, reabrir e excluir semanas'],['colaboradores','Colaboradores','person','Cadastro permanente para a Palavra da Semana'],['jornada','Jornada do Cliente','target','Etapas da jornada e caminhos fora da ordem'],['monitcrit','Critérios de monitoria','target','Pontos, critérios e regras de cada setor, e o link da planilha'],['monitag','Agentes monitorados','person','Quem é monitorado em cada setor'],['backup','Backup','save','Baixar ou restaurar uma cópia dos dados'],['exportacao','Exportar dados','save','Baixar em Excel os dados das áreas que você escolher']];
 function rConfig(){const el=$('p-config'),s=ST();
  if(!cfgView){el.innerHTML=`<header class="phead"><div><p class="kick">Área do administrador</p><h1>Configurações</h1><p class="sub">Escolha o que você quer alterar.</p></div></header><div class="tiles">${CFGT.map(([k,n,i,d])=>`<button class="tile" data-cfg="${k}"><span class="ti">${ICO[i]}</span><b>${n}</b><span>${d}</span></button>`).join('')}</div>`;return}
  const T=CFGT.find(t=>t[0]===cfgView)||CFGT[0];let h='',sub=T[3];
@@ -2215,6 +2450,8 @@ function rConfig(){const el=$('p-config'),s=ST();
  if(cfgView==='colaboradores'){const C=COLS_(),na=C.filter(c=>c.ativo!==false).length;sub=`Os colaboradores ativos aparecem automaticamente na Palavra da Semana de cada semana. ${na} ${na===1?'ativo':'ativos'}${C.length>na?` · ${C.length-na} ${C.length-na===1?'inativo':'inativos'}`:''}.`;
   h=`<div class="ucards">${C.slice().sort((a,b)=>((b.ativo!==false)-(a.ativo!==false))||String(a.nome).localeCompare(b.nome)).map(c=>`<button class="uc ${c.ativo===false?'off':''}" data-copen="${c.id}"><span class="av">${esc((c.nome||'?')[0])}</span><span><b>${esc(c.nome)}</b><small>${nPal(c.id)} ${nPal(c.id)===1?'palavra registrada':'palavras registradas'}</small></span><span class="chip ${c.ativo===false?'ln':'ok'}">${c.ativo===false?'Inativo':'Ativo'}</span></button>`).join('')}<button class="uc add" data-copen="">${ICO.plus} Adicionar colaborador</button></div>`}
  if(cfgView==='jornada')h=rCfgJornada();
+ if(cfgView==='monitcrit')h=rCfgMonCrit();
+ if(cfgView==='monitag')h=rCfgMonAg();
  if(cfgView==='backup')h=`<div class="panel cfgp"><h3>Baixar uma cópia</h3><p class="muted">Um arquivo com as configurações e todas as semanas. Os usuários e as senhas não entram no arquivo.</p><div><button class="btn pri" data-act="exportJson">${ICO.save}Baixar backup</button></div></div>
   <div class="panel cfgp sec"><h3>Restaurar</h3><p class="muted">As semanas e configurações do arquivo substituem as que existem com o mesmo período. Semanas que não estão no arquivo continuam como estão. Também aceita o backup do sistema anterior.</p><div><button class="btn" data-act="importJson">Escolher arquivo de backup</button><input type="file" id="impf" accept=".json,application/json" hidden></div></div>`;
  if(cfgView==='exportacao'){h=rCfgExport();sub='Escolha as áreas e o período de cada uma. Sai um arquivo Excel, com uma aba para cada parte.'}
@@ -2252,7 +2489,7 @@ async function saveColab(){const{id}=ED,nome=$('c_nome').value.trim().replace(/\
  const k=x=>norm(x).normalize('NFD').replace(/[\u0300-\u036f]/g,'');if(COLS_().some(c=>c.id!==id&&k(c.nome)===k(nome))){box.classList.add('bad');box.querySelector('.msg').textContent='Já existe um colaborador com esse nome.';return}
  await saveSettings(s=>{s.colaboradores=(s.colaboradores||[]).slice();if(id){const c=s.colaboradores.find(x=>x.id===id);if(c){c.nome=nome;c.ativo=ativo}}else s.colaboradores.push({id:'c'+uid(),nome,ativo,criado:Date.now()})},id?'Colaborador salvo':'Colaborador adicionado');closeEd()}
 function openUser(id){const u=id?S.users.find(x=>x.id===id):{nome:'',usuario:'',admin:false};if(!u)return;ED={kind:'user',id,u:clone(u)};rEd();showEd()}
-function rEd(){if(!ED)return;if(ED.kind==='agenda')return rEdAg();if(ED.kind==='jretapa')return rEdJrEtapa();if(ED.kind==='jrfluxo')return rEdJrFluxo();if(ED.kind==='diag')return rEdDiag();if(ED.kind==='proj')return rEdProj();if(ED.kind==='plan')return rEdPlan();if(ED.kind==='user')return rEdUser();if(ED.kind==='colab')return rEdColab();
+function rEd(){if(!ED)return;if(ED.kind==='agenda')return rEdAg();if(ED.kind==='jretapa')return rEdJrEtapa();if(ED.kind==='jrfluxo')return rEdJrFluxo();if(ED.kind==='diag')return rEdDiag();if(ED.kind==='proj')return rEdProj();if(ED.kind==='monag')return rEdMonAg();if(ED.kind==='monvarios')return rEdMonVarios();if(ED.kind==='plan')return rEdPlan();if(ED.kind==='user')return rEdUser();if(ED.kind==='colab')return rEdColab();
  const w=Wk(),{f}=ED,st=steps(f);if(ED.i>=st.length)ED.i=st.length-1;const i=ED.i,id=st[i],ro=!canEdit(w),isS=id==='sla';const r=isS?{}:((f==='q'?w.q:w.o)[id]||{});
  if(document.activeElement&&$('ed').contains(document.activeElement)&&ED.rendered===`${sel}|${f}|${i}`)return;ED.rendered=`${sel}|${f}|${i}`;
  const done=k=>k==='sla'?isN(w.sla):rowDone(f,(f==='q'?w.q:w.o)[k]||{});
@@ -2308,7 +2545,7 @@ async function saveUser(btn){const{id}=ED,q=k=>{const x=$('ed').querySelector(`[
   closeEd();if(id===meId&&!admin){page='inicio';cfgView=null;toast('Usuário salvo. Você não é mais administrador.')}else toast(id?'Usuário salvo':'Usuário adicionado');render()}
  catch(e){toast(e.message||errMsg(e),true);btn.textContent=id?'Salvar':'Adicionar';btn.removeAttribute('aria-disabled')}}
 $('ed').addEventListener('input',e=>{const b=e.target.closest('.f.bad');if(b){b.classList.remove('bad');const m=b.querySelector('.msg');m.textContent=m.dataset.h||''}});
-$('ed').addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.matches('input')&&!e.target.closest('.pjhadd')){e.preventDefault();const b=$('ed').querySelector('[data-edsave="1"],[data-usave],[data-plsave],[data-csave],[data-jrsalvar],[data-dgsalvar],[data-pjsalvar]');b&&b.click()}});
+$('ed').addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.matches('input')&&!e.target.closest('.pjhadd')){e.preventDefault();const b=$('ed').querySelector('[data-edsave="1"],[data-usave],[data-plsave],[data-csave],[data-jrsalvar],[data-dgsalvar],[data-pjsalvar],[data-masalvar]');b&&b.click()}});
 $('edScrim').onclick=closeEd;
 
 /* ---------- semanas: fechar, reabrir, excluir ---------- */
@@ -2741,6 +2978,7 @@ async function onData(d){
  if(!sel||!S.weeks[sel]){const p=prevOf(cur);sel=new Date().getDay()===1&&p?p.inicio:cur}
  if(page==='agenda')agCarregar(true);
  if(page==='an-jornada'||(page==='config'&&cfgView==='jornada'))jrCarregar();
+ if(page==='config'&&(cfgView==='monitcrit'||cfgView==='monitag'))monCarregar();
  if(page==='an-diag'||page==='an-jornada')dgCarregar();if(page==='an-diag')jrCarregar();
  if(page==='pm-proj'||page==='pm-fut'||page==='an-diag'||page==='an-perg'||page==='an-setor')pjCarregar();if(page==='pm-proj'||page==='pm-fut'||page==='an-perg'||page==='an-setor'){jrCarregar();dgCarregar()}
  render();
