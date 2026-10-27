@@ -22,7 +22,7 @@
 :root{
 --bg:#171717;--card:#1F1F1F;--card2:#292929;--bd:#2F2F2F;--bd2:#474747;
 --pri:#0FC589;--pri-h:#2DD69D;--on:#04150E;--tx:#EDEDED;--mu:#A3A3A3;--mu2:#8C8C8C;
---in:#1A2540;--inb:#2A3758;
+--in:#1F1F1F;--inb:#333333;--ln:rgba(255,255,255,.05);
 --ok:#3DDC6A;--wa:#F5B94F;--er:#F2665A;--ice:#E8F4EA;
 --f:'Geist',system-ui,-apple-system,'Segoe UI',sans-serif;
 --pad:28px;--gap:16px;--cp:18px;
@@ -131,7 +131,7 @@ svg.i{width:18px;height:18px;flex:none;stroke:currentColor;fill:none;stroke-widt
 .note{font-size:13px;color:var(--wa);background:rgba(245,185,79,.08);border:1px solid rgba(245,185,79,.3);border-radius:12px;padding:10px 12px}
 
 /* ===== topo ===== */
-.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:30;display:flex;align-items:center;gap:14px;padding:12px var(--pad);background:rgba(23,23,23,.94);backdrop-filter:blur(10px);border-bottom:1px solid var(--bd)}
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:30;display:flex;align-items:center;gap:14px;padding:12px var(--pad);background:rgba(23,23,23,.94);backdrop-filter:blur(10px);border-bottom:1px solid var(--ln)}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:31;background:rgba(23,23,23,.94)}
 .top .burger,.top .tema{width:40px;height:40px;border-radius:99px;border:1px solid var(--bd);background:transparent;display:grid;place-items:center}
 .top .tema{flex:none}
@@ -170,11 +170,13 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 #scrim{position:fixed;inset:0;background:rgba(5,9,8,.6);z-index:44;opacity:0;visibility:hidden;transition:.25s}
 #scrim.on{opacity:1;visibility:visible}
 /* trilho de ícones (áreas) + painel com as páginas da área; no computador ficam fixos, no celular abrem pelo botão do topo */
-#menu{position:fixed;left:0;top:0;bottom:0;max-width:92vw;display:flex;background:var(--bg);border-right:1px solid var(--bd);z-index:45;transform:translateX(-102%);visibility:hidden;transition:transform .3s cubic-bezier(.2,.8,.2,1),visibility .3s;padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px)}
+#menu{position:fixed;left:0;top:0;bottom:0;max-width:92vw;display:flex;background:var(--bg);border-right:1px solid var(--ln);z-index:45;transform:translateX(-102%);visibility:hidden;transition:transform .3s cubic-bezier(.2,.8,.2,1),visibility .3s;padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px)}
 #menu.on{transform:none;visibility:visible}
-.rail{width:64px;flex:none;display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 0;border-right:1px solid var(--bd)}
-.rlogo{width:40px;height:40px;display:grid;place-items:center;color:var(--pri);margin-bottom:12px}
-.rlogo svg{width:26px;height:36px;display:block;overflow:visible}
+.rail{width:64px;flex:none;display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 0}
+.rlogo{width:40px;height:40px;flex:none;display:grid;place-items:center;border-radius:12px;background:#0FC589;color:#171717;margin-bottom:12px}
+.rlogo svg{width:19px;height:27px;display:block;overflow:visible}
+.lg-head .rlogo{width:64px;height:64px;border-radius:18px;margin:0}
+.lg-head .rlogo svg{width:30px;height:42px}
 .rails{display:grid;gap:6px}
 .rails button{width:40px;height:40px;border:0;border-radius:10px;background:none;color:var(--mu);display:grid;place-items:center}
 .rails button:hover{background:var(--card);color:var(--tx)}
@@ -182,7 +184,7 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 .rails button[aria-current="true"]{color:var(--pri)}
 .avatar{margin-top:auto;width:36px;height:36px;flex:none;border-radius:50%;border:0;background:var(--pri);color:var(--on);font-size:13px;font-weight:600;display:grid;place-items:center}
 .avatar:hover,.avatar[aria-expanded="true"]{box-shadow:0 0 0 3px var(--card2)}
-.painel{width:min(250px,calc(92vw - 65px));flex:none;display:flex;flex-direction:column;gap:12px;padding:14px 12px;overflow-y:auto;min-height:0}
+.painel{width:min(250px,calc(92vw - 65px));flex:none;display:flex;flex-direction:column;gap:12px;padding:14px 12px;overflow-x:hidden;overflow-y:auto;min-height:0;border-left:1px solid var(--ln)}
 .ph{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:40px;padding:0 10px}
 .ph b{font-size:16px;font-weight:600}
 .pfoot{margin-top:auto;font-size:12px;color:var(--mu2);padding:0 10px}
@@ -203,9 +205,14 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 .ucb .v{margin-left:auto;display:inline-flex;align-items:center;gap:4px;font-size:12px;color:var(--mu)}
 #logout{border-top:1px solid var(--bd);border-radius:0 0 10px 10px;margin-top:6px}
 .top .pnl{display:none}
+.top .burger.pnl{border:0;border-radius:10px}
 @media (min-width:901px){
  #menu{transform:none;visibility:visible;transition:none;max-width:none}
- #app{padding-left:315px}#app.pfechado{padding-left:65px}#app.pfechado .painel{display:none}
+ #app{padding-left:315px;transition:padding-left .25s ease}
+ .painel>*{min-width:226px}
+ .top .pnl+.ttl{border-left:1px solid var(--ln);padding-left:14px}#app.pfechado{padding-left:65px}
+ .painel{transition:width .25s ease,padding .25s ease,border-width .25s ease,visibility 0s}
+ #app.pfechado .painel{width:0;padding-left:0;padding-right:0;border-left-width:0;visibility:hidden;transition:width .25s ease,padding .25s ease,border-width .25s ease,visibility 0s .25s}
  .top .burger:not(.pnl),#menuClose,#scrim{display:none}.top .pnl{display:grid}
 }
 /* categorias do menu (abrem e fecham) e áreas só de administrador */
@@ -714,7 +721,7 @@ button.jrlab:hover{background:var(--card2)}
 :root[data-theme="light"]{
 --bg:#F5F5F5;--card:#FFFFFF;--card2:#EFEFEF;--bd:#E0E0E0;--bd2:#C2C2C2;
 --pri:#08875D;--pri-h:#067049;--on:#FFFFFF;--tx:#171717;--mu:#5C5C5C;--mu2:#666666;
---in:#FFFFFF;--inb:#D0D0D0;
+--in:#FFFFFF;--inb:#D0D0D0;--ln:rgba(0,0,0,.06);
 --ok:#18773A;--wa:#A35F00;--er:#C3362A;--ice:#16201B;color-scheme:light}
 /* rótulos das chaves Ativo/Administrador: a regra .swl da apresentação usa texto quase branco */
 [data-theme="light"] label.swl>span{color:var(--tx)}
@@ -747,7 +754,7 @@ button.jrlab:hover{background:var(--card2)}
   <div class="lg-card">
     <div class="lg-form">
       <form id="loginForm" novalidate>
-        <div class="lg-head"><span data-brand></span><h1>Central de Qualidade e Operações</h1></div>
+        <div class="lg-head"><span class="rlogo" role="img" aria-label="iGreen"><svg viewBox="0 0 372 516" aria-hidden="true"><use href="#ig"/></svg></span><h1>Central de Qualidade e Operações</h1></div>
         <div class="f"><label for="lu">Usuário</label><input id="lu" autocomplete="username"></div>
         <div class="f"><label for="lp">Senha</label><div class="pwd"><input id="lp" type="password" autocomplete="current-password"><button type="button" class="eye" id="eye" aria-label="Mostrar senha" aria-pressed="false"><svg class="i" viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button></div></div>
         <label class="keep"><input type="checkbox" id="keep" checked>Manter conectado</label>
