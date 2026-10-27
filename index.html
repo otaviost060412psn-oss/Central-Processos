@@ -528,6 +528,26 @@ button.plc.miss:hover{background:var(--card2)}
 
 /* configurações: listas e formulários */
 .cfgp{display:grid;gap:16px}
+/* perguntas-chave: cada pergunta abre e fecha a lista de itens que a respondem */
+.pqs{display:grid;gap:10px}
+.pq{padding:0}
+.pqh{width:100%;display:flex;align-items:center;gap:14px;background:none;border:0;padding:16px 18px;text-align:left;color:var(--tx);border-radius:inherit}
+.pqh:hover{background:var(--card2)}
+.pqn{flex:none;font-size:13px;font-weight:600;color:var(--mu);font-variant-numeric:tabular-nums}
+.pqtx{flex:1;min-width:0;display:grid;gap:2px}
+.pqtx b{font-size:15px;font-weight:600}
+.pqtx .muted{font-size:13px}
+.pqc{flex:none;min-width:28px;height:28px;padding:0 8px;border-radius:99px;display:grid;place-items:center;font-size:13px;font-weight:600;background:var(--card2)}
+.pqc.z{color:var(--mu2)}
+.pqh .chev{flex:none;color:var(--mu);transition:transform .2s}
+.pq.on .pqh .chev{transform:rotate(180deg)}
+.pqb{display:grid;gap:6px;padding:0 18px 16px 52px}
+.pqi{display:grid;grid-template-columns:1fr auto;gap:4px 10px;align-items:center;text-align:left;background:var(--bg);border:1px solid var(--bd);border-radius:10px;padding:9px 12px;color:var(--tx);font-size:14px}
+button.pqi{cursor:pointer}
+button.pqi:hover{border-color:var(--bd2);background:var(--card2)}
+.pqi .pqt{font-weight:500;min-width:0;overflow-wrap:anywhere}
+.pqi small{grid-column:1/-1;color:var(--mu);font-size:13px;overflow-wrap:anywhere}
+@media (max-width:600px){.pqb{padding-left:18px}.pqi{grid-template-columns:1fr}}
 /* projetos: quadro por status, cartões, planejamento futuro e painel */
 .chip.in{background:rgba(79,157,255,.14);color:#6AAEFF}
 [data-theme="light"] .chip.in{background:rgba(31,99,196,.1);color:#1F63C4}
@@ -824,7 +844,7 @@ button.jrlab:hover{background:var(--card2)}
         <div class="grp so-adm" data-grp="inicio"><button data-p="inicio"><svg class="i" viewBox="0 0 24 24"><path d="M4 11l8-7 8 7v9a1 1 0 0 1-1 1h-5v-6h-4v6H5a1 1 0 0 1-1-1z"/></svg>Visão Geral</button></div>
         <div class="grp" data-grp="cal"><button data-p="qualidade"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg>Qualidade<span class="st" id="stq"></span></button><button data-p="operacoes"><svg class="i" viewBox="0 0 24 24"><path d="M4 21V7l8-4 8 4v14M9 21v-6h6v6"/></svg>Operações<span class="st" id="sto"></span></button><button data-p="palavra"><svg class="i" viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/></svg>Palavra da Semana</button></div>
         <div class="grp" data-grp="agenda"><button data-p="agenda"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Agenda e Demandas</button></div>
-        <div class="grp so-adm" data-grp="an"><button data-p="an-jornada"><svg class="i" viewBox="0 0 24 24"><circle cx="5" cy="18" r="2"/><circle cx="19" cy="6" r="2"/><path d="M7 18h7a3 3 0 0 0 0-6h-4a3 3 0 0 1 0-6h7"/></svg>Jornada do Cliente</button><button data-p="an-diag"><svg class="i" viewBox="0 0 24 24"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg>Diagnósticos</button><button data-p="an-perg"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.7M12 17h.01"/></svg>Perguntas-chave<span class="eb">Em breve</span></button><button data-p="an-setor"><svg class="i" viewBox="0 0 24 24"><circle cx="9" cy="8" r="4"/><path d="M2 21a7 7 0 0 1 14 0M16 4a4 4 0 0 1 0 8M22 21a7 7 0 0 0-5-6.7"/></svg>Por setor<span class="eb">Em breve</span></button></div>
+        <div class="grp so-adm" data-grp="an"><button data-p="an-jornada"><svg class="i" viewBox="0 0 24 24"><circle cx="5" cy="18" r="2"/><circle cx="19" cy="6" r="2"/><path d="M7 18h7a3 3 0 0 0 0-6h-4a3 3 0 0 1 0-6h7"/></svg>Jornada do Cliente</button><button data-p="an-diag"><svg class="i" viewBox="0 0 24 24"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg>Diagnósticos</button><button data-p="an-perg"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.7M12 17h.01"/></svg>Perguntas-chave</button><button data-p="an-setor"><svg class="i" viewBox="0 0 24 24"><circle cx="9" cy="8" r="4"/><path d="M2 21a7 7 0 0 1 14 0M16 4a4 4 0 0 1 0 8M22 21a7 7 0 0 0-5-6.7"/></svg>Por setor<span class="eb">Em breve</span></button></div>
         <div class="grp so-adm" data-grp="pm"><button data-p="pm-proj"><svg class="i" viewBox="0 0 24 24"><path d="M3 6a1 1 0 0 1 1-1h5l2 2h9a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/></svg>Projetos e Iniciativas</button><button data-p="pm-fut"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Planejamento Futuro</button></div>
       </div>
       <small class="pfoot">Central de Qualidade e Operações</small>
@@ -845,6 +865,7 @@ button.jrlab:hover{background:var(--card2)}
     <section class="page" id="p-agenda"></section>
     <section class="page" id="p-an-jornada"></section>
     <section class="page" id="p-an-diag"></section>
+    <section class="page" id="p-an-perg"></section>
     <section class="page" id="p-pm-proj"></section>
     <section class="page" id="p-pm-fut"></section>
     <section class="page" id="p-embreve"></section>
@@ -1089,10 +1110,10 @@ function render(){
  document.querySelectorAll('#nav button[data-p]').forEach(b=>{const on=b.dataset.p===page;b.classList.toggle('on',on);on?b.setAttribute('aria-current','page'):b.removeAttribute('aria-current')});
  rMenu();
  document.querySelectorAll('.top [data-present]').forEach(b=>b.hidden=!presModoDaPagina());
- $('pageTitle').textContent=({inicio:'Visão Geral',qualidade:'Qualidade',operacoes:'Operações',palavra:'Palavra da Semana',agenda:'Agenda e Demandas','an-jornada':'Jornada do Cliente','an-diag':'Diagnósticos','pm-proj':'Projetos e Iniciativas','pm-fut':'Planejamento Futuro',config:'Configurações'})[page]||(EMB[page]||[])[0]||'';
+ $('pageTitle').textContent=({inicio:'Visão Geral',qualidade:'Qualidade',operacoes:'Operações',palavra:'Palavra da Semana',agenda:'Agenda e Demandas','an-jornada':'Jornada do Cliente','an-diag':'Diagnósticos','an-perg':'Perguntas-chave','pm-proj':'Projetos e Iniciativas','pm-fut':'Planejamento Futuro',config:'Configurações'})[page]||(EMB[page]||[])[0]||'';
  document.querySelectorAll('.page').forEach(p=>p.classList.toggle('on',p.id==='p-'+(EMB[page]?'embreve':page)));
- document.querySelector('.wsel').hidden=page==='agenda'||page==='an-jornada'||page==='an-diag'||page==='pm-proj'||page==='pm-fut'||!!EMB[page];
- if(EMB[page])rEmBreve();else if(page==='an-jornada')rJornada();else if(page==='an-diag')rDiag();else if(page==='pm-proj')rProj();else if(page==='pm-fut')rFut();else if(page==='inicio')rInicio(w);else if(page==='palavra')rPalavra(w);else if(page==='agenda')rAgenda();else if(page==='config'){if(!(['setores','jornada','exportacao'].includes(cfgView)&&render.cfgShown===cfgView&&!render.force))rConfig();render.cfgShown=cfgView}else rFrente(w,page==='qualidade'?'q':'o');
+ document.querySelector('.wsel').hidden=page==='agenda'||page==='an-jornada'||page==='an-diag'||page==='an-perg'||page==='pm-proj'||page==='pm-fut'||!!EMB[page];
+ if(EMB[page])rEmBreve();else if(page==='an-jornada')rJornada();else if(page==='an-diag')rDiag();else if(page==='an-perg')rPerg();else if(page==='pm-proj')rProj();else if(page==='pm-fut')rFut();else if(page==='inicio')rInicio(w);else if(page==='palavra')rPalavra(w);else if(page==='agenda')rAgenda();else if(page==='config'){if(!(['setores','jornada','exportacao'].includes(cfgView)&&render.cfgShown===cfgView&&!render.force))rConfig();render.cfgShown=cfgView}else rFrente(w,page==='qualidade'?'q':'o');
  if(ED)rEd();
 }
 
@@ -1100,7 +1121,6 @@ function render(){
 const PAG_COLAB=['qualidade','operacoes','palavra','agenda'];
 /* áreas ainda não construídas: [título, categoria, o que a área vai fazer] */
 const EMB={
- 'an-perg':['Perguntas-chave','Análises','Respostas calculadas a partir dos dados reais, como onde estão os pontos de ruptura e quais problemas ainda não têm plano de ação.'],
  'an-setor':['Análises por setor','Análises','Evolução de Qualidade e Operações por setor, comparação entre setores e problemas recorrentes, com filtro de período.'],};
 function rEmBreve(){const[t,c,d]=EMB[page];
  $('p-embreve').innerHTML=`<header class="phead"><div><p class="kick">${c}</p><h1>${t}</h1><p class="sub">${d}</p></div></header><div class="panel embreve"><span class="chip ln">Em breve</span><p class="muted">Esta área ainda está em construção. Nenhum dado é exibido aqui até ela ficar pronta.</p></div>`}
@@ -1316,7 +1336,7 @@ async function delAg(id,cancelar){const x=agAchar(id);if(!x)return;
 document.addEventListener('click',e=>{
  const t=e.target.closest('button');if(!t)return;
  /* ao sair, a agenda da conta anterior é apagada da memória e da tela */
- if(t.id==='logout'){AG=agVazio(null);$('p-agenda').innerHTML='';JR=jrVazio(null);$('p-an-jornada').innerHTML='';DG=dgVazio(null);$('p-an-diag').innerHTML='';PJ=pjVazio(null);$('p-pm-proj').innerHTML='';$('p-pm-fut').innerHTML='';return}
+ if(t.id==='logout'){AG=agVazio(null);$('p-agenda').innerHTML='';JR=jrVazio(null);$('p-an-jornada').innerHTML='';DG=dgVazio(null);$('p-an-diag').innerHTML='';PJ=pjVazio(null);$('p-pm-proj').innerHTML='';$('p-pm-fut').innerHTML='';PQ.html=null;PQ.abertas.clear();$('p-an-perg').innerHTML='';return}
  if(t.getAttribute('aria-disabled')==='true')return;const d=t.dataset;let foco=null;
  if(d.agaba){AG.aba=d.agaba;foco=`[data-agaba="${d.agaba}"]`}
  else if('agenc' in d){AG.encerradas=!AG.encerradas;foco='[data-agenc]'}
@@ -1373,7 +1393,7 @@ const jrSugestoes=()=>{const m=new Map(),add=s=>{const k=s.trim().toLowerCase();
 const jrFluxos=()=>JR.fluxos.filter(f=>jrEtapa(f.data.de)&&jrEtapa(f.data.para));
 const jrLigados=id=>jrFluxos().filter(f=>f.data.de===id||f.data.para===id);
 /* a aba de Configurações só é refeita quando os dados da jornada mudam (como a de Setores), para não tirar o foco a cada atualização */
-const jrRedesenhar=()=>{if(page==='an-diag'||page==='pm-proj'||page==='pm-fut')return render();if(page==='an-jornada'||(page==='config'&&cfgView==='jornada')){
+const jrRedesenhar=()=>{if(page==='an-diag'||page==='an-perg'||page==='pm-proj'||page==='pm-fut')return render();if(page==='an-jornada'||(page==='config'&&cfgView==='jornada')){
  /* mantém a rolagem lateral da linha do tempo de Configurações ao redesenhar */
  const t=document.querySelector('#p-config .jrtrilho'),x=t?t.scrollLeft:0;render.cfgShown=null;render();const n=document.querySelector('#p-config .jrtrilho');if(n)n.scrollLeft=x}};
 /* uma leitura por vez; se outra for pedida no meio, roda de novo no fim. Resposta de outra conta é descartada */
@@ -1570,7 +1590,7 @@ const dgAtivo=x=>x.data.situacao==='ativo'||x.data.situacao==='investigacao';
 const dgChip=(M,k)=>{const v=dgM(M,k);return v?`<span class="chip ${v[1]}">${esc(v[0])}</span>`:''};
 /* nomes das etapas só depois de a Jornada carregar (antes disso, não dá para saber se foi excluída) */
 const dgEtapas=x=>JR.etapas?[...new Set(x.data.etapas.map(jrNome))].join(', '):x.data.etapas.length?(JR.erro?'Não carregadas':'…'):'';
-const dgRedesenhar=()=>{if(page==='an-diag'||page==='an-jornada'||page==='pm-proj'||page==='pm-fut')render()};
+const dgRedesenhar=()=>{if(page==='an-diag'||page==='an-jornada'||page==='an-perg'||page==='pm-proj'||page==='pm-fut')render()};
 async function dgCarregar(){
  if(!isAdmin())return;
  if(DG.dono!==meId)DG=dgVazio(meId);
@@ -1719,7 +1739,7 @@ const pjPeso=x=>(dgM(DG_GRAV,x.data.prioridade)||[0,0,0])[2];
 const pjHist=id=>(PJ.hist||[]).filter(h=>h.data.projeto===id).sort((a,b)=>b.data.dia.localeCompare(a.data.dia)||b.criado-a.criado);
 const pjProbNome=id=>{const x=(DG.itens||[]).find(y=>y.id===id);return x?x.data.titulo:DG.itens?'Problema excluído':'…'};
 const pjDoProblema=id=>(PJ.itens||[]).filter(x=>x.data.status!=='cancelado'&&x.data.problemas.includes(id));
-const pjRedesenhar=()=>{if(page==='pm-proj'||page==='pm-fut'||page==='an-diag')render();
+const pjRedesenhar=()=>{if(page==='pm-proj'||page==='pm-fut'||page==='an-diag'||page==='an-perg')render();
  /* o painel aberto não é redesenhado (perderia o que está sendo digitado): só a lista do histórico */
  if(ED&&ED.kind==='proj'&&ED.id&&$('pj_hist'))$('pj_hist').innerHTML=pjHistHtml(ED.id)};
 async function pjCarregar(){
@@ -1929,6 +1949,85 @@ document.addEventListener('click',e=>{
 });
 /* projetos ligados a um problema, nos detalhes dos Diagnósticos */
 const dgProjetos=x=>{const L=pjDoProblema(x.id);return `<div><div class="lab">Projetos ligados</div>${L.length?`<div class="pjlig">${L.map(p=>`<button class="dglink" data-pjabrir="${esc(p.id)}"><span>${esc(p.data.nome)}</span></button>${dgChip(PJ_ST,p.data.status)}`).join('')}</div>`:`<p>${PJ.itens?'<span class="none">Nenhum projeto ligado</span>':'…'}</p>`}</div>`};
+
+/* ---------- perguntas-chave ----------
+   respostas calculadas na hora a partir da Jornada, dos Diagnósticos, dos Projetos e da Calibragem; nada é gravado.
+   Cada pergunta devolve um resumo curto e a lista de itens que a respondem (clicar abre o problema, o projeto, a etapa ou a página) */
+const PQ={abertas:new Set(),html:null};
+const pqPronto=()=>JR.dono===meId&&DG.dono===meId&&PJ.dono===meId&&JR.etapas&&DG.itens&&PJ.itens;
+const pqErro=()=>(JR.dono===meId&&JR.erro)||(DG.dono===meId&&DG.erro)||(PJ.dono===meId&&PJ.erro);
+const pqGravP=x=>(dgM(DG_GRAV,x.data.gravidade)||[0,0,0])[2];
+/* itens: problema (abre nos Diagnósticos), projeto (abre o painel), etapa (abre na Jornada), página (navega) */
+const pqProb=(x,extra)=>`<button class="pqi" data-jrdiag="${esc(x.id)}"><span class="pqt">${esc(x.data.titulo)}</span><span class="agch">${dgChip(DG_GRAV,x.data.gravidade)}${dgChip(DG_SIT,x.data.situacao)}</span>${extra?`<small>${extra}</small>`:''}</button>`;
+const pqProj=(x,extra)=>`<button class="pqi" data-pjabrir="${esc(x.id)}"><span class="pqt">${esc(x.data.nome)}</span><span class="agch">${dgChip(PJ_ST,x.data.status)}${dgChip(DG_GRAV,x.data.prioridade)}</span>${extra?`<small>${extra}</small>`:''}</button>`;
+const pqTexto=(t,extra,attr)=>`<${attr?'button':'div'} class="pqi"${attr||''}><span class="pqt">${t}</span>${extra?`<small>${extra}</small>`:''}</${attr?'button':'div'}>`;
+const pqN=(n,um,varios)=>`${n} ${n===1?um:varios}`;
+function pqPerguntas(){
+ const hoje=today(),A=DG.itens.filter(dgAtivo).sort((a,b)=>pqGravP(b)-pqGravP(a)),P=PJ.itens,E=JR.etapas;
+ const semPlano=A.filter(x=>!pjDoProblema(x.id).length),aberto=x=>pjAberto(x);
+ const Q=[];
+ /* 1. pontos de ruptura: etapas com mais peso de problemas ativos (crítica 4 · alta 3 · média 2 · baixa 1) */
+ const etapas=E.map((e,i)=>{const L=A.filter(x=>x.data.etapas.includes(e.id));return {e,i,L,peso:L.reduce((t,x)=>t+pqGravP(x),0)}}).filter(r=>r.L.length).sort((a,b)=>b.peso-a.peso||b.L.length-a.L.length);
+ Q.push({t:'Onde estão os pontos de ruptura da jornada?',r:!E.length?'A jornada não tem etapas cadastradas.':etapas.length?`${esc(etapas[0].e.data.nome)} concentra os problemas mais graves.`:'Nenhuma etapa com problema ativo.',n:etapas.length,
+  itens:etapas.map(r=>pqTexto(`Etapa ${r.i+1} · ${esc(r.e.data.nome)}`,`${pqN(r.L.length,'problema ativo','problemas ativos')} · mais grave: ${esc(DG_GRAV[jrGrav(r.L[0])][0])} · peso ${r.peso}`,` data-pqetapa="${esc(r.e.id)}"`))});
+ /* 2. problemas ativos sem nenhum projeto ligado */
+ Q.push({t:'Quais problemas ainda não têm plano de ação?',r:A.length?(semPlano.length?`${pqN(semPlano.length,'problema ativo sem projeto','problemas ativos sem projeto')}${semPlano.filter(x=>x.data.gravidade==='critica').length?`, ${semPlano.filter(x=>x.data.gravidade==='critica').length} crítico(s)`:''}.`:'Todos os problemas ativos têm projeto ligado.'):'Não há problemas ativos.',n:semPlano.length,itens:semPlano.map(x=>pqProb(x))});
+ /* 3. repetição entre setores: problema com 2+ setores, ou o mesmo tema em setores diferentes */
+ const multi=A.filter(x=>x.data.setores.length>=2),temas=new Map();
+ A.filter(x=>x.data.tema).forEach(x=>{const k=x.data.tema.toLowerCase();if(!temas.has(k))temas.set(k,{t:x.data.tema,L:[],S:new Map()});const g=temas.get(k);g.L.push(x);x.data.setores.forEach(s=>g.S.set(s.toLowerCase(),s))});
+ const temasRep=[...temas.values()].filter(g=>g.S.size>=2&&g.L.length>=2);
+ Q.push({t:'Quais problemas se repetem em vários setores?',r:multi.length||temasRep.length?`${pqN(multi.length,'problema envolve','problemas envolvem')} 2 ou mais setores${temasRep.length?`; ${pqN(temasRep.length,'tema aparece','temas aparecem')} em setores diferentes`:''}.`:'Nenhuma repetição com os dados atuais.',n:multi.length+temasRep.length,
+  itens:[...temasRep.map(g=>pqTexto(`Tema: ${esc(g.t)}`,`${pqN(g.L.length,'problema','problemas')} em ${esc([...g.S.values()].join(', '))}`)),...multi.map(x=>pqProb(x,`Setores: ${esc(x.data.setores.join(', '))}`))]});
+ /* 4. atrasados */
+ const atr=P.filter(pjAtrasado).sort((a,b)=>a.data.prazo.localeCompare(b.data.prazo));
+ Q.push({t:'Quais projetos estão atrasados?',r:P.length?(atr.length?`${pqN(atr.length,'projeto em aberto','projetos em aberto')} com o prazo vencido.`:'Nenhum projeto atrasado.'):'Não há projetos cadastrados.',n:atr.length,
+  itens:atr.map(x=>pqProj(x,`Prazo ${esc(dfmt(x.data.prazo))} · ${Math.round((Date.parse(hoje)-Date.parse(x.data.prazo))/864e5)} dias de atraso`))});
+ /* 5. parados e o motivo */
+ const par=P.filter(x=>x.data.status==='standby'||x.data.status==='aguardando').sort((a,b)=>pjPeso(b)-pjPeso(a));
+ Q.push({t:'Quais projetos estão parados e por quê?',r:par.length?`${pqN(par.length,'projeto em stand-by ou aguardando','projetos em stand-by ou aguardando')}${par.filter(x=>!(x.data.impedimentos||x.data.dependeDe||x.data.motivoAguardar)).length?`; ${par.filter(x=>!(x.data.impedimentos||x.data.dependeDe||x.data.motivoAguardar)).length} sem motivo registrado`:''}.`:'Nenhum projeto parado.',n:par.length,
+  itens:par.map(x=>pqProj(x,esc(x.data.impedimentos||(x.data.dependeDe?'Depende de: '+x.data.dependeDe:'')||x.data.motivoAguardar)||'<span class="pjfalta">Motivo não registrado</span>'))});
+ /* 6. dependências */
+ const dep=P.filter(x=>aberto(x)&&x.data.dependeDe).sort((a,b)=>pjPeso(b)-pjPeso(a));
+ Q.push({t:'Quais melhorias dependem de outros setores ou pessoas?',r:dep.length?`${pqN(dep.length,'projeto em aberto depende','projetos em aberto dependem')} de alguém de fora.`:'Nenhuma dependência registrada nos projetos em aberto.',n:dep.length,itens:dep.map(x=>pqProj(x,`Depende de: ${esc(x.data.dependeDe)}`))});
+ /* 7. resultado: comprovados e concluídos sem comprovação */
+ const conc=P.filter(x=>x.data.status==='concluido'),ok=conc.filter(x=>x.data.validacao==='comprovada'||x.data.validacao==='parcial'),semComp=conc.filter(x=>x.data.validacao==='nao_avaliado'||x.data.validacao==='aguardando');
+ Q.push({t:'Quais iniciativas estão gerando resultado?',r:conc.length?`${pqN(ok.length,'projeto concluído com melhoria comprovada','projetos concluídos com melhoria comprovada')} ou parcial${semComp.length?`; ${pqN(semComp.length,'ainda sem comprovação','ainda sem comprovação')}`:''}.`:'Nenhum projeto concluído ainda.',n:ok.length+semComp.length,
+  itens:[...ok.map(x=>pqProj(x,`${esc(PJ_VAL[x.data.validacao])}${x.data.resultado?' · '+esc(x.data.resultado):''}`)),...semComp.map(x=>pqProj(x,`<span class="pjfalta">${esc(PJ_VAL[x.data.validacao])}</span> · registre a medição para comprovar`))]});
+ /* 8. adiados para reavaliar */
+ const fut=P.filter(x=>PJ_FUT.includes(x.data.status)),venc=fut.filter(x=>x.data.reavaliar&&x.data.reavaliar<=hoje).sort((a,b)=>a.data.reavaliar.localeCompare(b.data.reavaliar)),semData=fut.filter(x=>!x.data.reavaliar&&(x.data.status==='ideia'||x.data.status==='standby'));
+ Q.push({t:'O que foi adiado e precisa ser reavaliado?',r:fut.length?`${pqN(venc.length,'iniciativa com a reavaliação vencida','iniciativas com a reavaliação vencida')}${semData.length?`; ${semData.length} sem data para reavaliar`:''}.`:'Nada no planejamento futuro.',n:venc.length+semData.length,
+  itens:[...venc.map(x=>pqProj(x,`Reavaliar em ${esc(dfmt(x.data.reavaliar))}${x.data.condicao?' · '+esc(x.data.condicao):''}`)),...semData.map(x=>pqProj(x,'Sem data para reavaliar'))]});
+ /* 9. calibragem: últimas 4 semanas já passadas */
+ /* só semanas que já terminaram (shortRange devolve a semana atual quando ainda não há anteriores) */
+ const r4=shortRange('ult4'),seg=mondayOf(new Date()),L=r4?periodWeeks(r4[0],r4[1]).filter(w=>w.inicio<seg):[],cal=[];
+ if(L.length){const Qa=aggQ(L),Oa=calcO(L.at(-1)),per=`${dshort(L[0].inicio)} a ${dfmt(L.at(-1).fim)}`;
+  Qa.rows.filter(r=>r.monitorias===0).forEach(r=>cal.push(pqTexto(`Qualidade · ${esc(r.nome)}`,`Sem monitoria de ${per}`,' data-p="qualidade"')));
+  Qa.rows.filter(r=>isN(r.zeradas)&&r.zeradas>0).sort((a,b)=>b.zeradas-a.zeradas).forEach(r=>cal.push(pqTexto(`Qualidade · ${esc(r.nome)}`,`${pqN(r.zeradas,'monitoria zerada','monitorias zeradas')} de ${per}`,' data-p="qualidade"')));
+  Oa.rows.filter(r=>isN(r.backlog)&&isN(r.tratados)&&r.backlog>r.tratados).forEach(r=>cal.push(pqTexto(`Operações · ${esc(r.nome)}`,`Backlog (${nf(r.backlog)}) maior que o tratado (${nf(r.tratados)}) na semana de ${esc(periodo(L.at(-1)))}`,' data-p="operacoes"')))}
+ Q.push({t:'Quais equipes precisam de atenção na Calibragem?',r:!L.length?'Ainda não há semanas anteriores para analisar.':cal.length?`${pqN(cal.length,'ponto de atenção','pontos de atenção')} nas últimas ${L.length} semanas.`:'Nenhuma equipe sem monitoria, com zeradas ou com backlog acima do tratado.',n:cal.length,itens:cal});
+ /* 10. prioridades: junta o mais urgente das respostas acima */
+ const pr=[],prM=new Map(),prAdd=(id,s,hh)=>{const a=prM.get(id);if(!a||s>a.s)prM.set(id,{s,h:hh})};
+ semPlano.filter(x=>x.data.gravidade==='critica'||x.data.gravidade==='alta').forEach(x=>prAdd('d'+x.id,100+pqGravP(x)*10,pqProb(x,`${esc(DG_GRAV[x.data.gravidade][0])} sem plano de ação`)));
+ atr.filter(x=>x.data.prioridade==='critica'||x.data.prioridade==='alta').forEach(x=>prAdd(x.id,80+pjPeso(x)*5,pqProj(x,`Atrasado desde ${esc(dfmt(x.data.prazo))}`)));
+ par.filter(x=>x.data.prioridade==='critica'||x.data.prioridade==='alta').forEach(x=>prAdd(x.id,60+pjPeso(x)*5,pqProj(x,`${esc(PJ_ST[x.data.status][0])} com prioridade ${esc(DG_GRAV[x.data.prioridade][0].toLowerCase())}`)));
+ venc.forEach(x=>prAdd(x.id,50,pqProj(x,`Reavaliação vencida em ${esc(dfmt(x.data.reavaliar))}`)));
+ semComp.forEach(x=>prAdd(x.id,30,pqProj(x,'Concluído sem comprovação do resultado')));
+ pr.push(...prM.values());
+ const top=pr.sort((a,b)=>b.s-a.s).slice(0,10);
+ Q.push({t:'O que priorizar agora?',r:top.length?`${pqN(top.length,'item mais urgente','itens mais urgentes')}${pr.length>top.length?` (de ${pr.length} no total)`:''}, do mais importante para o menos.`:'Nada crítico no momento.',n:pr.length,itens:top.map(x=>x.h)});
+ return Q}
+function rPerg(){pjCarregarTudo();
+ let h;
+ if(!pqPronto())h=pqErro()?`<div class="panel cfgp"><p class="muted">Não foi possível carregar os dados das análises.</p><div><button class="btn sm" data-pqrecarregar>Tentar de novo</button></div></div>`:'<div class="panel"><p class="muted" role="status">Carregando…</p></div>';
+ else h=`${JR.limitado||DG.limitado||PJ.limitado?'<div class="banner"><span class="dot wa"></span><div>Há muitos registros: parte deles não está sendo considerada nas respostas.</div></div>':''}<div class="pqs">${pqPerguntas().map((q,i)=>{const ab=PQ.abertas.has(i);return `<section class="panel pq${ab?' on':''}"><button class="pqh" data-pqtog="${i}" aria-expanded="${ab}"${ab?` aria-controls="pq_${i}"`:''}><span class="pqn">${String(i+1).padStart(2,'0')}</span><span class="pqtx"><b>${esc(q.t)}</b><span class="muted">${q.r}</span></span><span class="pqc${q.n?'':' z'}">${q.n}</span>${ICO.chev}</button>
+  ${ab?`<div class="pqb" id="pq_${i}">${q.itens.length?q.itens.join(''):'<p class="muted">Nada a listar.</p>'}</div>`:''}</section>`}).join('')}</div>`;
+ const html=`<header class="phead"><div><p class="kick">Análises</p><h1>Perguntas-chave</h1><p class="sub">Respostas calculadas a partir dos dados reais da Jornada, dos Diagnósticos, dos Projetos e da Calibragem. Clique numa pergunta para ver os itens.</p></div></header>${h}`;
+ if(html===PQ.html)return;PQ.html=html;$('p-an-perg').innerHTML=html}
+document.addEventListener('click',e=>{const t=e.target.closest&&e.target.closest('button');if(!t||t.getAttribute('aria-disabled')==='true')return;const d=t.dataset;
+ if(d.pqtog!==undefined){const i=+d.pqtog;PQ.abertas.has(i)?PQ.abertas.delete(i):PQ.abertas.add(i);rPerg();const b=document.querySelector(`[data-pqtog="${i}"]`);b&&b.focus()}
+ /* etapa: abre a Jornada com ela selecionada */
+ else if(d.pqetapa){JR.sel=d.pqetapa;page='an-jornada';closeMenu();closeEd();render();scrollTo({top:0})}
+ else if('pqrecarregar' in d){if(JR.erro)JR=jrVazio(null);if(DG.erro)DG=dgVazio(null);if(PJ.erro)PJ=pjVazio(null);render()}});
 
 /* ---------- seletor de ano, mês e semana ---------- */
 function rWsel(){const w=Wk();$('wTxt').textContent=`${wkTxt(w)} ${w.inicio.slice(0,4)}`;const old=$('wBtn').querySelector('.lk');old&&old.remove();if(w.fechada){const s=document.createElement('span');s.className='lk';s.title='Semana fechada';$('wBtn').insertBefore(s,$('wBtn').querySelector('.ch'))}$('wNow').hidden=sel===curWeek();if(!$('wp').hidden)rWp()}
@@ -2513,7 +2612,7 @@ async function onData(d){
  if(page==='agenda')agCarregar(true);
  if(page==='an-jornada'||(page==='config'&&cfgView==='jornada'))jrCarregar();
  if(page==='an-diag'||page==='an-jornada')dgCarregar();if(page==='an-diag')jrCarregar();
- if(page==='pm-proj'||page==='pm-fut'||page==='an-diag')pjCarregar();if(page==='pm-proj'||page==='pm-fut'){jrCarregar();dgCarregar()}
+ if(page==='pm-proj'||page==='pm-fut'||page==='an-diag'||page==='an-perg')pjCarregar();if(page==='pm-proj'||page==='pm-fut'||page==='an-perg'){jrCarregar();dgCarregar()}
  render();
 }
 async function boot(){
