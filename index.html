@@ -531,6 +531,48 @@ button.plc.miss:hover{background:var(--card2)}
 /* perguntas-chave: cada pergunta abre e fecha a lista de itens que a respondem */
 .pqs{display:grid;gap:10px}
 /* configurações das monitorias */
+/* tela de monitorias */
+a.btn{text-decoration:none;color:var(--tx)}
+.momes{display:flex;align-items:center;gap:6px;margin-bottom:14px}
+.momes b{font-size:15px;min-width:150px;text-align:center}
+.mogrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:var(--gap)}
+.mocard{display:grid;justify-items:center;gap:6px;text-align:center;padding:20px 14px;color:var(--tx);cursor:pointer;width:100%}
+.mocard:hover{border-color:var(--bd2);background:var(--card2)}
+.mosetor{justify-items:start;text-align:left;padding:20px}
+.mosetor b{font-size:17px}
+.mocard b{font-weight:600}
+.mopct{font:700 26px/1.1 var(--f);font-variant-numeric:tabular-nums}
+.moav{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;color:#fff;font-weight:600;font-size:15px}
+.moag{display:grid;gap:8px}
+.moacoes{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.moacoes .btn{width:100%}
+.mobar{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;margin-bottom:12px}
+.mobar h2{font-size:20px;flex:1;min-width:0}
+.momedia{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px;margin-bottom:var(--gap)}
+.momedia b{font:700 30px/1.1 var(--f);color:var(--pri)}
+.mocont{margin:4px 0 10px}
+.mosem{display:grid;gap:10px;margin-bottom:var(--gap)}
+.mosem h3{font-size:15px}.mosem h3 .muted{font-weight:400;font-size:13px}
+.moitem{display:grid;gap:8px}
+.moih{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px}
+.moih .btn{margin-left:auto}
+.moerr{display:flex;flex-wrap:wrap;gap:6px}
+.moobs{margin:0;white-space:pre-wrap;overflow-wrap:anywhere}
+.moprev{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;padding:12px 14px;border-radius:12px;background:var(--card2)}
+.moprev b{font-size:22px;font-variant-numeric:tabular-nums}
+.moprev .mozer{color:var(--er)}
+.mocrits{display:grid;gap:6px}
+.mocrit{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--bd);border-radius:10px;padding:9px 11px;cursor:pointer;background:var(--bg)}
+.mocrit:has(input:checked){border-color:var(--pri)}
+.mocrit.zr:has(input:checked){border-color:var(--er)}
+.mocrit input{margin:3px 0 0;accent-color:var(--pri);flex:none;width:18px;height:18px}
+.mocrit.zr input{accent-color:var(--er)}
+.mocrit span{display:grid;gap:2px;min-width:0}
+.mocrit b{font-weight:500;font-size:14px}
+.mocrit small{font-size:12px;color:var(--mu)}
+.mocrit details{font-size:12px;color:var(--mu)}
+.mocrit details p{margin:4px 0 0;white-space:pre-wrap}
+.mocrit summary{cursor:pointer}
 .mcsec{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;margin-bottom:12px}
 .mcsec .pc-s .muted{font-weight:400}
 .mclink{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:end}
@@ -876,6 +918,7 @@ button.jrlab:hover{background:var(--card2)}
         <button data-area="agenda" data-p="agenda" aria-label="Agenda e Demandas" title="Agenda e Demandas"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg></button>
         <button data-area="an" aria-controls="painel" class="so-adm" aria-label="Análises" title="Análises"><svg class="i" viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg></button>
         <button data-area="pm" aria-controls="painel" class="so-adm" aria-label="Projetos e Melhorias" title="Projetos e Melhorias"><svg class="i" viewBox="0 0 24 24"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5c.8.8 1 1.5 1 2.5h6c0-1 .2-1.7 1-2.5A6 6 0 0 0 12 3z"/></svg></button>
+        <button data-area="mon" data-p="monitorias" aria-label="Monitorias" title="Monitorias"><svg class="i" viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4h6v3H9zM9 13l2 2 4-4"/></svg></button>
       </div>
       <button class="avatar" id="avatar" aria-label="Sua conta" aria-haspopup="dialog" aria-expanded="false" aria-controls="ucard"></button>
     </div>
@@ -887,6 +930,7 @@ button.jrlab:hover{background:var(--card2)}
         <div class="grp" data-grp="agenda"><button data-p="agenda"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Agenda e Demandas</button></div>
         <div class="grp so-adm" data-grp="an"><button data-p="an-jornada"><svg class="i" viewBox="0 0 24 24"><circle cx="5" cy="18" r="2"/><circle cx="19" cy="6" r="2"/><path d="M7 18h7a3 3 0 0 0 0-6h-4a3 3 0 0 1 0-6h7"/></svg>Jornada do Cliente</button><button data-p="an-diag"><svg class="i" viewBox="0 0 24 24"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg>Diagnósticos</button><button data-p="an-perg"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.7M12 17h.01"/></svg>Perguntas-chave</button><button data-p="an-setor"><svg class="i" viewBox="0 0 24 24"><circle cx="9" cy="8" r="4"/><path d="M2 21a7 7 0 0 1 14 0M16 4a4 4 0 0 1 0 8M22 21a7 7 0 0 0-5-6.7"/></svg>Por setor</button></div>
         <div class="grp so-adm" data-grp="pm"><button data-p="pm-proj"><svg class="i" viewBox="0 0 24 24"><path d="M3 6a1 1 0 0 1 1-1h5l2 2h9a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/></svg>Projetos e Iniciativas</button><button data-p="pm-fut"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Planejamento Futuro</button></div>
+        <div class="grp" data-grp="mon"><button data-p="monitorias"><svg class="i" viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4h6v3H9zM9 13l2 2 4-4"/></svg>Monitorias</button></div>
       </div>
       <small class="pfoot">Central de Qualidade e Operações</small>
     </div>
@@ -910,6 +954,7 @@ button.jrlab:hover{background:var(--card2)}
     <section class="page" id="p-an-setor"></section>
     <section class="page" id="p-pm-proj"></section>
     <section class="page" id="p-pm-fut"></section>
+    <section class="page" id="p-monitorias"></section>
     <section class="page" id="p-embreve"></section>
     <section class="page" id="p-config"></section>
   </main>
@@ -1079,7 +1124,7 @@ const NeonDB={
  async agendaDelete(id){return this.req('agendaDelete',{id})},
  async agendaPessoas(){return this.req('agendaPessoas')},
  /* áreas novas (Jornada…): só administradores; fora do snapshot, carregadas na própria tela */
- async regList(area){return this.req('regList',{area})},
+ async regList(area,extra){return this.req('regList',{...(extra||{}),area})},
  async regSave(p){return this.req('regSave',p)},
  async regDelete(area,id){return this.req('regDelete',{area,id})},
  async regOrdem(area,ids){return this.req('regOrdem',{area,ids})}
@@ -1152,15 +1197,15 @@ function render(){
  document.querySelectorAll('#nav button[data-p]').forEach(b=>{const on=b.dataset.p===page;b.classList.toggle('on',on);on?b.setAttribute('aria-current','page'):b.removeAttribute('aria-current')});
  rMenu();
  document.querySelectorAll('.top [data-present]').forEach(b=>b.hidden=!presModoDaPagina());
- $('pageTitle').textContent=({inicio:'Visão Geral',qualidade:'Qualidade',operacoes:'Operações',palavra:'Palavra da Semana',agenda:'Agenda e Demandas','an-jornada':'Jornada do Cliente','an-diag':'Diagnósticos','an-perg':'Perguntas-chave','an-setor':'Por setor','pm-proj':'Projetos e Iniciativas','pm-fut':'Planejamento Futuro',config:'Configurações'})[page]||(EMB[page]||[])[0]||'';
+ $('pageTitle').textContent=({inicio:'Visão Geral',qualidade:'Qualidade',operacoes:'Operações',palavra:'Palavra da Semana',agenda:'Agenda e Demandas','an-jornada':'Jornada do Cliente','an-diag':'Diagnósticos','an-perg':'Perguntas-chave','an-setor':'Por setor','pm-proj':'Projetos e Iniciativas','pm-fut':'Planejamento Futuro',monitorias:'Monitorias',config:'Configurações'})[page]||(EMB[page]||[])[0]||'';
  document.querySelectorAll('.page').forEach(p=>p.classList.toggle('on',p.id==='p-'+(EMB[page]?'embreve':page)));
- document.querySelector('.wsel').hidden=page==='agenda'||page==='an-jornada'||page==='an-diag'||page==='an-perg'||page==='an-setor'||page==='pm-proj'||page==='pm-fut'||!!EMB[page];
- if(EMB[page])rEmBreve();else if(page==='an-jornada')rJornada();else if(page==='an-diag')rDiag();else if(page==='an-perg')rPerg();else if(page==='an-setor')rSetor();else if(page==='pm-proj')rProj();else if(page==='pm-fut')rFut();else if(page==='inicio')rInicio(w);else if(page==='palavra')rPalavra(w);else if(page==='agenda')rAgenda();else if(page==='config'){if(!(['setores','jornada','exportacao','monitcrit','monitag'].includes(cfgView)&&render.cfgShown===cfgView&&!render.force))rConfig();render.cfgShown=cfgView}else rFrente(w,page==='qualidade'?'q':'o');
+ document.querySelector('.wsel').hidden=page==='agenda'||page==='an-jornada'||page==='an-diag'||page==='an-perg'||page==='an-setor'||page==='pm-proj'||page==='pm-fut'||page==='monitorias'||!!EMB[page];
+ if(EMB[page])rEmBreve();else if(page==='an-jornada')rJornada();else if(page==='an-diag')rDiag();else if(page==='an-perg')rPerg();else if(page==='an-setor')rSetor();else if(page==='pm-proj')rProj();else if(page==='pm-fut')rFut();else if(page==='monitorias')rMon();else if(page==='inicio')rInicio(w);else if(page==='palavra')rPalavra(w);else if(page==='agenda')rAgenda();else if(page==='config'){if(!(['setores','jornada','exportacao','monitcrit','monitag'].includes(cfgView)&&render.cfgShown===cfgView&&!render.force))rConfig();render.cfgShown=cfgView}else rFrente(w,page==='qualidade'?'q':'o');
  if(ED)rEd();
 }
 
 /* ---------- menu lateral: categorias e páginas "Em breve" ---------- */
-const PAG_COLAB=['qualidade','operacoes','palavra','agenda'];
+const PAG_COLAB=['qualidade','operacoes','palavra','agenda','monitorias'];
 /* áreas ainda não construídas: [título, categoria, o que a área vai fazer] */
 const EMB={
 };
@@ -1168,13 +1213,13 @@ function rEmBreve(){const[t,c,d]=EMB[page];
  $('p-embreve').innerHTML=`<header class="phead"><div><p class="kick">${c}</p><h1>${t}</h1><p class="sub">${d}</p></div></header><div class="panel embreve"><span class="chip ln">Em breve</span><p class="muted">Esta área ainda está em construção. Nenhum dado é exibido aqui até ela ficar pronta.</p></div>`}
 /* trilho: cada ícone é uma área; o painel ao lado mostra as páginas da área escolhida.
    Áreas de uma página só (Visão Geral, Agenda) já abrem a página; as outras só trocam o painel, sem mudar de página */
-const AREA_T={inicio:'Visão Geral',cal:'Calibragem Semanal',agenda:'Agenda e Demandas',an:'Análises',pm:'Projetos e Melhorias'};
-const areaDe=p=>p==='inicio'||p==='agenda'?p:['qualidade','operacoes','palavra'].includes(p)?'cal':/^an-/.test(p)?'an':/^pm-/.test(p)?'pm':null;
+const AREA_T={inicio:'Visão Geral',cal:'Calibragem Semanal',agenda:'Agenda e Demandas',an:'Análises',pm:'Projetos e Melhorias',mon:'Monitorias'};
+const areaDe=p=>p==='inicio'||p==='agenda'?p:p==='monitorias'?'mon':['qualidade','operacoes','palavra'].includes(p)?'cal':/^an-/.test(p)?'an':/^pm-/.test(p)?'pm':null;
 const iniciais=s=>{const w=String(s).trim().split(/\s+/).filter(Boolean);return ((w[0]||'')[0]||'').concat(w.length>1?w[1][0]:'').toUpperCase()};
 /* areaSel: área aberta no painel sem ter trocado de página; volta a seguir a página quando ela muda */
 let areaSel=null,areaPg=null;
 function rMenu(){if(page!==areaPg){areaSel=null;areaPg=page}
- const cur=areaDe(page);let a=areaSel||cur||'cal';if(!isAdmin()&&a!=='agenda')a='cal';
+ const cur=areaDe(page);let a=areaSel||cur||'cal';if(!isAdmin()&&a!=='agenda'&&a!=='mon')a='cal';
  document.querySelectorAll('#rail [data-area]').forEach(b=>{b.classList.toggle('sel',b.dataset.area===a);if(!b.dataset.p)b.setAttribute('aria-pressed',b.dataset.area===a);b.dataset.area===cur?b.setAttribute('aria-current','true'):b.removeAttribute('aria-current')});
  document.querySelectorAll('#nav .grp').forEach(g=>g.hidden=g.dataset.grp!==a);$('areaT').textContent=AREA_T[a]}
 /* painel recolhido ou aberto (no computador): escolha guardada neste navegador */
@@ -1378,7 +1423,7 @@ async function delAg(id,cancelar){const x=agAchar(id);if(!x)return;
 document.addEventListener('click',e=>{
  const t=e.target.closest('button');if(!t)return;
  /* ao sair, a agenda da conta anterior é apagada da memória e da tela */
- if(t.id==='logout'){AG=agVazio(null);$('p-agenda').innerHTML='';JR=jrVazio(null);$('p-an-jornada').innerHTML='';DG=dgVazio(null);$('p-an-diag').innerHTML='';PJ=pjVazio(null);$('p-pm-proj').innerHTML='';$('p-pm-fut').innerHTML='';PQ.html=null;PQ.abertas.clear();$('p-an-perg').innerHTML='';Object.assign(POR,{sel:null,html:null});$('p-an-setor').innerHTML='';MON=monVazio(null);return}
+ if(t.id==='logout'){AG=agVazio(null);$('p-agenda').innerHTML='';JR=jrVazio(null);$('p-an-jornada').innerHTML='';DG=dgVazio(null);$('p-an-diag').innerHTML='';PJ=pjVazio(null);$('p-pm-proj').innerHTML='';$('p-pm-fut').innerHTML='';PQ.html=null;PQ.abertas.clear();$('p-an-perg').innerHTML='';Object.assign(POR,{sel:null,html:null});$('p-an-setor').innerHTML='';MON=monVazio(null);Object.assign(MO,{setor:null,hist:null,itens:null,mesLido:null,dono:null,erro:false,limitado:false,denovo:false,html:null,mes:today().slice(0,7)});$('p-monitorias').innerHTML='';return}
  if(t.getAttribute('aria-disabled')==='true')return;const d=t.dataset;let foco=null;
  if(d.agaba){AG.aba=d.agaba;foco=`[data-agaba="${d.agaba}"]`}
  else if('agenc' in d){AG.encerradas=!AG.encerradas;foco='[data-agenc]'}
@@ -2365,6 +2410,125 @@ document.addEventListener('click',e=>{
  else if('mvsalvar' in d)monSalvarVarios(t);
  else if('monrecarregar' in d){MON=monVazio(null);render.cfgShown=null;render()}});
 
+/* ---------- monitorias: tela de todos os usuários ----------
+   setores → cards dos agentes do setor (média e nº de monitorias do mês) → nova monitoria e histórico do agente por semana.
+   As monitorias são buscadas por mês; a nota é calculada pelo servidor (aqui só a prévia) */
+const MO={setor:null,hist:null,mes:today().slice(0,7),itens:null,mesLido:null,dono:null,carregando:false,denovo:false,erro:false,limitado:false,html:null};
+const moDatas=m=>{const[y,mm]=m.split('-').map(Number);return [m+'-01',ymd(new Date(y,mm,0))]};
+const moMesSoma=(m,n)=>{const[y,mm]=m.split('-').map(Number),d=new Date(y,mm-1+n,1);return ymd(d).slice(0,7)};
+async function moCarregar(){
+ if(!meId)return;
+ if(MO.dono!==meId)Object.assign(MO,{dono:meId,itens:null,mesLido:null,erro:false,limitado:false,denovo:false,setor:null,hist:null,html:null,mes:today().slice(0,7)});
+ const mes=MO.mes;if(MO.carregando){MO.denovo=true;return}MO.carregando=true;const dono=MO.dono;
+ try{const[de,ate]=moDatas(mes),r=await DB.regList('monitoria',{de,ate});if(MO.dono!==dono||MO.mes!==mes)return;
+  const novo=r.itens||[],mudou=MO.mesLido!==mes||JSON.stringify(MO.itens)!==JSON.stringify(novo);
+  Object.assign(MO,{itens:novo,mesLido:mes,limitado:!!r.limitado,erro:false});if(mudou&&page==='monitorias')render();
+ }catch(e){if(MO.dono===dono&&MO.mes===mes&&MO.mesLido!==mes){MO.erro=true;if(page==='monitorias')render()}}
+ finally{MO.carregando=false;if(MO.denovo){MO.denovo=false;moCarregar()}}
+}
+const moDoMes=()=>MO.mesLido===MO.mes?MO.itens:null;
+/* conflito de verdade fecha o painel; erro de validação (agente ou critério desativado no meio) mantém o painel e recarrega a configuração */
+const moErro=(e,ed)=>{const m=String(e&&e.message||''),conf=/alterado por outra pessoa/i.test(m)||m==='Registro não encontrado.';toast(conf?(agConflito(e)||m):m,true);if(conf&&ED===ed)closeEd();else monCarregar();return conf};
+const moMedia=L=>L.length?L.reduce((t,x)=>t+x.data.nota,0)/L.length:null;
+const moPct=v=>isN(v)?pct(v):'—';
+const MO_CORES=['#2E7D32','#00695C','#1565C0','#4E342E','#6A1B9A','#AD1457','#E65100','#37474F'];
+const moCor=s=>MO_CORES[[...String(s)].reduce((t,c)=>(t*31+c.charCodeAt(0))>>>0,7)%MO_CORES.length];
+/* agente pelo id; se foi excluído, monta um com o nome e o setor guardados na monitoria */
+const moAgente=id=>(MON.agentes||[]).find(a=>a.id===id)||(()=>{const x=(MO.itens||[]).find(y=>y.data.agente===id);return x?{id,data:{nome:x.data.agenteNome,setor:x.data.setor,ativo:false},excluido:true}:null})();
+const moAvaliador=id=>{const u=S.users.find(x=>x.id===id);return u?u.nome:'Conta excluída'};
+/* semanas (segunda a domingo) que tocam o mês, numeradas dentro do mês; monitoria no fim de semana entra na semana dela */
+function moSemanas(m){const[de,ate]=moDatas(m),L=[];let s=mondayOf(new Date(de+'T12:00:00'));while(s<=ate){const fim=addDays(s,6);L.push({ini:s,fim,de:s<de?de:s,ate:fim>ate?ate:fim});s=addDays(s,7)}return L.filter(w=>w.de<=w.ate)}
+const moMesBarra=()=>`<div class="momes"><button class="ico" data-momes="-1" aria-label="Mês anterior">${ICO.l}</button><b>${esc(dgMesNome(MO.mes))}</b><button class="ico" data-momes="1" aria-label="Próximo mês"${MO.mes>=today().slice(0,7)?' aria-disabled="true"':''}>${ICO.r}</button></div>`;
+const moPlanilha=()=>{const l=MON.geral&&MON.geral.data.planilha;return l&&/^https:\/\//i.test(l)?`<a class="btn" href="${esc(l)}" target="_blank" rel="noopener noreferrer"><svg class="i" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>Planilha de preenchimento</a>`:''};
+function rMon(){if(MON.dono!==meId)monCarregar();if(MO.dono!==meId||(MO.mesLido!==MO.mes&&!MO.carregando&&!MO.erro))moCarregar();
+ let h;const L=moDoMes(),S_=monSetores();
+ if(!MON.setores||!MON.agentes)h=monEstado();
+ else if(!L)h=MO.erro?`<div class="panel cfgp"><p class="muted">Não foi possível carregar as monitorias deste mês.</p><div><button class="btn sm" data-morecarregar>Tentar de novo</button></div></div>`:'<div class="panel"><p class="muted" role="status">Carregando…</p></div>';
+ else if(MO.hist&&moAgente(MO.hist))h=moHistorico(L);
+ else if(MO.setor&&S_.some(s=>s.id===MO.setor))h=moSetor(L);
+ else{MO.setor=null;MO.hist=null;
+  h=`<div class="mogrid">${S_.map(s=>{const A=monAgentesDe(s.id).filter(a=>a.data.ativo!==false),M=L.filter(x=>x.data.setor===s.id),cfg=monCfgDe(s.id);
+   return `<button class="panel mocard mosetor" data-mosetor="${esc(s.id)}"><b>${esc(s.nome)}</b><span class="mopct">${moPct(moMedia(M))}</span><small class="muted">${M.length} ${M.length===1?'monitoria':'monitorias'} no mês · ${A.length} ${A.length===1?'agente':'agentes'}</small>${cfg?'':'<small class="pjfalta">Sem critérios cadastrados</small>'}</button>`}).join('')}</div>`}
+ const html=`<header class="phead"><div><p class="kick">Monitorias</p><h1>Monitorias de qualidade</h1><p class="sub">Escolha o setor, depois o agente: registre uma nova monitoria ou veja o histórico.</p></div><div class="tools">${moPlanilha()}</div></header>${MON.limitado||MO.limitado?'<div class="banner"><span class="dot wa"></span><div>Há muitos registros: parte deles não está sendo exibida.</div></div>':''}${moMesBarra()}${h}`;
+ if(html===MO.html)return;MO.html=html;$('p-monitorias').innerHTML=html}
+function moSetor(L){const s=monSetores().find(x=>x.id===MO.setor),cfg=monCfgDe(s.id),M=L.filter(x=>x.data.setor===s.id);
+ /* agentes ativos e também os inativos que tiveram monitoria no mês */
+ const A=monAgentesDe(s.id).filter(a=>a.data.ativo!==false||M.some(x=>x.data.agente===a.id));
+ /* quem teve monitoria neste setor no mês mas foi excluído ou mudou de setor também aparece, para nada ficar invisível */
+ [...new Set(M.map(x=>x.data.agente))].filter(id=>!A.some(a=>a.id===id)).forEach(id=>{const ag=moAgente(id);if(ag)A.push({...ag,fora:true})});
+ return `<div class="mobar"><button class="btn ghost sm" data-mosetor="">${ICO.l}Setores</button><h2>${esc(s.nome)}</h2></div>
+ <div class="panel momedia"><div><p class="kick">Média da equipe — ${esc(dgMesNome(MO.mes))}</p><b>${moPct(moMedia(M))}</b></div><span class="muted">${M.length} ${M.length===1?'monitoria':'monitorias'} no mês</span></div>
+ ${cfg?'':'<div class="banner"><span class="dot wa"></span><div>Este setor ainda não tem critérios de monitoria. Um administrador cadastra em Configurações › Critérios de monitoria.</div></div>'}
+ ${A.length?`<p class="kick mocont">${A.length} ${A.length===1?'agente':'agentes'}</p><div class="mogrid">${A.map(a=>{const Ma=M.filter(x=>x.data.agente===a.id);
+  return `<div class="moag"><button class="panel mocard" data-mohist="${esc(a.id)}" aria-label="Histórico de ${esc(a.data.nome)}"><span class="moav" style="background:${moCor(a.data.nome)}" aria-hidden="true">${esc(iniciais(a.data.nome))}</span><b>${esc(a.data.nome)}</b><span class="mopct">${moPct(moMedia(Ma))}</span><small class="muted">${Ma.length} ${Ma.length===1?'monitoria':'monitorias'}</small>${a.fora?`<small class="muted">${a.excluido?'Agente excluído':'Não está mais neste setor'}</small>`:a.data.ativo===false?'<small class="muted">Inativo</small>':''}</button>
+   <div class="moacoes"><button class="btn sm" data-monova="${esc(a.id)}"${cfg&&a.data.ativo!==false&&!a.fora?'':' aria-disabled="true"'}>${ICO.plus}Nova</button><button class="btn sm" data-mohist="${esc(a.id)}">Histórico</button></div></div>`}).join('')}</div>`
+  :'<div class="panel embreve"><p class="muted">Nenhum agente cadastrado neste setor. Um administrador cadastra em Configurações › Agentes monitorados.</p></div>'}`}
+function moHistorico(L){const a=moAgente(MO.hist),s=SET().find(x=>x.id===a.data.setor),M=L.filter(x=>x.data.agente===a.id).sort((x,y)=>y.data.data.localeCompare(x.data.data)||y.criado-x.criado),cfg=monCfgDe(a.data.setor);
+ const item=x=>{const d=x.data;return `<div class="panel moitem"><div class="moih"><span class="chip ${d.zerada?'er':''}">${d.zerada?'Zerada':moPct(d.nota)}</span><b>${esc(dfmt(d.data))}</b>${d.protocolo?`<span class="muted">Protocolo ${esc(d.protocolo)}</span>`:''}<span class="muted">${d.perdidos?`${nf(d.perdidos)} ${d.perdidos===1?'ponto perdido':'pontos perdidos'} de ${nf(d.total)}`:`Sem pontos perdidos (${nf(d.total)})`}</span><button class="btn sm" data-moeditar="${esc(x.id)}">${ICO.edit}Editar</button></div>
+  ${d.erros.length?`<div class="moerr">${d.erros.map(c=>`<span class="chip ${c.zera?'er':'ln'}">${esc(c.nome)}${c.zera?' · zera':c.peso?` · −${nf(c.peso)}`:''}</span>`).join('')}</div>`:''}${d.zeradaManual?'<div class="moerr"><span class="chip er">Zerada manualmente</span></div>':''}
+  <p class="moobs">${esc(d.observacao)}</p><small class="muted">Avaliado por ${esc(moAvaliador(x.criado_por))}${x.atualizado!==x.criado?` · alterado por ${esc(moAvaliador(x.atualizado_por))}`:''}</small></div>`};
+ const sem=moSemanas(MO.mes);
+ return `<div class="mobar"><button class="btn ghost sm" data-mosetor="${esc(a.data.setor)}">${ICO.l}${esc(s?s.nome:'Setor')}</button><h2>${esc(a.data.nome)}</h2><button class="btn pri sm" data-monova="${esc(a.id)}"${cfg&&a.data.ativo!==false&&!a.excluido?'':' aria-disabled="true"'}>${ICO.plus}Nova monitoria</button></div>
+ <div class="panel momedia"><div><p class="kick">Média — ${esc(dgMesNome(MO.mes))}</p><b>${moPct(moMedia(M))}</b></div><span class="muted">${M.length} ${M.length===1?'monitoria':'monitorias'} no mês</span></div>
+ ${M.length?sem.map((w,i)=>{const W=M.filter(x=>x.data.data>=w.de&&x.data.data<=w.ate);return `<section class="mosem"><h3>Semana ${i+1} <span class="muted">${esc(dshort(w.de))} a ${esc(dshort(w.ate))} · ${W.length} ${W.length===1?'monitoria':'monitorias'}</span></h3>${W.length?W.map(item).join(''):'<p class="muted">Nenhuma monitoria nesta semana.</p>'}</section>`}).join('')
+  :'<div class="panel embreve"><p class="muted">Nenhuma monitoria deste agente no mês.</p></div>'}`}
+/* formulário: no modo "erros" marca o que deu errado; no modo "acertos" os comuns começam marcados e desmarcar tira os pontos.
+   Os críticos são sempre marcados quando aconteceram. Em 'erros' a monitoria guarda os critérios em falha */
+function openMo(agente,id){const a=moAgente(agente),x=id?(MO.itens||[]).find(y=>y.id===id):null;if(!a||(id&&!x))return;
+ const cfg=monCfgDe(x?x.data.setor:a.data.setor);if(!cfg&&!x)return;
+ ED={kind:'mon',id,agente:a.id,x:x?clone(x):null,falhas:new Set(x?x.data.erros.map(c=>c.id):[]),zm:x?!!x.data.zeradaManual:false};rEd();showEd()}
+/* critérios do formulário: os ativos de hoje e, numa correção, os já marcados que não existem mais (com o peso do dia) */
+function moCriterios(){const{x}=ED,setor=x?x.data.setor:(moAgente(ED.agente)||{data:{}}).data.setor,cfg=monCfgDe(setor);
+ const L=(cfg?cfg.data.criterios:[]).filter(c=>c.ativo!==false||ED.falhas.has(c.id)).map(c=>({...c}));
+ if(x)x.data.erros.forEach(c=>{const i=L.findIndex(y=>y.id===c.id);if(i<0)L.push({...c,antigo:true});else Object.assign(L[i],{peso:c.peso,zera:c.zera})});
+ return {L,cfg,modo:(cfg&&cfg.data.modo)||'erros',total:x?x.data.total:cfg?cfg.data.total:0,zm:!!(cfg&&cfg.data.zerarManual)||!!(x&&x.data.zeradaManual)}}
+function moPrevia(){const{L,total}=moCriterios(),F=L.filter(c=>ED.falhas.has(c.id)),perd=F.reduce((t,c)=>t+c.peso,0),zer=ED.zm||perd>=total||F.some(c=>c.zera),nota=zer?0:Math.round((total-perd)/total*10000)/100;
+ return `<b class="${zer?'mozer':''}">${zer?'Zerada':pct(nota)}</b><span>${nf(perd)} ${perd===1?'ponto perdido':'pontos perdidos'} de ${nf(total)}</span>${ED.zm?'<span class="chip er">Zerada manualmente</span>':''}`}
+function rEdMo(){const{id,x}=ED;if(ED.rendered)return;ED.rendered=true;const a=moAgente(ED.agente),s=SET().find(y=>y.id===(x?x.data.setor:a.data.setor)),{L,modo,zm}=moCriterios();
+ const marcado=c=>modo==='acertos'&&!c.zera?!ED.falhas.has(c.id):ED.falhas.has(c.id);
+ const caixa=c=>`<label class="mocrit${c.zera?' zr':''}"><input type="checkbox" data-mocrit="${esc(c.id)}"${marcado(c)?' checked':''}><span><b>${esc(c.nome)}</b><small>${c.zera?'Crítico: zera a monitoria':modo==='acertos'?`${nf(c.peso)} pontos`:`−${nf(c.peso)} pontos`}${c.antigo?' · critério que não existe mais':''}</small>${c.descricao?`<details><summary>Ver o que é avaliado</summary><p>${esc(c.descricao)}</p></details>`:''}</span></label>`;
+ const comuns=L.filter(c=>!c.zera),criticos=L.filter(c=>c.zera);
+ $('ed').innerHTML=`<div class="edh"><div class="row"><span>Monitorias · ${esc(s?s.nome:'')}</span><button class="ico" data-edclose aria-label="Fechar">${ICO.x}</button></div><div><div class="k">${id?'Editar monitoria':'Nova monitoria'}</div><h3>${esc(a?a.data.nome:x.data.agenteNome)}</h3></div></div>
+ <div class="edb"><div class="g2"><div class="f"><label for="mo_data">Data</label><input id="mo_data" type="date" max="${today()}" value="${esc(x?x.data.data:today())}"><span class="msg"></span></div><div class="f"><label for="mo_prot">Protocolo (opcional)</label><input id="mo_prot" maxlength="100" value="${esc(x?x.data.protocolo:'')}" autocomplete="off"><span class="msg"></span></div></div>
+ <div class="moprev" id="mo_prev" role="status">${moPrevia()}</div>
+ <fieldset class="dgset"><legend>${modo==='acertos'?'Critérios (desmarque o que não foi atendido)':'Critérios (marque o que deu errado)'}</legend><div class="mocrits">${comuns.map(caixa).join('')||'<p class="muted">Nenhum critério.</p>'}</div></fieldset>
+ ${criticos.length?`<fieldset class="dgset"><legend>Críticos (marcar zera a monitoria)</legend><div class="mocrits">${criticos.map(caixa).join('')}</div></fieldset>`:''}
+ ${zm?`<div><button class="btn sm ${ED.zm?'':'dan'}" data-mozerar>${ED.zm?'Desfazer zeramento manual':'Zerar monitoria'}</button></div>`:''}
+ <div class="f"><label for="mo_obs">Observação (o que foi observado)</label><textarea id="mo_obs" maxlength="2000" rows="5">${esc(x?x.data.observacao:'')}</textarea><span class="msg"></span></div>
+ ${id?`<div class="last">Avaliado por ${esc(moAvaliador(x.criado_por))} em ${esc(tsTxt(x.criado))}${x.atualizado!==x.criado?` · alterado por ${esc(moAvaliador(x.atualizado_por))} em ${esc(tsTxt(x.atualizado))}`:''}</div>`:''}
+ <div class="eda"><button class="btn pri" data-mosalvar>${id?'Salvar':'Registrar monitoria'}</button><button class="btn" data-edclose>Cancelar</button>${id?`<button class="btn dan" data-moexcluir>${ICO.del}Excluir</button>`:''}</div></div>`}
+$('ed').addEventListener('change',e=>{if(!ED||ED.kind!=='mon'||!e.target.dataset.mocrit)return;const id=e.target.dataset.mocrit,{L,modo}=moCriterios(),c=L.find(y=>y.id===id);if(!c)return;
+ const falha=modo==='acertos'&&!c.zera?!e.target.checked:e.target.checked;falha?ED.falhas.add(id):ED.falhas.delete(id);$('mo_prev').innerHTML=moPrevia()});
+async function moSalvar(btn){const ed=ED,{id,x}=ed,obs=$('mo_obs').value.trim(),data=$('mo_data').value;
+ const erro=(k,m)=>{const f=$(k).closest('.f');f.classList.add('bad');f.querySelector('.msg').textContent=m;$(k).focus()};
+ if(!data||($('mo_data').validity&&$('mo_data').validity.badInput))return erro('mo_data','Informe a data da monitoria.');
+ if(data>today())return erro('mo_data','A data não pode ser no futuro.');
+ if(!obs)return erro('mo_obs','Escreva o que foi observado.');
+ const{L}=moCriterios(),erros=L.filter(c=>ed.falhas.has(c.id)).map(c=>c.id);
+ const lbl=btn.innerHTML;btn.textContent='Salvando…';btn.setAttribute('aria-disabled','true');
+ try{const d={data,agente:ed.agente,protocolo:$('mo_prot').value.trim(),erros,zeradaManual:ed.zm,observacao:obs};
+  const r=await DB.regSave(id?{area:'monitoria',id,versao:x.atualizado,data:d}:{area:'monitoria',data:d});
+  /* uma monitoria de outro mês: abre o mês dela para aparecer na tela */
+  if(data.slice(0,7)!==MO.mes)MO.mes=data.slice(0,7);
+  if(ED===ed)closeEd();toast(id?'Monitoria salva':`Monitoria registrada: ${r.item.data.zerada?'zerada':pct(r.item.data.nota)}`)}
+ catch(e){btn.innerHTML=lbl;btn.removeAttribute('aria-disabled');moErro(e,ed)}
+ moCarregar()}
+async function moExcluir(btn){const ed=ED,{id,x}=ed;
+ if(!await confirmBox('Excluir monitoria?',`A monitoria de ${dfmt(x.data.data)} de ${x.data.agenteNome} será excluída. Isso não pode ser desfeito.`,'Excluir monitoria',true))return;
+ btn.setAttribute('aria-disabled','true');
+ try{await DB.regDelete('monitoria',id);if(ED===ed)closeEd();toast('Monitoria excluída')}catch(e){btn.removeAttribute('aria-disabled');moErro(e,ed)}
+ moCarregar()}
+document.addEventListener('click',e=>{const t=e.target.closest&&e.target.closest('button');if(!t||t.getAttribute('aria-disabled')==='true')return;const d=t.dataset;
+ if(d.mosetor!==undefined){MO.setor=d.mosetor||null;MO.hist=null;rMon();scrollTo({top:0})}
+ else if(d.mohist){MO.hist=d.mohist;rMon();scrollTo({top:0})}
+ else if(d.monova)openMo(d.monova,null);
+ else if(d.moeditar){const x=(MO.itens||[]).find(y=>y.id===d.moeditar);if(x)openMo(x.data.agente,x.id)}
+ else if(d.momes){const n=+d.momes,m=moMesSoma(MO.mes,n);if(n>0&&m>today().slice(0,7))return;MO.mes=m;MO.itens=null;MO.mesLido=null;moCarregar();rMon();const b=document.querySelector(`[data-momes="${n}"]`);b&&b.focus()}
+ else if('mozerar' in d){ED.zm=!ED.zm;ED.rendered=false;const s=$('mo_obs').value,dt=$('mo_data').value,pr=$('mo_prot').value;rEdMo();$('mo_obs').value=s;$('mo_data').value=dt;$('mo_prot').value=pr;const b=$('ed').querySelector('[data-mozerar]');b&&b.focus()}
+ else if('mosalvar' in d)moSalvar(t);
+ else if('moexcluir' in d)moExcluir(t);
+ else if('morecarregar' in d){MO.erro=false;MO.mesLido=null;moCarregar();rMon()}});
+
 /* ---------- seletor de ano, mês e semana ---------- */
 function rWsel(){const w=Wk();$('wTxt').textContent=`${wkTxt(w)} ${w.inicio.slice(0,4)}`;const old=$('wBtn').querySelector('.lk');old&&old.remove();if(w.fechada){const s=document.createElement('span');s.className='lk';s.title='Semana fechada';$('wBtn').insertBefore(s,$('wBtn').querySelector('.ch'))}$('wNow').hidden=sel===curWeek();if(!$('wp').hidden)rWp()}
 function rWp(){const L=ids(),ys=[...new Set(L.map(x=>+x.slice(0,4)))],yi=ys.indexOf(pickY);const ms=new Set(L.filter(x=>+x.slice(0,4)===pickY).map(x=>x.slice(0,7)));
@@ -2489,7 +2653,7 @@ async function saveColab(){const{id}=ED,nome=$('c_nome').value.trim().replace(/\
  const k=x=>norm(x).normalize('NFD').replace(/[\u0300-\u036f]/g,'');if(COLS_().some(c=>c.id!==id&&k(c.nome)===k(nome))){box.classList.add('bad');box.querySelector('.msg').textContent='Já existe um colaborador com esse nome.';return}
  await saveSettings(s=>{s.colaboradores=(s.colaboradores||[]).slice();if(id){const c=s.colaboradores.find(x=>x.id===id);if(c){c.nome=nome;c.ativo=ativo}}else s.colaboradores.push({id:'c'+uid(),nome,ativo,criado:Date.now()})},id?'Colaborador salvo':'Colaborador adicionado');closeEd()}
 function openUser(id){const u=id?S.users.find(x=>x.id===id):{nome:'',usuario:'',admin:false};if(!u)return;ED={kind:'user',id,u:clone(u)};rEd();showEd()}
-function rEd(){if(!ED)return;if(ED.kind==='agenda')return rEdAg();if(ED.kind==='jretapa')return rEdJrEtapa();if(ED.kind==='jrfluxo')return rEdJrFluxo();if(ED.kind==='diag')return rEdDiag();if(ED.kind==='proj')return rEdProj();if(ED.kind==='monag')return rEdMonAg();if(ED.kind==='monvarios')return rEdMonVarios();if(ED.kind==='plan')return rEdPlan();if(ED.kind==='user')return rEdUser();if(ED.kind==='colab')return rEdColab();
+function rEd(){if(!ED)return;if(ED.kind==='agenda')return rEdAg();if(ED.kind==='jretapa')return rEdJrEtapa();if(ED.kind==='jrfluxo')return rEdJrFluxo();if(ED.kind==='diag')return rEdDiag();if(ED.kind==='proj')return rEdProj();if(ED.kind==='monag')return rEdMonAg();if(ED.kind==='monvarios')return rEdMonVarios();if(ED.kind==='mon')return rEdMo();if(ED.kind==='plan')return rEdPlan();if(ED.kind==='user')return rEdUser();if(ED.kind==='colab')return rEdColab();
  const w=Wk(),{f}=ED,st=steps(f);if(ED.i>=st.length)ED.i=st.length-1;const i=ED.i,id=st[i],ro=!canEdit(w),isS=id==='sla';const r=isS?{}:((f==='q'?w.q:w.o)[id]||{});
  if(document.activeElement&&$('ed').contains(document.activeElement)&&ED.rendered===`${sel}|${f}|${i}`)return;ED.rendered=`${sel}|${f}|${i}`;
  const done=k=>k==='sla'?isN(w.sla):rowDone(f,(f==='q'?w.q:w.o)[k]||{});
@@ -2545,7 +2709,7 @@ async function saveUser(btn){const{id}=ED,q=k=>{const x=$('ed').querySelector(`[
   closeEd();if(id===meId&&!admin){page='inicio';cfgView=null;toast('Usuário salvo. Você não é mais administrador.')}else toast(id?'Usuário salvo':'Usuário adicionado');render()}
  catch(e){toast(e.message||errMsg(e),true);btn.textContent=id?'Salvar':'Adicionar';btn.removeAttribute('aria-disabled')}}
 $('ed').addEventListener('input',e=>{const b=e.target.closest('.f.bad');if(b){b.classList.remove('bad');const m=b.querySelector('.msg');m.textContent=m.dataset.h||''}});
-$('ed').addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.matches('input')&&!e.target.closest('.pjhadd')){e.preventDefault();const b=$('ed').querySelector('[data-edsave="1"],[data-usave],[data-plsave],[data-csave],[data-jrsalvar],[data-dgsalvar],[data-pjsalvar],[data-masalvar]');b&&b.click()}});
+$('ed').addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.matches('input')&&!e.target.closest('.pjhadd')){e.preventDefault();const b=$('ed').querySelector('[data-edsave="1"],[data-usave],[data-plsave],[data-csave],[data-jrsalvar],[data-dgsalvar],[data-pjsalvar],[data-masalvar],[data-mosalvar]');b&&b.click()}});
 $('edScrim').onclick=closeEd;
 
 /* ---------- semanas: fechar, reabrir, excluir ---------- */
@@ -2979,6 +3143,7 @@ async function onData(d){
  if(page==='agenda')agCarregar(true);
  if(page==='an-jornada'||(page==='config'&&cfgView==='jornada'))jrCarregar();
  if(page==='config'&&(cfgView==='monitcrit'||cfgView==='monitag'))monCarregar();
+ if(page==='monitorias'){monCarregar();moCarregar()}
  if(page==='an-diag'||page==='an-jornada')dgCarregar();if(page==='an-diag')jrCarregar();
  if(page==='pm-proj'||page==='pm-fut'||page==='an-diag'||page==='an-perg'||page==='an-setor')pjCarregar();if(page==='pm-proj'||page==='pm-fut'||page==='an-perg'||page==='an-setor'){jrCarregar();dgCarregar()}
  render();
