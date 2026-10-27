@@ -573,6 +573,10 @@ a.btn{text-decoration:none;color:var(--tx)}
 .mocrit details{font-size:12px;color:var(--mu)}
 .mocrit details p{margin:4px 0 0;white-space:pre-wrap}
 .mocrit summary{cursor:pointer}
+.maw{color:var(--wa)!important}
+.maauto{display:grid;gap:4px;padding:12px 14px;border-radius:12px;background:var(--card2);font-size:13px}
+.maauto b{font-size:14px}
+.maauto .btn{margin-top:6px}
 .mcsec{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;margin-bottom:12px}
 .mcsec .pc-s .muted{font-weight:400}
 .mclink{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:end}
@@ -1150,7 +1154,7 @@ const nAdm=()=>S.users.filter(u=>u.admin).length;
 const canEdit=w=>!!w&&(!w.fechada||isAdmin());
 const curWeek=()=>{const c=mondayOf(new Date());return S.weeks[c]?c:(ids().filter(x=>x<=c).at(-1)||ids().at(-1))};
 
-function calcQ(w){const rows=SETF('q').map(s=>({...s,...((w&&w.q&&w.q[s.id])||{})}));const val=rows.filter(r=>isN(r.monitorias)&&r.monitorias>0&&isN(r.qualidade));const sm=(a,k)=>a.reduce((t,x)=>t+(isN(x[k])?x[k]:0),0);
+function calcQ(w){const rows=SETF('q').map(s=>({...s,...qEf(w,s.id)}));const val=rows.filter(r=>isN(r.monitorias)&&r.monitorias>0&&isN(r.qualidade));const sm=(a,k)=>a.reduce((t,x)=>t+(isN(x[k])?x[k]:0),0);
  let q=null;if(val.length)q=val.reduce((t,e)=>t+e.qualidade,0)/val.length;
  const any=rows.some(r=>isN(r.monitorias));return{rows,q,mon:any?sm(rows,'monitorias'):null,zer:any?sm(rows,'zeradas'):null,ag:any?sm(rows,'agentes'):null,sem:rows.filter(r=>r.monitorias===0)}}
 function calcO(w){const rows=SETF('o').map(s=>({...s,...((w&&w.o&&w.o[s.id])||{})}));const sm=(a,k)=>a.reduce((t,x)=>t+(isN(x[k])?x[k]:0),0);const t=rows.filter(r=>isN(r.tempo)&&isN(r.backlog)&&r.backlog>0),tb=sm(t,'backlog');const any=rows.some(r=>isN(r.tratados)||isN(r.backlog));
@@ -1423,7 +1427,7 @@ async function delAg(id,cancelar){const x=agAchar(id);if(!x)return;
 document.addEventListener('click',e=>{
  const t=e.target.closest('button');if(!t)return;
  /* ao sair, a agenda da conta anterior é apagada da memória e da tela */
- if(t.id==='logout'){AG=agVazio(null);$('p-agenda').innerHTML='';JR=jrVazio(null);$('p-an-jornada').innerHTML='';DG=dgVazio(null);$('p-an-diag').innerHTML='';PJ=pjVazio(null);$('p-pm-proj').innerHTML='';$('p-pm-fut').innerHTML='';PQ.html=null;PQ.abertas.clear();$('p-an-perg').innerHTML='';Object.assign(POR,{sel:null,html:null});$('p-an-setor').innerHTML='';MON=monVazio(null);Object.assign(MO,{setor:null,hist:null,itens:null,mesLido:null,dono:null,erro:false,limitado:false,denovo:false,html:null,mes:today().slice(0,7)});$('p-monitorias').innerHTML='';return}
+ if(t.id==='logout'){AG=agVazio(null);$('p-agenda').innerHTML='';JR=jrVazio(null);$('p-an-jornada').innerHTML='';DG=dgVazio(null);$('p-an-diag').innerHTML='';PJ=pjVazio(null);$('p-pm-proj').innerHTML='';$('p-pm-fut').innerHTML='';PQ.html=null;PQ.abertas.clear();$('p-an-perg').innerHTML='';Object.assign(POR,{sel:null,html:null});$('p-an-setor').innerHTML='';MON=monVazio(null);MA.dono=null;MA.meses={};Object.assign(MO,{setor:null,hist:null,itens:null,mesLido:null,dono:null,erro:false,limitado:false,denovo:false,html:null,mes:today().slice(0,7)});$('p-monitorias').innerHTML='';return}
  if(t.getAttribute('aria-disabled')==='true')return;const d=t.dataset;let foco=null;
  if(d.agaba){AG.aba=d.agaba;foco=`[data-agaba="${d.agaba}"]`}
  else if('agenc' in d){AG.encerradas=!AG.encerradas;foco='[data-agenc]'}
@@ -2509,14 +2513,14 @@ async function moSalvar(btn){const ed=ED,{id,x}=ed,obs=$('mo_obs').value.trim(),
  try{const d={data,agente:ed.agente,protocolo:$('mo_prot').value.trim(),erros,zeradaManual:ed.zm,observacao:obs};
   const r=await DB.regSave(id?{area:'monitoria',id,versao:x.atualizado,data:d}:{area:'monitoria',data:d});
   /* uma monitoria de outro mês: abre o mês dela para aparecer na tela */
-  if(data.slice(0,7)!==MO.mes)MO.mes=data.slice(0,7);
+  maLimpar();if(data.slice(0,7)!==MO.mes)MO.mes=data.slice(0,7);
   if(ED===ed)closeEd();toast(id?'Monitoria salva':`Monitoria registrada: ${r.item.data.zerada?'zerada':pct(r.item.data.nota)}`)}
  catch(e){btn.innerHTML=lbl;btn.removeAttribute('aria-disabled');moErro(e,ed)}
  moCarregar()}
 async function moExcluir(btn){const ed=ED,{id,x}=ed;
  if(!await confirmBox('Excluir monitoria?',`A monitoria de ${dfmt(x.data.data)} de ${x.data.agenteNome} será excluída. Isso não pode ser desfeito.`,'Excluir monitoria',true))return;
  btn.setAttribute('aria-disabled','true');
- try{await DB.regDelete('monitoria',id);if(ED===ed)closeEd();toast('Monitoria excluída')}catch(e){btn.removeAttribute('aria-disabled');moErro(e,ed)}
+ try{await DB.regDelete('monitoria',id);maLimpar();if(ED===ed)closeEd();toast('Monitoria excluída')}catch(e){btn.removeAttribute('aria-disabled');moErro(e,ed)}
  moCarregar()}
 document.addEventListener('click',e=>{const t=e.target.closest&&e.target.closest('button');if(!t||t.getAttribute('aria-disabled')==='true')return;const d=t.dataset;
  if(d.mosetor!==undefined){MO.setor=d.mosetor||null;MO.hist=null;rMon();scrollTo({top:0})}
@@ -2528,6 +2532,49 @@ document.addEventListener('click',e=>{const t=e.target.closest&&e.target.closest
  else if('mosalvar' in d)moSalvar(t);
  else if('moexcluir' in d)moExcluir(t);
  else if('morecarregar' in d){MO.erro=false;MO.mesLido=null;moCarregar();rMon()}});
+
+/* ---------- calibragem preenchida pelas monitorias ----------
+   para cada setor e semana (segunda a domingo), as monitorias registradas viram: monitorias, qualidade (média das notas, zeradas
+   valendo 0), zeradas, agentes diferentes e responsáveis (todos os avaliadores). Nada é gravado na semana: o que for digitado à mão
+   vale no lugar do automático; o automático só preenche os campos vazios. As monitorias são lidas por mês e guardadas aqui */
+const MA={dono:null,meses:{},memo:new Map()};
+const MA_CAMPOS=['monitorias','qualidade','zeradas','agentes'];
+const maMesesDe=ids=>[...new Set(ids.flatMap(id=>[id.slice(0,7),addDays(id,6).slice(0,7)]))];
+const maMudou=()=>{MA.memo.clear();render()};
+function maCarregarMes(m){if(!meId)return Promise.resolve();if(MA.dono!==meId){MA.dono=meId;MA.meses={}}
+ const e=MA.meses[m]||(MA.meses[m]={itens:null,prom:null,erro:0});if(e.prom)return e.prom;const dono=MA.dono;
+ e.prom=(async()=>{try{const[de,ate]=moDatas(m),r=await DB.regList('monitoria',{de,ate});if(MA.dono!==dono||MA.meses[m]!==e)return;
+  const novo=r.itens||[],mudou=JSON.stringify(e.itens)!==JSON.stringify(novo);e.itens=novo;e.erro=0;if(mudou)maMudou()}catch(err){if(MA.meses[m]===e)e.erro=Date.now()}finally{e.prom=null}})();
+ return e.prom}
+const maPronto=ids=>MA.dono===meId&&maMesesDe(ids).every(m=>MA.meses[m]&&MA.meses[m].itens);
+/* espera os meses das semanas; devolve false se algum não carregou (quem chama avisa) */
+const maGarantir=async L=>{const ids=L.filter(Boolean).map(w=>w.inicio);await Promise.all(maMesesDe(ids).map(maCarregarMes));return maPronto(ids)};
+/* esquece o que foi lido (depois de registrar, corrigir ou excluir uma monitoria) */
+const maLimpar=()=>{MA.meses={};MA.memo.clear()};
+function maAuto(w,setor){if(!w||!w.inicio||!meId)return null;
+ if(!maPronto([w.inicio])){maMesesDe([w.inicio]).forEach(m=>{const e=MA.dono===meId&&MA.meses[m];if(!e||(!e.itens&&!e.prom&&Date.now()-(e.erro||0)>30000))maCarregarMes(m)});return null}
+ const mk=w.inicio+'|'+setor;if(MA.memo.has(mk))return MA.memo.get(mk);
+ const fim=addDays(w.inicio,6),L=maMesesDe([w.inicio]).flatMap(m=>MA.meses[m].itens).filter(x=>x.data.setor===setor&&x.data.data>=w.inicio&&x.data.data<=fim);
+ if(!L.length){MA.memo.set(mk,null);return null}
+ const res={monitorias:L.length,qualidade:Math.round(L.reduce((t,x)=>t+x.data.nota,0)/L.length*100)/100,zeradas:L.filter(x=>x.data.zerada).length,agentes:new Set(L.map(x=>x.data.agente)).size,responsavel:[...new Set(L.map(x=>moAvaliador(x.criado_por)))].join(', ')};MA.memo.set(mk,res);return res}
+/* valores da semana para um setor: digitado vence; vazio usa o automático. _usados/_dif dizem de onde veio cada um */
+function qEf(w,id){const man=(w&&w.q&&w.q[id])||{},au=maAuto(w,id);if(!au)return man;const r={...man},usados=[],dif=[];
+ MA_CAMPOS.forEach(k=>{if(isN(man[k])){if(man[k]!==au[k])dif.push(k)}else{r[k]=au[k];usados.push(k)}});
+ if(man.responsavel){if(man.responsavel!==au.responsavel)dif.push('responsavel')}else{r.responsavel=au.responsavel;usados.push('responsavel')}
+ r._auto=au;r._usados=usados;r._dif=dif;return r}
+/* linha da tabela da Qualidade: de onde vieram os números */
+const maOrigem=r=>!r._auto?'':r._dif.length?`<span class="by maw">Preenchido manualmente · monitorias do sistema: ${nf(r._auto.monitorias)} (${pct(r._auto.qualidade)})</span>`:r._usados.length?`<span class="by">${r._usados.length===5?'Calculado das':'Completado com as'} monitorias do sistema</span>`:'';
+/* no formulário: dica com o número das monitorias nos campos vazios */
+const maPh=(w,f,id,k,t,r)=>{if(f!=='q'||id==='sla'||(k==='responsavel'?r[k]:isN(r[k])))return '';const au=maAuto(w,id);if(!au||(k!=='responsavel'&&!isN(au[k])))return '';return ` placeholder="${esc(k==='responsavel'?au.responsavel:raw(t,au[k]))} (monitorias)"`};
+function maBox(w,f,id,r,ro){if(f!=='q'||id==='sla')return '';const au=maAuto(w,id);if(!au)return '';
+ const manual=MA_CAMPOS.some(k=>isN(r[k]))||!!r.responsavel;
+ return `<div class="maauto"><b>Das monitorias do sistema</b><span>${nf(au.monitorias)} ${au.monitorias===1?'monitoria':'monitorias'} · qualidade ${pct(au.qualidade)} · ${nf(au.zeradas)} ${au.zeradas===1?'zerada':'zeradas'} · ${nf(au.agentes)} ${au.agentes===1?'agente':'agentes'}</span><small>Responsáveis: ${esc(au.responsavel)}</small>
+ <small class="muted">${manual?'Há números digitados à mão: eles valem no lugar destes.':'Os campos vazios usam estes números. O que for digitado vale no lugar deles.'}</small>${manual&&!ro?'<div><button class="btn sm" data-usarauto>Usar o automático</button></div>':''}</div>`}
+/* apaga os números digitados à mão deste setor nesta semana, para valer o das monitorias */
+async function maUsarAuto(btn){const w=Wk();if(!ED||ED.kind!=='row'||ED.f!=='q'||!canEdit(w))return;const id=steps('q')[ED.i];if(!id||id==='sla')return;
+ const b=`q.${id}.`,patch={};[...MA_CAMPOS,'responsavel'].forEach(k=>patch[b+k]=null);patch[b+'by']=who();patch[b+'at']=Date.now();
+ btn.setAttribute('aria-disabled','true');if(await save(patch)){toast('Usando os números das monitorias');ED.rendered=null;rEd();render()}else btn.removeAttribute('aria-disabled')}
+document.addEventListener('click',e=>{const t=e.target.closest&&e.target.closest('button[data-usarauto]');if(t&&t.getAttribute('aria-disabled')!=='true')maUsarAuto(t)});
 
 /* ---------- seletor de ano, mês e semana ---------- */
 function rWsel(){const w=Wk();$('wTxt').textContent=`${wkTxt(w)} ${w.inicio.slice(0,4)}`;const old=$('wBtn').querySelector('.lk');old&&old.remove();if(w.fechada){const s=document.createElement('span');s.className='lk';s.title='Semana fechada';$('wBtn').insertBefore(s,$('wBtn').querySelector('.ch'))}$('wNow').hidden=sel===curWeek();if(!$('wp').hidden)rWp()}
@@ -2554,7 +2601,7 @@ const COLS={q:[['monitorias','Monitorias','num'],['qualidade','Qualidade','pct']
 function cellView(k,t,r){const v=r[k];if(t==='text')return v?esc(v):'<span class="none">Não definido</span>';if(!isN(v))return '<span class="none">—</span>';if(k==='qualidade')return pct(v);if(k==='zeradas'&&v>0)return `<span class="chip er">${nf(v)}</span>`;if(t==='dur')return dur(v);return nf(v)}
 function rTable(w,f){const C=COLS[f],c=f==='q'?calcQ(w):calcO(w),ed=canEdit(w);
  const head=`<tr><th>${f==='q'?'Equipe':'Setor'}</th>${C.map(([k,l,t])=>`<th class="${t==='text'?'':'n'}">${l}</th>`).join('')}${f==='o'?'<th class="n">Em dias úteis</th>':''}<th class="act"></th></tr>`;
- const body=c.rows.map((r,i)=>`<tr data-edrow="${f}|${i}" tabindex="0" aria-label="${ed?'Lançar':'Ver'} dados de ${esc(r.nome)}"><td><span class="nm">${esc(r.nome)}</span>${f==='q'&&r.monitorias===0?' <span class="chip ln">Sem monitoria</span>':''}${r.by?`<span class="by">${esc(r.by)} · ${tsTxt(r.at)}</span>`:'<span class="by">Aguardando lançamento</span>'}</td>${C.map(([k,,t])=>`<td class="${t==='text'?'':'n'}">${cellView(k,t,r)}</td>`).join('')}${f==='o'?`<td class="n">${isN(r.tempo)?diasTxt(r.tempo):''}</td>`:''}<td class="act">${ICO.edit}</td></tr>`).join('');
+ const body=c.rows.map((r,i)=>`<tr data-edrow="${f}|${i}" tabindex="0" aria-label="${ed?'Lançar':'Ver'} dados de ${esc(r.nome)}"><td><span class="nm">${esc(r.nome)}</span>${f==='q'&&r.monitorias===0?' <span class="chip ln">Sem monitoria</span>':''}${r.by?`<span class="by">${esc(r.by)} · ${tsTxt(r.at)}</span>`:r._auto?'':'<span class="by">Aguardando lançamento</span>'}${f==='q'?maOrigem(r):''}</td>${C.map(([k,,t])=>`<td class="${t==='text'?'':'n'}">${cellView(k,t,r)}</td>`).join('')}${f==='o'?`<td class="n">${isN(r.tempo)?diasTxt(r.tempo):''}</td>`:''}<td class="act">${ICO.edit}</td></tr>`).join('');
  const foot=f==='q'?`<tr><td>Total</td><td class="n">${nf(c.mon)}</td><td class="n">${pct(c.q)}</td><td class="n">${nf(c.zer)}</td><td class="n">${nf(c.ag)}</td><td class="none" style="font-weight:400">Qualidade total: média simples entre as equipes</td><td></td></tr>`
  :`<tr><td>Total</td><td class="n">${nf(c.trat)}</td><td class="n">${nf(c.back)}</td><td class="n">${dur(c.tempo)}</td><td class="n">${isN(c.tempo)?diasTxt(c.tempo):''}</td><td></td></tr><tr data-edrow="o|sla" tabindex="0" style="cursor:pointer"><td>SLA de resolução da semana${w.slaBy&&isN(w.sla)?`<span class="by">${esc(w.slaBy)} · ${tsTxt(w.slaAt)}</span>`:''}</td><td></td><td></td><td class="n">${isN(w.sla)?dur(w.sla):'<span class="none">Não lançado</span>'}</td><td></td><td class="act">${ICO.edit}</td></tr>`;
  return `<div class="tw"><table><thead>${head}</thead><tbody>${body}</tbody><tfoot>${foot}</tfoot></table></div>`}
@@ -2639,7 +2686,7 @@ const raw=(t,v)=>v===null||v===undefined?'':t==='pct'?String(v).replace('.',',')
 const steps=f=>f==='q'?SETF('q').map(s=>s.id):[...SETF('o').map(s=>s.id),'sla'];
 const showEd=()=>{$('ed').classList.add('on');$('edScrim').classList.add('on');setTimeout(()=>{const x=$('ed').querySelector('input:not([readonly]),textarea:not([readonly])');x&&x.focus()},320)};
 function closeEd(){if(document.activeElement&&$('ed').contains(document.activeElement))document.activeElement.blur();$('ed').classList.remove('on');$('edScrim').classList.remove('on');ED=null}
-function openEd(f,i){const w=Wk();withWho(w,()=>{if(i===undefined){const st=steps(f);i=st.findIndex(id=>id==='sla'?!isN(w.sla):!rowDone(f,(f==='q'?w.q:w.o)[id]||{}));if(i<0)i=0}ED={kind:'row',f,i};rEd();showEd()})}
+function openEd(f,i){const w=Wk();withWho(w,()=>{if(i===undefined){const st=steps(f);i=st.findIndex(id=>id==='sla'?!isN(w.sla):!rowDone(f,f==='q'?qEf(w,id):(w.o[id]||{})));if(i<0)i=0}ED={kind:'row',f,i};rEd();showEd()})}
 function openPlan(id,f,setor){const w=Wk();withWho(w,()=>{const p=id?w.planos[id]:{frente:f,setor,erro:'',acao:'',objetivo:'',prazo:''};if(!p)return;ED={kind:'plan',id,p:clone(p)};rEd();showEd()})}
 const nPal=id=>Object.values(S.weeks).filter(w=>w.palavras&&w.palavras[id]&&w.palavras[id].palavra).length;
 function openColab(id){const c=id?colab(id):{nome:'',ativo:true};if(!c)return;ED={kind:'colab',id,c:clone(c)};rEd();showEd()}
@@ -2656,11 +2703,11 @@ function openUser(id){const u=id?S.users.find(x=>x.id===id):{nome:'',usuario:'',
 function rEd(){if(!ED)return;if(ED.kind==='agenda')return rEdAg();if(ED.kind==='jretapa')return rEdJrEtapa();if(ED.kind==='jrfluxo')return rEdJrFluxo();if(ED.kind==='diag')return rEdDiag();if(ED.kind==='proj')return rEdProj();if(ED.kind==='monag')return rEdMonAg();if(ED.kind==='monvarios')return rEdMonVarios();if(ED.kind==='mon')return rEdMo();if(ED.kind==='plan')return rEdPlan();if(ED.kind==='user')return rEdUser();if(ED.kind==='colab')return rEdColab();
  const w=Wk(),{f}=ED,st=steps(f);if(ED.i>=st.length)ED.i=st.length-1;const i=ED.i,id=st[i],ro=!canEdit(w),isS=id==='sla';const r=isS?{}:((f==='q'?w.q:w.o)[id]||{});
  if(document.activeElement&&$('ed').contains(document.activeElement)&&ED.rendered===`${sel}|${f}|${i}`)return;ED.rendered=`${sel}|${f}|${i}`;
- const done=k=>k==='sla'?isN(w.sla):rowDone(f,(f==='q'?w.q:w.o)[k]||{});
+ const done=k=>k==='sla'?isN(w.sla):rowDone(f,f==='q'?qEf(w,k):(w.o[k]||{}));
  const hint=t=>t==='dur'?'Formato 10h12 ou 10:12':t==='pct'?'Use vírgula para decimais':'';
- const fld=([k,l,t])=>`<div class="f"><label for="e_${k}">${l}</label><input id="e_${k}" data-k="${k}" data-t="${t}" inputmode="${t==='text'?'text':'decimal'}" value="${esc(raw(t,isS?w.sla:r[k]))}" ${ro?'readonly':''} autocomplete="off"><span class="msg" data-h="${hint(t)}">${hint(t)}</span></div>`;
+ const fld=([k,l,t])=>`<div class="f"><label for="e_${k}">${l}</label><input id="e_${k}" data-k="${k}" data-t="${t}" inputmode="${t==='text'?'text':'decimal'}" value="${esc(raw(t,isS?w.sla:r[k]))}"${isS?'':maPh(w,f,id,k,t,r)} ${ro?'readonly':''} autocomplete="off"><span class="msg" data-h="${hint(t)}">${hint(t)}</span></div>`;
  let body='';if(isS)body=fld(['sla','SLA de resolução da semana','dur'])+(w.slaBy&&isN(w.sla)?`<div class="last">Último lançamento: ${esc(w.slaBy)} em ${tsTxt(w.slaAt)}</div>`:'');
- else body=`<div class="g2">${FIELDS[f].map(fld).join('')}</div>${f==='q'?`<div class="f"><label for="e_resp">Responsável pela monitoria</label><input id="e_resp" data-k="responsavel" data-t="text" list="dlpe" value="${esc(r.responsavel||'')}" ${ro?'readonly':''} autocomplete="off"><datalist id="dlpe">${COLS_().filter(c=>c.ativo!==false).map(c=>c.nome).map(n=>`<option value="${esc(n)}">`).join('')}</datalist><span class="msg" data-h=""></span></div>`:''}${r.by?`<div class="last">Último lançamento: ${esc(r.by)} em ${tsTxt(r.at)}</div>`:''}`;
+ else body=`${maBox(w,f,id,r,ro)}<div class="g2">${FIELDS[f].map(fld).join('')}</div>${f==='q'?`<div class="f"><label for="e_resp">Responsável pela monitoria</label><input id="e_resp" data-k="responsavel" data-t="text" list="dlpe" value="${esc(r.responsavel||'')}"${maPh(w,f,id,'responsavel','text',r)} ${ro?'readonly':''} autocomplete="off"><datalist id="dlpe">${COLS_().filter(c=>c.ativo!==false).map(c=>c.nome).map(n=>`<option value="${esc(n)}">`).join('')}</datalist><span class="msg" data-h=""></span></div>`:''}${r.by?`<div class="last">Último lançamento: ${esc(r.by)} em ${tsTxt(r.at)}</div>`:''}`;
  const last=i===st.length-1;
  $('ed').innerHTML=`<div class="edh"><div class="row"><span>${ro?'Semana fechada · somente leitura':`Lançando ${FR[f]} · <b>Semana de ${wkTxt(w)} ${w.inicio.slice(0,4)}</b>`}</span><button class="ico" data-edclose aria-label="Fechar">${ICO.x}</button></div>
  <div class="prog">${st.map((k,j)=>`<button class="${j===i?'cur':done(k)?'done':''}" data-edgo="${j}" aria-label="${k==='sla'?'SLA da semana':esc(setorNome(k))}"></button>`).join('')}</div>
@@ -2854,6 +2901,7 @@ async function exportXlsx(){if(!isAdmin()||!EX||EX.ocupado)return;const X=EX,E={
  try{
   if(!window.XLSX)try{await loadScript('https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js')}catch(e){throw new Error('Não foi possível gerar o Excel sem internet.')}
   const wb=XLSX.utils.book_new(),add=(n,rows)=>XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows),n),dia=t=>t?dfmt(ymd(new Date(t))):'';
+  if(E.cal&&!await maGarantir(periodWeeks(E.cFrom,E.cTo)))msg('Atenção: não foi possível ler as monitorias; os números automáticos podem estar incompletos.');
   if(E.cal){const L=periodWeeks(E.cFrom,E.cTo),sem=w=>`${dfmt(w.inicio)} a ${dfmt(w.fim)}`;
    add('Qualidade',[['Semana','Equipe','Monitorias','Qualidade (%)','Zeradas','Agentes','Responsável','Preenchido por'],...L.flatMap(w=>{const Q=calcQ(w);return [...Q.rows.map(r=>[sem(w),r.nome,r.monitorias??'',r.qualidade??'',r.zeradas??'',r.agentes??'',r.responsavel||'',r.by||'']),[sem(w),'Total',Q.mon??'',Q.q!==null?+Q.q.toFixed(2):'',Q.zer??'',Q.ag??'','','']]})]);
    add('Operações',[['Semana','Setor','Tickets tratados','Backlog atual','Tempo médio de backlog','Dias úteis','Preenchido por'],...L.flatMap(w=>{const O=calcO(w);return [...O.rows.map(r=>[sem(w),r.nome,r.tratados??'',r.backlog??'',isN(r.tempo)?dur(r.tempo):'',diasTxt(r.tempo),r.by||'']),[sem(w),'Total',O.trat??'',O.back??'',isN(O.tempo)?dur(O.tempo):'','',''],[sem(w),'SLA de resolução','','',isN(O.sla)?dur(O.sla):'','',w.slaBy||'']]})]);
@@ -2880,6 +2928,7 @@ async function exportXlsx(){if(!isAdmin()||!EX||EX.ocupado)return;const X=EX,E={
   }
   if(E.an){if(!await anGarantir())throw new Error('Não foi possível carregar os dados das Análises. Tente de novo.');if(JR.limitado||DG.limitado||PJ.limitado)limitado=true;
    add('Perguntas-chave',[['Nº','Pergunta','Resposta','Item','Detalhe'],...pqPerguntas().flatMap((q,i)=>{const I=pqItensTexto(q.itens),r=pqPlano(q.r);return I.length?I.map(x=>[i+1,q.t,r,x.t,x.d]):[[i+1,q.t,r,'','']]})]);
+   await maGarantir(ids().filter(id=>id>=E.dDe&&id<=E.dAte).map(id=>S.weeks[id]));
    const P=porPeriodoDatas(E.dDe,E.dAte);
    add('Por setor',[['Setor','Na Calibragem','Qualidade média (%)','Monitorias','Zeradas','Tickets tratados','Backlog (última semana)','Tempo médio','Problemas ativos','Críticos ativos','Projetos em aberto','Atrasados','Concluídos no período','Etapas da jornada'],
     ...porSetores().map(s=>{const r=porNumeros(s,P),v=x=>isN(x)?x:'';return [s.nome,s.cfg?'Sim':'Não (só etiqueta)',r.q&&isN(r.q.qualidade)?+r.q.qualidade.toFixed(2):'',r.q?v(r.q.monitorias):'',r.q?v(r.q.zeradas):'',r.o?v(r.o.tratados):'',r.o?v(r.o.backlog):'',r.o&&isN(r.o.tempo)?dur(r.o.tempo):'',r.prob.length,r.crit,r.abertos.length,r.atr,r.concl.length,r.etapas.map(({e,i})=>`${i+1}. ${e.data.nome}`).join(', ')]})]);
@@ -2904,7 +2953,7 @@ let slides=[],si=0,PWL=[],pFrom=null,pTo=null,pShort=null;
 const avg=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:null;
 const lastWith=(L,fn)=>{for(let i=L.length-1;i>=0;i--){const v=fn(L[i]);if(isN(v))return{v,w:L[i]}}return{v:null,w:null}};
 function aggQ(L){if(L.length===1)return{...calcQ(L[0]),fb:{}};
- const rows=SETF('q').map(s=>{const rs=L.map(w=>(w.q&&w.q[s.id])||{}),has=rs.filter(r=>isN(r.monitorias)),qs=rs.filter(r=>r.monitorias>0&&isN(r.qualidade)).map(r=>r.qualidade),ag=lastWith(rs,r=>r.agentes),resp=[...rs].reverse().find(r=>r.responsavel);
+ const rows=SETF('q').map(s=>{const rs=L.map(w=>qEf(w,s.id)),has=rs.filter(r=>isN(r.monitorias)),qs=rs.filter(r=>r.monitorias>0&&isN(r.qualidade)).map(r=>r.qualidade),ag=lastWith(rs,r=>r.agentes),resp=[...rs].reverse().find(r=>r.responsavel);
   return{...s,monitorias:has.length?has.reduce((t,r)=>t+r.monitorias,0):null,zeradas:rs.some(r=>isN(r.zeradas))?rs.reduce((t,r)=>t+(isN(r.zeradas)?r.zeradas:0),0):null,qualidade:avg(qs),agentes:ag.v,responsavel:resp?resp.responsavel:''}});
  const sum=k=>rows.some(r=>isN(r[k]))?rows.reduce((t,r)=>t+(isN(r[k])?r[k]:0),0):null,ag=lastWith(L,w=>calcQ(w).ag);
  return{rows,q:avg(L.map(w=>calcQ(w).q).filter(isN)),mon:sum('monitorias'),zer:sum('zeradas'),ag:ag.v,sem:rows.filter(r=>r.monitorias===0),fb:{ag:ag.w&&ag.w!==L.at(-1)?ag.w.inicio:null}}}
@@ -3073,7 +3122,7 @@ function buildSlidesAn(E,Dg){PWL=[];const hoje=today(),rod=`Situação em ${dfmt
 const pqPlano=html=>{const t=document.createElement('template');t.innerHTML=html;return t.content.textContent.trim()};
 const pqItensTexto=itens=>itens.map(hh=>{const t=document.createElement('template');t.innerHTML=hh;const c=t.content,a=c.querySelector('.pqt'),b=c.querySelector('small');return {t:(a||c).textContent.trim(),d:b?b.textContent.trim():''}});
 /* Jornada, Diagnósticos e Projetos carregados para a conta atual (as perguntas e o "Por setor" dependem dos três) */
-async function anGarantir(){const L=[];if(JR.dono!==meId||!JR.etapas)L.push(jrCarregar());if(DG.dono!==meId||!DG.itens)L.push(dgCarregar());if(PJ.dono!==meId||!PJ.itens)L.push(pjCarregar());await Promise.all(L);
+async function anGarantir(){const L=[];if(JR.dono!==meId||!JR.etapas)L.push(jrCarregar());if(DG.dono!==meId||!DG.itens)L.push(dgCarregar());if(PJ.dono!==meId||!PJ.itens)L.push(pjCarregar());await Promise.all([...L,maGarantir(ids().slice(-6).map(id=>S.weeks[id]))]);
  for(let i=0;i<150&&(JR.carregando||DG.carregando||PJ.carregando);i++)await new Promise(r=>setTimeout(r,100));
  return pqPronto()}
 /* período de datas → semanas da Calibragem que começam nele (até a semana atual), no formato usado pelo "Por setor" */
@@ -3096,7 +3145,8 @@ function buildSlidesPm(P,de,ate){PWL=[];const hoje=today(),rod=`${dfmt(de)} a ${
 /* busca os dados da área (Agenda, Análises e Projetos), monta os slides e apresenta ou baixa */
 let presTok=0;
 async function presIr(baixar){const m=presModo,tk=++presTok,pg=page;
- if(m==='geral'||m==='cal'){closePcfg();const L=periodWeeks(pFrom,pTo);baixar?downloadPres(L,m):startPres(L,m);return}
+ if(m==='geral'||m==='cal'){closePcfg();const L=periodWeeks(pFrom,pTo),LL=[...L,...(prevPeriod(L)||[])];
+  if(!maPronto(LL.map(w=>w.inicio))){const tk=++presTok,pg=page,ok=await maGarantir(LL);if(tk!==presTok||page!==pg||!meId)return;if(!ok)toast('Não foi possível ler as monitorias: os números automáticos podem estar incompletos.',true)}baixar?downloadPres(L,m):startPres(L,m);return}
  let de,ate;if(m==='ag'||m==='pm'){({de,ate}=pAg);if(!de||!ate||![de,ate].every(d=>/^\d{4}-\d{2}-\d{2}$/.test(d)&&d>='2000-01-01'&&d<='2100-12-31'))return toast('Confira as datas do período.',true);
   if(de>ate)[de,ate]=[ate,de];
   /* na Agenda o período vira várias consultas; nos Projetos ele só filtra os concluídos */
@@ -3144,6 +3194,7 @@ async function onData(d){
  if(page==='an-jornada'||(page==='config'&&cfgView==='jornada'))jrCarregar();
  if(page==='config'&&(cfgView==='monitcrit'||cfgView==='monitag'))monCarregar();
  if(page==='monitorias'){monCarregar();moCarregar()}
+ if((page==='qualidade'||page==='inicio')&&sel)maMesesDe([sel]).forEach(maCarregarMes);
  if(page==='an-diag'||page==='an-jornada')dgCarregar();if(page==='an-diag')jrCarregar();
  if(page==='pm-proj'||page==='pm-fut'||page==='an-diag'||page==='an-perg'||page==='an-setor')pjCarregar();if(page==='pm-proj'||page==='pm-fut'||page==='an-perg'||page==='an-setor'){jrCarregar();dgCarregar()}
  render();
