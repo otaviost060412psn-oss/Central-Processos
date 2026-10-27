@@ -628,8 +628,25 @@ button.jrlab:hover{background:var(--card2)}
 .dgcont{margin:0 0 8px}
 .dgpan{padding:0}
 .dgtab td{vertical-align:top}
-.dglink{background:none;border:0;padding:0;text-align:left;font-weight:500;color:var(--tx);cursor:pointer;overflow-wrap:anywhere}
-.dglink:hover{text-decoration:underline}
+.dglink{display:inline-flex;align-items:flex-start;gap:6px;background:none;border:0;padding:0;text-align:left;font-weight:500;color:var(--tx);cursor:pointer;overflow-wrap:anywhere}
+.dglink span{min-width:0}
+.dglink:hover span{text-decoration:underline}
+.dglink .chev{flex:none;color:var(--mu);margin-top:1px;transform:rotate(-90deg);transition:transform .2s}
+.dglink[aria-expanded="true"] .chev{transform:none}
+.dgtab td .by{margin-left:24px}
+.dgtab tr.dgopen,.dgtab tr.dgdet{background:var(--card2)}
+.dgtab tr.dgopen td{border-bottom-color:transparent}
+.dgtab tr.dgdet,.dgtab tr.dgmes{cursor:default}
+.dgtab tr.dgmes:hover{background:none}
+.dgtab tr.dgmes th{padding-top:16px;font-size:13px;font-weight:600;color:var(--tx)}
+.dgtab tr.dgmes th .muted{font-weight:400}
+.dgdet>td{padding:4px 14px 16px 38px}
+.dgdb{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px 28px}
+.dgdb .lab{font-size:12px;font-weight:500;color:var(--pri);margin-bottom:3px}
+.dgdb p{margin:0;font-size:14px;line-height:1.55;white-space:pre-wrap;overflow-wrap:anywhere}
+.dgda{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;margin-top:14px;font-size:12px}
+/* no celular a tabela rola para o lado: os detalhes ficam presos à esquerda e cabem na largura da tela */
+@media (max-width:600px){.dgdb,.dgda{position:sticky;left:38px;max-width:calc(100vw - 100px)}.dgdb{grid-template-columns:1fr}}
 .dgsm{font-size:13px;color:var(--mu);max-width:220px;overflow-wrap:anywhere}
 .dgset{border:0;margin:0;padding:0;min-width:0}
 .dgset legend{font-size:12px;color:var(--mu);padding:0;margin-bottom:6px}
@@ -1412,8 +1429,12 @@ const DG_GRAV={critica:['Crítica','er',4],alta:['Alta','wa',3],media:['Média',
 const DG_SIT={ativo:['Ativo','er'],investigacao:['Em investigação','wa'],reduzido:['Reduzido','ln'],resolvido:['Resolvido','ok']};
 const DG_FREQ={diaria:'Diária',semanal:'Semanal',quinzenal:'Quinzenal',mensal:'Mensal',pontual:'Pontual',nao_medida:'Não medida'};
 const DG_CAUSA={hipotese:'Hipótese a validar',confirmada:'Causa identificada'};
-const dgVazio=dono=>({itens:null,limitado:false,dono,carregando:false,denovo:false,erro:false,html:null,adiado:false,f:{q:'',sit:'ativos',grav:'',etapa:'',setor:''}});
+/* f.mes: 'AAAA-MM' (abre no mês atual) ou '' para todos os meses; abertos: problemas com os detalhes à mostra */
+const dgVazio=dono=>({itens:null,limitado:false,dono,carregando:false,denovo:false,erro:false,html:null,adiado:false,abertos:new Set(),f:{q:'',mes:today().slice(0,7),sit:'ativos',grav:'',etapa:'',setor:''}});
 let DG=dgVazio(null);
+/* mês do problema: o da data de registro; sem ela, o mês em que foi criado no sistema */
+const dgMes=x=>/^\d{4}-\d{2}/.test(x.data.data||'')?x.data.data.slice(0,7):ymd(new Date(x.criado)).slice(0,7);
+const dgMesNome=k=>`${MESL[+k.slice(5,7)-1]} de ${k.slice(0,4)}`;
 const dgM=(M,k)=>Object.hasOwn(M,k)?M[k]:null;
 const dgAtivo=x=>x.data.situacao==='ativo'||x.data.situacao==='investigacao';
 const dgChip=(M,k)=>{const v=dgM(M,k);return v?`<span class="chip ${v[1]}">${esc(v[0])}</span>`:''};
@@ -1432,6 +1453,7 @@ async function dgCarregar(){
 }
 function dgLista(){const f=DG.f,q=f.q.trim().toLowerCase(),st=f.setor.toLowerCase(),peso=x=>(dgM(DG_GRAV,x.data.gravidade)||[0,0,0])[2];
  return DG.itens.filter(x=>{const d=x.data;
+  if(f.mes&&dgMes(x)!==f.mes)return false;
   if(f.sit==='ativos'&&!dgAtivo(x))return false;
   if(f.sit==='fechados'&&d.situacao!=='resolvido'&&d.situacao!=='reduzido')return false;
   if(Object.hasOwn(DG_SIT,f.sit)&&d.situacao!==f.sit)return false;
@@ -1446,14 +1468,25 @@ function dgResultado(){
  const R=dgLista();if(!R.length)return '<div class="panel"><p class="muted">Nenhum problema com esses filtros.</p></div>';
  const corta=(s,n)=>{const c=Array.from(s);return c.length>n?c.slice(0,n-1).join('')+'…':s};
  const causa=d=>d.causa&&d.causa.trim()?`<span class="none">${d.causaTipo==='confirmada'?'Confirmada':'Hipótese'}:</span> ${esc(corta(d.causa.trim(),90))}`:'—';
- const linha=x=>{const d=x.data;return `<tr data-dgrow="${esc(x.id)}"><td><button class="dglink" data-dgabrir="${esc(x.id)}">${esc(d.titulo)}</button>${d.tema?`<span class="by">Tema: ${esc(d.tema)}</span>`:''}</td><td>${dgChip(DG_GRAV,d.gravidade)}</td><td class="dgsm">${esc(dgM(DG_FREQ,d.frequencia)||'—')}</td><td class="dgsm">${esc(dgEtapas(x)||'—')}</td><td class="dgsm">${esc(d.setores.join(', ')||'—')}</td><td class="dgsm">${causa(d)}</td><td>${dgChip(DG_SIT,d.situacao)}</td></tr>`};
- return `<p class="muted dgcont">${R.length} ${R.length===1?'problema':'problemas'}</p><div class="panel dgpan"><div class="tw"><table class="dgtab"><thead><tr><th>Problema</th><th>Gravidade</th><th>Frequência</th><th>Etapas</th><th>Setores</th><th>Causa</th><th>Situação</th></tr></thead><tbody>${R.map(linha).join('')}</tbody></table></div></div>`}
+ /* detalhes completos, abertos e fechados pela própria linha; editar continua no painel lateral */
+ const campo=(l,v)=>`<div><div class="lab">${l}</div><p>${v&&v.trim()?esc(v.trim()):'<span class="none">Não informado</span>'}</p></div>`;
+ const detalhes=x=>{const d=x.data;return `<tr class="dgdet"><td colspan="7"><div class="dgdb" id="dgd_${esc(x.id)}">${campo('O que está acontecendo',d.descricao)}${campo('Impacto para o cliente',d.impacto)}${campo(d.causaTipo==='confirmada'?'Causa identificada':'Causa (hipótese a validar)',d.causa)}${campo('Evidências',d.evidencias)}${campo('Próxima ação necessária',d.proxima)}${campo('Tema',d.tema)}${campo('Data de registro',dfmt(d.data||''))}</div>
+ <div class="dgda"><span class="muted">Registrado em ${tsTxt(x.criado)}${x.atualizado!==x.criado?` · alterado em ${tsTxt(x.atualizado)}`:''}</span><button class="btn sm" data-dgabrir="${esc(x.id)}">${ICO.edit}Editar</button></div></td></tr>`};
+ const linha=x=>{const d=x.data,ab=DG.abertos.has(x.id);return `<tr data-dgrow="${esc(x.id)}"${ab?' class="dgopen"':''}><td><button class="dglink" data-dgtog="${esc(x.id)}" aria-expanded="${ab}"${ab?` aria-controls="dgd_${esc(x.id)}"`:''}>${ICO.chev}<span>${esc(d.titulo)}</span></button>${d.tema?`<span class="by">Tema: ${esc(d.tema)}</span>`:''}</td><td>${dgChip(DG_GRAV,d.gravidade)}</td><td class="dgsm">${esc(dgM(DG_FREQ,d.frequencia)||'—')}</td><td class="dgsm">${esc(dgEtapas(x)||'—')}</td><td class="dgsm">${esc(d.setores.join(', ')||'—')}</td><td class="dgsm">${causa(d)}</td><td>${dgChip(DG_SIT,d.situacao)}</td></tr>${ab?detalhes(x):''}`};
+ /* em "Todos os meses", agrupa por mês (mais recente primeiro), mantendo a ordem por gravidade dentro de cada mês */
+ let corpo;if(DG.f.mes)corpo=R.map(linha).join('');
+ else{const G=new Map();R.forEach(x=>{const k=dgMes(x);G.has(k)?G.get(k).push(x):G.set(k,[x])});
+  corpo=[...G.keys()].sort().reverse().map(k=>{const g=G.get(k);return `<tr class="dgmes"><th colspan="7" scope="rowgroup">${esc(dgMesNome(k))} <span class="muted">· ${g.length} ${g.length===1?'problema':'problemas'}</span></th></tr>${g.map(linha).join('')}`}).join('')}
+ return `<p class="muted dgcont">${R.length} ${R.length===1?'problema':'problemas'}</p><div class="panel dgpan"><div class="tw"><table class="dgtab"><thead><tr><th>Problema</th><th>Gravidade</th><th>Frequência</th><th>Etapas</th><th>Setores</th><th>Causa</th><th>Situação</th></tr></thead><tbody>${corpo}</tbody></table></div></div>`}
 function dgFiltros(){const f=DG.f,o=(v,t,cur)=>`<option value="${esc(v)}"${v===cur?' selected':''}>${esc(t)}</option>`;
  const setores=[...new Map(DG.itens.flatMap(x=>x.data.setores).map(s=>[s.toLowerCase(),s])).values()].sort((a,b)=>a.localeCompare(b));
  /* filtro de uma etapa ou setor que deixou de existir não pode continuar valendo escondido */
  if(f.etapa&&JR.etapas&&!jrEtapa(f.etapa))f.etapa='';
  if(f.setor&&!setores.some(s=>s.toLowerCase()===f.setor.toLowerCase()))f.setor='';
+ /* só os meses com registros, mais o mês atual e o escolhido (para o filtro nunca ficar valendo escondido) */
+ const meses=[...new Set([today().slice(0,7),...(f.mes?[f.mes]:[]),...DG.itens.map(dgMes)])].sort().reverse();
  return `<div class="dgfil"><input id="dg_q" type="search" maxlength="100" placeholder="Buscar problema, causa, tema…" aria-label="Buscar problema" value="${esc(f.q)}" autocomplete="off">
+ <select id="dg_mes" aria-label="Mês">${meses.map(k=>o(k,dgMesNome(k),f.mes)).join('')}${o('','Todos os meses',f.mes)}</select>
  <select id="dg_sit" aria-label="Situação">${o('','Todas as situações',f.sit)}${o('ativos','Ativos e em investigação',f.sit)}${o('fechados','Resolvidos ou reduzidos',f.sit)}${Object.entries(DG_SIT).map(([k,[t]])=>o(k,t,f.sit)).join('')}</select>
  <select id="dg_grav" aria-label="Gravidade">${o('','Todas as gravidades',f.grav)}${Object.entries(DG_GRAV).map(([k,[t]])=>o(k,t,f.grav)).join('')}</select>
  <select id="dg_etapa" aria-label="Etapa da jornada">${o('','Todas as etapas',f.etapa)}${(JR.etapas||[]).map((e,i)=>o(e.id,`${i+1}. ${e.data.nome}`,f.etapa)).join('')}</select>
@@ -1473,7 +1506,7 @@ function rDiag(){
 /* busca e filtros trocam só a tabela, sem tirar o foco */
 const dgAtualizar=()=>{const r=$('dg_res');if(r&&DG.itens)r.innerHTML=dgResultado()};
 document.addEventListener('input',e=>{if(e.target.id==='dg_q'){DG.f.q=e.target.value;dgAtualizar()}});
-document.addEventListener('change',e=>{const k={dg_sit:'sit',dg_grav:'grav',dg_etapa:'etapa',dg_setor:'setor'}[e.target.id];if(k){DG.f[k]=e.target.value;dgAtualizar()}});
+document.addEventListener('change',e=>{const k={dg_mes:'mes',dg_sit:'sit',dg_grav:'grav',dg_etapa:'etapa',dg_setor:'setor'}[e.target.id];if(k){DG.f[k]=e.target.value;dgAtualizar()}});
 document.addEventListener('focusout',e=>{if(e.target.closest&&e.target.closest('#p-an-diag .dgfil')&&DG.adiado){DG.adiado=false;setTimeout(()=>page==='an-diag'&&rDiag())}});
 function openDiag(id){
  const x=id?(DG.itens||[]).find(y=>y.id===id):{data:{titulo:'',descricao:'',etapas:[],setores:[],tema:'',data:today(),impacto:'',frequencia:'',gravidade:'media',causaTipo:'hipotese',causa:'',evidencias:'',proxima:'',situacao:'ativo'}};
@@ -1520,12 +1553,15 @@ async function delDiag(btn){const ed=ED,{id,x}=ed;
  dgCarregar();
 }
 /* atalhos dos números do topo: cada um aplica um filtro */
-/* limpam também busca, etapa e setor, para a tabela bater com o número clicado */
-const DG_ATALHO=Object.fromEntries(Object.entries({ativos:['ativos',''],criticos:['ativos','critica'],investigacao:['investigacao',''],fechados:['fechados','']}).map(([k,[sit,grav]])=>[k,{q:'',sit,grav,etapa:'',setor:''}]));
+/* limpam também mês, busca, etapa e setor, para a tabela bater com o número clicado (os números contam todos os meses) */
+const DG_ATALHO=Object.fromEntries(Object.entries({ativos:['ativos',''],criticos:['ativos','critica'],investigacao:['investigacao',''],fechados:['fechados','']}).map(([k,[sit,grav]])=>[k,{q:'',mes:'',sit,grav,etapa:'',setor:''}]));
+/* abre ou fecha os detalhes de um problema, devolvendo o foco ao botão da linha */
+const dgToggle=id=>{DG.abertos.has(id)?DG.abertos.delete(id):DG.abertos.add(id);dgAtualizar();const b=document.querySelector(`[data-dgtog="${CSS.escape(id)}"]`);b&&b.focus()};
 document.addEventListener('click',e=>{
- const tr=e.target.closest&&e.target.closest('tr[data-dgrow]');if(tr&&!e.target.closest('button')){openDiag(tr.dataset.dgrow);return}
+ const tr=e.target.closest&&e.target.closest('tr[data-dgrow]');if(tr&&!e.target.closest('button')){if(!getSelection().toString())dgToggle(tr.dataset.dgrow);return}
  const t=e.target.closest&&e.target.closest('button');if(!t||t.getAttribute('aria-disabled')==='true')return;const d=t.dataset;
- if(d.dgabrir!==undefined)openDiag(d.dgabrir||null);
+ if(d.dgtog)dgToggle(d.dgtog);
+ else if(d.dgabrir!==undefined)openDiag(d.dgabrir||null);
  else if(d.dgfiltro&&Object.hasOwn(DG_ATALHO,d.dgfiltro)){Object.assign(DG.f,DG_ATALHO[d.dgfiltro]);rDiag();const b=document.querySelector(`[data-dgfiltro="${d.dgfiltro}"]`);b&&b.focus()}
  else if('dgrecarregar' in d){DG=dgVazio(null);render()}
  else if('dgsalvar' in d)saveDiag(t);
