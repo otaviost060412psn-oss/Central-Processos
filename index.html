@@ -512,6 +512,11 @@ button.plc.miss:hover{background:var(--card2)}
 
 /* configurações: listas e formulários */
 .cfgp{display:grid;gap:16px}
+/* exportar dados */
+#ex_box{display:grid;gap:var(--gap)}
+.exchks{display:flex;flex-wrap:wrap;gap:8px}
+.exchks .dgchk{padding:7px 14px;font-size:14px}
+.exa{display:flex;flex-wrap:wrap;align-items:center;gap:12px}
 .cfgp h3{font-size:17px}
 .muted{margin:0;color:var(--mu);font-size:14px}
 .frow{display:grid;grid-template-columns:1fr 1fr;gap:14px}
@@ -758,7 +763,6 @@ button.jrlab:hover{background:var(--card2)}
       <div id="wp" hidden role="dialog" aria-label="Escolher semana"></div>
     </div>
     <button class="btn so-adm" data-present aria-label="Apresentar"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M8 5.5v13l11-6.5z"/></svg><span class="hide-s">Apresentar</span></button>
-    <button class="btn so-adm" id="expBtn"><svg class="i" viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg><span class="hide-s">Exportar Excel</span></button>
   </header>
   <div id="scrim"></div>
   <nav id="menu" aria-label="Menu principal">
@@ -1044,7 +1048,7 @@ function render(){
  $('pageTitle').textContent=({inicio:'Visão Geral',qualidade:'Qualidade',operacoes:'Operações',palavra:'Palavra da Semana',agenda:'Agenda e Demandas','an-jornada':'Jornada do Cliente','an-diag':'Diagnósticos',config:'Configurações'})[page]||(EMB[page]||[])[0]||'';
  document.querySelectorAll('.page').forEach(p=>p.classList.toggle('on',p.id==='p-'+(EMB[page]?'embreve':page)));
  document.querySelector('.wsel').hidden=page==='agenda'||page==='an-jornada'||page==='an-diag'||!!EMB[page];
- if(EMB[page])rEmBreve();else if(page==='an-jornada')rJornada();else if(page==='an-diag')rDiag();else if(page==='inicio')rInicio(w);else if(page==='palavra')rPalavra(w);else if(page==='agenda')rAgenda();else if(page==='config'){if(!(['setores','jornada'].includes(cfgView)&&render.cfgShown===cfgView&&!render.force))rConfig();render.cfgShown=cfgView}else rFrente(w,page==='qualidade'?'q':'o');
+ if(EMB[page])rEmBreve();else if(page==='an-jornada')rJornada();else if(page==='an-diag')rDiag();else if(page==='inicio')rInicio(w);else if(page==='palavra')rPalavra(w);else if(page==='agenda')rAgenda();else if(page==='config'){if(!(['setores','jornada','exportacao'].includes(cfgView)&&render.cfgShown===cfgView&&!render.force))rConfig();render.cfgShown=cfgView}else rFrente(w,page==='qualidade'?'q':'o');
  if(ED)rEd();
 }
 
@@ -1717,7 +1721,7 @@ function rPalavra(w){const L=pessoasDaSemana(w);
  <div class="pwl">${L.map((x,i)=>`<button data-pwi="${i}" class="${i===pIdx?'on':''}"><span class="k">${i+1}</span>${esc(x.nome)}${x.palavra?'':' <span class="none" style="margin-left:auto;font-size:12px">sem palavra</span>'}</button>`).join('')}</div></div>`}
 
 /* ---------- configurações ---------- */
-const CFGT=[['usuarios','Usuários','users','Quem acessa o sistema e quem é administrador'],['setores','Setores','build','Equipes e setores do sistema'],['semanas','Semanas','cal','Criar, fechar, reabrir e excluir semanas'],['colaboradores','Colaboradores','person','Cadastro permanente para a Palavra da Semana'],['jornada','Jornada do Cliente','target','Etapas da jornada e caminhos fora da ordem'],['backup','Backup','save','Baixar ou restaurar uma cópia dos dados'],['exportacao','Exportação Geral','save','Em breve: exportar os dados do sistema em Excel e CSV']];
+const CFGT=[['usuarios','Usuários','users','Quem acessa o sistema e quem é administrador'],['setores','Setores','build','Equipes e setores do sistema'],['semanas','Semanas','cal','Criar, fechar, reabrir e excluir semanas'],['colaboradores','Colaboradores','person','Cadastro permanente para a Palavra da Semana'],['jornada','Jornada do Cliente','target','Etapas da jornada e caminhos fora da ordem'],['backup','Backup','save','Baixar ou restaurar uma cópia dos dados'],['exportacao','Exportar dados','save','Baixar em Excel os dados das áreas que você escolher']];
 function rConfig(){const el=$('p-config'),s=ST();
  if(!cfgView){el.innerHTML=`<header class="phead"><div><p class="kick">Área do administrador</p><h1>Configurações</h1><p class="sub">Escolha o que você quer alterar.</p></div></header><div class="tiles">${CFGT.map(([k,n,i,d])=>`<button class="tile" data-cfg="${k}"><span class="ti">${ICO[i]}</span><b>${n}</b><span>${d}</span></button>`).join('')}</div>`;return}
  const T=CFGT.find(t=>t[0]===cfgView)||CFGT[0];let h='',sub=T[3];
@@ -1739,7 +1743,7 @@ function rConfig(){const el=$('p-config'),s=ST();
  if(cfgView==='jornada')h=rCfgJornada();
  if(cfgView==='backup')h=`<div class="panel cfgp"><h3>Baixar uma cópia</h3><p class="muted">Um arquivo com as configurações e todas as semanas. Os usuários e as senhas não entram no arquivo.</p><div><button class="btn pri" data-act="exportJson">${ICO.save}Baixar backup</button></div></div>
   <div class="panel cfgp sec"><h3>Restaurar</h3><p class="muted">As semanas e configurações do arquivo substituem as que existem com o mesmo período. Semanas que não estão no arquivo continuam como estão. Também aceita o backup do sistema anterior.</p><div><button class="btn" data-act="importJson">Escolher arquivo de backup</button><input type="file" id="impf" accept=".json,application/json" hidden></div></div>`;
- if(cfgView==='exportacao')h=`<div class="panel embreve"><span class="chip ln">Em breve</span><p class="muted">Aqui você vai poder exportar, de uma vez, os dados reais de todos os módulos (Calibragem Semanal, Agenda e Demandas e as próximas áreas) em Excel ou CSV, escolhendo módulos e período. Enquanto isso, o Excel da semana continua no botão do topo e o backup completo em Configurações › Backup.</p></div>`;
+ if(cfgView==='exportacao'){h=rCfgExport();sub='Escolha as áreas e o período de cada uma. Sai um arquivo Excel, com uma aba para cada parte.'}
  el.innerHTML=`<div class="cfg"><header class="phead"><div><button class="btn ghost sm" data-cfg="" style="margin:0 0 10px -10px">${ICO.l}Configurações</button><h1>${T[1]}</h1><p class="sub">${sub}</p></div></header>${h}</div>`}
 async function saveSettings(mut,msg){const s=ST();mut(s);try{await DB.saveSettings(s);S.settings=s;render();toast(msg||'Configurações salvas')}catch(e){toast(e.message||errMsg(e),true)}}
 async function act(a){try{
@@ -1912,21 +1916,94 @@ function rTema(){const cl=document.documentElement.dataset.theme==='light',b=$('
 $('tema').onclick=()=>{const h=document.documentElement,cl=h.dataset.theme!=='light';if(cl)h.dataset.theme='light';else delete h.dataset.theme;try{localStorage.setItem('cp-tema',cl?'claro':'escuro')}catch(e){}rTema()};
 rTema();
 $('burger').onclick=openMenu;$('menuClose').onclick=closeMenu;$('scrim').onclick=closeMenu;
-$('expBtn').onclick=()=>exportXlsx();
 $('logout').onclick=async()=>{closeMenu();closeEd();await DB.logout()};
 $('eye').onclick=()=>{const i=$('lp'),show=i.type==='password';i.type=show?'text':'password';$('eye').setAttribute('aria-pressed',show);$('eye').setAttribute('aria-label',show?'Esconder senha':'Mostrar senha')};
 $('loginForm').onsubmit=async e=>{e.preventDefault();loginErr('');const b=$('lbtn');b.textContent='Entrando…';b.setAttribute('aria-disabled','true');
  try{if(!$('lu').value.trim()||!$('lp').value)throw new Error('Digite o usuário e a senha.');await DB.login($('lu').value,$('lp').value,$('keep').checked)}catch(err){loginErr(err.message)}finally{b.textContent='Entrar';b.removeAttribute('aria-disabled')}};
 
 /* ---------- Excel ---------- */
-async function exportXlsx(){if(!isAdmin())return;
- try{if(!window.XLSX)await loadScript('https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js')}catch(e){toast('Não foi possível gerar o Excel sem internet.',true);return}
- const w=Wk(),Q=calcQ(w),O=calcO(w),wb=XLSX.utils.book_new(),add=(n,rows)=>XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows),n);
- add('Qualidade',[['Equipe','Monitorias','Qualidade (%)','Zeradas','Agentes','Responsável','Preenchido por'],...Q.rows.map(r=>[r.nome,r.monitorias??'',r.qualidade??'',r.zeradas??'',r.agentes??'',r.responsavel||'',r.by||'']),['Total',Q.mon??'',Q.q!==null?+Q.q.toFixed(2):'',Q.zer??'',Q.ag??'','','']]);
- add('Operações',[['Setor','Tickets tratados','Backlog atual','Tempo médio de backlog','Dias úteis','Preenchido por'],...O.rows.map(r=>[r.nome,r.tratados??'',r.backlog??'',isN(r.tempo)?dur(r.tempo):'',diasTxt(r.tempo),r.by||'']),['Total',O.trat??'',O.back??'',isN(O.tempo)?dur(O.tempo):'','',''],['SLA de resolução','','',isN(O.sla)?dur(O.sla):'','',w.slaBy||'']]);
- add('Planos de ação',[['Frente','Setor','Erro identificado','Ação proposta','Objetivo','Prazo'],...[...plansOf(w,'q'),...plansOf(w,'o')].map(p=>[FR[p.frente],setorNome(p.setor),p.erro||'',p.acao||'',p.objetivo||'',dfmt(p.prazo)])]);
- add('Palavra da Semana',[['Colaborador','Palavra'],...pessoasDaSemana(w).filter(p=>p.palavra).map(p=>[p.nome,p.palavra])]);
- XLSX.writeFile(wb,`central-igreen-${w.inicio}.xlsx`);
+/* ---------- exportar dados (Configurações): áreas escolhidas, cada uma com seu período, num Excel só ---------- */
+const EX_AREAS=[['cal','Calibragem Semanal'],['ag','Agenda e Demandas'],['an','Análises']];
+const EX_DSH=[['mes','Mês atual'],['mesant','Mês anterior'],['tri','Últimos 3 meses'],['ano','Este ano']];
+const exRange=k=>{const d=new Date(),y=d.getFullYear(),m=d.getMonth(),fim=(a,b)=>ymd(new Date(a,b+1,0));
+ return k==='mes'?[ymd(new Date(y,m,1)),fim(y,m)]:k==='mesant'?[ymd(new Date(y,m-1,1)),fim(y,m-1)]:k==='tri'?[ymd(new Date(y,m-2,1)),fim(y,m)]:k==='ano'?[y+'-01-01',y+'-12-31']:null};
+const exSemanas=k=>k==='tudo'?(ids().length?[ids()[0],ids().at(-1)]:null):shortRange(k);
+const exSoma=(s,n)=>{const d=new Date(s+'T12:00:00');d.setDate(d.getDate()+n);return ymd(d)};
+const exNovo=()=>{const[aDe,aAte]=exRange('mes');return {cal:true,ag:false,an:false,cFrom:sel,cTo:sel,cShort:null,aDe,aAte,aShort:'mes',semPrazo:true,dDe:aDe,dAte:aAte,dShort:'mes',ocupado:false}};
+let EX=null;
+function rCfgExport(){if(!EX)EX=exNovo();if(!S.weeks[EX.cFrom]||!S.weeks[EX.cTo])Object.assign(EX,{cFrom:sel,cTo:sel,cShort:null});const E=EX,todas=EX_AREAS.every(([k])=>E[k]);
+ const all=ids().slice().reverse(),opt=v=>all.map(id=>`<option value="${id}"${id===v?' selected':''}>${wkTxt(S.weeks[id])} ${id.slice(0,4)}${S.weeks[id].fechada?' · fechada':''}</option>`).join('');
+ const chk=(id,t,on,extra='')=>`<label class="dgchk"><input type="checkbox" id="${id}"${extra}${on?' checked':''}>${t}</label>`;
+ const datas=(p,txt)=>`<div class="pc-s" role="group" aria-label="Atalhos de período">${EX_DSH.map(([k,t])=>`<button class="${E[p+'Short']===k?'on':''}" data-exds="${p}:${k}">${t}</button>`).join('')}</div>
+  <div class="frow"><div class="f"><label for="ex_${p}De">${txt} de</label><input id="ex_${p}De" type="date" value="${esc(E[p+'De'])}"></div><div class="f"><label for="ex_${p}Ate">Até</label><input id="ex_${p}Ate" type="date" value="${esc(E[p+'Ate'])}"></div></div>`;
+ const L=E.cal?periodWeeks(E.cFrom,E.cTo):[];
+ return `<div id="ex_box">
+ <div class="panel cfgp"><h3>O que exportar</h3><div class="exchks">${chk('ex_todas','Todas',todas)}${EX_AREAS.map(([k,t])=>chk('ex_'+k,t,E[k],` data-exa="${k}"`)).join('')}</div></div>
+ ${E.cal?`<div class="panel cfgp"><h3>Calibragem Semanal</h3><p class="muted">Qualidade, Operações, Planos de ação e Palavra da Semana das semanas escolhidas.</p>
+  <div class="pc-s" role="group" aria-label="Atalhos de semanas">${[...SHORTS,['tudo','Todas as semanas']].map(([k,t])=>{const r=exSemanas(k);return `<button class="${E.cShort===k?'on':''}" data-excs="${k}"${r?'':' disabled'}>${t}</button>`}).join('')}</div>
+  <div class="frow"><div class="f"><label for="ex_cFrom">Da semana</label><select id="ex_cFrom">${opt(E.cFrom)}</select></div><div class="f"><label for="ex_cTo">Até a semana</label><select id="ex_cTo">${opt(E.cTo)}</select></div></div>
+  <p class="muted">${L.length?`${L.length} ${L.length===1?'semana':'semanas'}: ${dfmt(L[0].inicio)} a ${dfmt(L.at(-1).fim)}`:'Nenhuma semana cadastrada.'}</p></div>`:''}
+ ${E.ag?`<div class="panel cfgp"><h3>Agenda e Demandas</h3><p class="muted">De toda a equipe: compromissos e demandas com data ou prazo no período, e demandas concluídas no período.</p>${datas('a','Período')}
+  <div class="exchks">${chk('ex_semPrazo','Incluir também as demandas em aberto sem prazo (elas não têm data)',E.semPrazo)}</div></div>`:''}
+ ${E.an?`<div class="panel cfgp"><h3>Análises</h3><p class="muted">Diagnósticos registrados no período, pela data de registro. A Jornada do Cliente (etapas e caminhos) não tem datas e sai completa.</p>${datas('d','Diagnósticos registrados')}</div>`:''}
+ <div class="exa"><button class="btn pri" data-exgo${E.ocupado?' aria-disabled="true"':''}><svg class="i" viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>${E.ocupado?'Gerando…':'Exportar Excel'}</button><span class="muted" role="status" id="ex_msg"></span></div></div>`}
+/* redesenha só a aba, devolvendo o foco a quem estava sendo usado */
+const exRedesenhar=()=>{const b=$('ex_box');if(!b)return;const f=document.activeElement&&document.activeElement.closest('#ex_box')?document.activeElement:null,
+ sel_=f&&(f.id?'#'+f.id:[...f.attributes].filter(a=>/^data-ex/.test(a.name)).map(a=>`[${a.name}="${CSS.escape(a.value)}"]`).join(''));
+ b.outerHTML=rCfgExport();const n=sel_&&document.querySelector(sel_);n&&n.focus()};
+document.addEventListener('change',e=>{const t=e.target;if(!EX||!t.closest||!t.closest('#ex_box'))return;const id=t.id;
+ if(EX.ocupado){exRedesenhar();return}
+ if(id==='ex_todas')EX_AREAS.forEach(([k])=>EX[k]=t.checked);
+ else if(t.dataset.exa)EX[t.dataset.exa]=t.checked;
+ else if(id==='ex_cFrom'||id==='ex_cTo'){EX[id.slice(3)]=t.value;if(EX.cFrom>EX.cTo)[EX.cFrom,EX.cTo]=[EX.cTo,EX.cFrom];EX.cShort=null}
+ else if(id==='ex_semPrazo'){EX.semPrazo=t.checked;return}
+ /* datas digitadas: só guarda, sem redesenhar enquanto a pessoa digita */
+ else if(/^ex_[ad](De|Ate)$/.test(id)){EX[id.slice(3)]=t.value;EX[id[3]+'Short']=null;document.querySelectorAll(`[data-exds^="${id[3]}:"]`).forEach(b=>b.classList.remove('on'));return}
+ else return;
+ exRedesenhar()});
+document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('#ex_box button');if(!b||!EX||EX.ocupado||b.getAttribute('aria-disabled')==='true')return;const d=b.dataset;
+ if(d.excs){const r=exSemanas(d.excs);if(!r)return;[EX.cFrom,EX.cTo]=r;EX.cShort=d.excs;exRedesenhar()}
+ else if(d.exds){const[p,k]=d.exds.split(':'),r=exRange(k);if(!r)return;[EX[p+'De'],EX[p+'Ate']]=r;EX[p+'Short']=k;exRedesenhar()}
+ else if('exgo' in d)exportXlsx()});
+async function exportXlsx(){if(!isAdmin()||!EX||EX.ocupado)return;const X=EX,E={...EX},msg=m=>{const s=$('ex_msg');if(s)s.textContent=m};
+ if(!EX_AREAS.some(([k])=>E[k]))return msg('Marque pelo menos uma área.');
+ for(const[p,t]of [['a','Agenda e Demandas'],['d','Análises']]){if(!E[p==='a'?'ag':'an'])continue;
+  if(!E[p+'De']||!E[p+'Ate'])return msg(`Preencha as duas datas de ${t}.`);if(E[p+'De']>E[p+'Ate'])[E[p+'De'],E[p+'Ate']]=[E[p+'Ate'],E[p+'De']];
+  if(![E[p+'De'],E[p+'Ate']].every(d=>/^\d{4}-\d{2}-\d{2}$/.test(d)&&d>='2000-01-01'&&d<='2100-12-31'))return msg(`Confira as datas de ${t}: use anos entre 2000 e 2100.`)}
+ /* a agenda é buscada em várias consultas; períodos muito longos ficariam lentos */
+ if(E.ag&&(Date.parse(E.aAte)-Date.parse(E.aDe))/864e5>3*366)return msg('Na Agenda e Demandas, exporte no máximo 3 anos por vez.');
+ X.ocupado=true;exRedesenhar();msg('Gerando o arquivo…');let limitado=false;
+ try{
+  if(!window.XLSX)try{await loadScript('https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js')}catch(e){throw new Error('Não foi possível gerar o Excel sem internet.')}
+  const wb=XLSX.utils.book_new(),add=(n,rows)=>XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows),n),dia=t=>t?dfmt(ymd(new Date(t))):'';
+  if(E.cal){const L=periodWeeks(E.cFrom,E.cTo),sem=w=>`${dfmt(w.inicio)} a ${dfmt(w.fim)}`;
+   add('Qualidade',[['Semana','Equipe','Monitorias','Qualidade (%)','Zeradas','Agentes','Responsável','Preenchido por'],...L.flatMap(w=>{const Q=calcQ(w);return [...Q.rows.map(r=>[sem(w),r.nome,r.monitorias??'',r.qualidade??'',r.zeradas??'',r.agentes??'',r.responsavel||'',r.by||'']),[sem(w),'Total',Q.mon??'',Q.q!==null?+Q.q.toFixed(2):'',Q.zer??'',Q.ag??'','','']]})]);
+   add('Operações',[['Semana','Setor','Tickets tratados','Backlog atual','Tempo médio de backlog','Dias úteis','Preenchido por'],...L.flatMap(w=>{const O=calcO(w);return [...O.rows.map(r=>[sem(w),r.nome,r.tratados??'',r.backlog??'',isN(r.tempo)?dur(r.tempo):'',diasTxt(r.tempo),r.by||'']),[sem(w),'Total',O.trat??'',O.back??'',isN(O.tempo)?dur(O.tempo):'','',''],[sem(w),'SLA de resolução','','',isN(O.sla)?dur(O.sla):'','',w.slaBy||'']]})]);
+   add('Planos de ação',[['Semana','Frente','Setor','Erro identificado','Ação proposta','Objetivo','Prazo'],...L.flatMap(w=>[...plansOf(w,'q'),...plansOf(w,'o')].map(p=>[sem(w),FR[p.frente],setorNome(p.setor),p.erro||'',p.acao||'',p.objetivo||'',dfmt(p.prazo)]))]);
+   add('Palavra da Semana',[['Semana','Colaborador','Palavra'],...L.flatMap(w=>pessoasDaSemana(w).filter(p=>p.palavra).map(p=>[sem(w),p.nome,p.palavra]))]);
+  }
+  if(E.ag){const M=new Map(),junta=r=>{if(r.limitado)limitado=true;(r.itens||[]).forEach(x=>M.set(x.id,x))};
+   /* com data ou prazo no período (o servidor aceita até 400 dias por consulta) */
+   for(let de=E.aDe;de<=E.aAte;de=exSoma(de,400))junta(await DB.agendaList({pessoa:'*',de,ate:[exSoma(de,399),E.aAte].sort()[0]}));
+   /* concluídas no período (até um mês por consulta) */
+   for(let de=E.aDe;de<=E.aAte;de=exSoma(de,31)){const ate=[exSoma(de,30),E.aAte].sort()[0];junta(await DB.agendaList({pessoa:'*',encerradas:true,desde:new Date(de+'T00:00:00').getTime(),ate:new Date(ate+'T23:59:59.999').getTime()}))}
+   if(E.semPrazo){const r=await DB.agendaList({pessoa:'*',demandas:'abertas'});if(r.limitado)limitado=true;(r.itens||[]).filter(x=>!x.dia).forEach(x=>M.set(x.id,x))}
+   const ord=x=>x.dia||(x.encerrado?ymd(new Date(x.encerrado)):'9999');
+   add('Agenda e Demandas',[['Tipo','Título','Descrição','Responsável','Data ou prazo','Início','Fim','Status','Concluída em','Criada em'],...[...M.values()].sort((a,b)=>ord(a).localeCompare(ord(b))||a.criado-b.criado).map(x=>[x.tipo==='demanda'?'Demanda':'Agenda',x.titulo||'',x.descricao||'',(x.resp_nome||'')+(x.conta_excluida?' (conta excluída)':''),dfmt(x.dia||''),x.hora_ini||'',x.hora_fim||'',x.tipo==='demanda'?(AG_ST[x.status]||[x.status||''])[0]:'',dia(x.encerrado),dia(x.criado)])]);
+  }
+  if(E.an){const[re,rf,rd]=await Promise.all([DB.regList('jornada_etapa'),DB.regList('jornada_fluxo'),DB.regList('diagnostico')]);if(re.limitado||rf.limitado||rd.limitado)limitado=true;
+   const ET=re.itens||[],nome=id=>{const e=ET.find(y=>y.id===id);return e?e.data.nome:'Etapa excluída'},lista=a=>(Array.isArray(a)?a:[]).filter(s=>typeof s==='string'&&s.trim()).join(', ');
+   add('Jornada - Etapas',[['Ordem','Etapa','Descrição','Setores','Processos que acontecem','Motivos de contato e reclamações','Problemas que podem surgir'],...ET.map((e,i)=>[i+1,e.data.nome||'',e.data.descricao||'',lista(e.data.setores),e.data.processos||'',e.data.motivos||'',e.data.riscos||''])]);
+   add('Jornada - Caminhos',[['Tipo','De','Para','Descrição'],...(rf.itens||[]).map(f=>[jrTipo(f.data.tipo),nome(f.data.de),nome(f.data.para),f.data.descricao||''])]);
+   const dt=x=>/^\d{4}-\d{2}-\d{2}$/.test(x.data.data||'')?x.data.data:ymd(new Date(x.criado)),txt=(M,k)=>{const v=dgM(M,k);return v?(Array.isArray(v)?v[0]:v):''};
+   add('Diagnósticos',[['Data de registro','Mês','Problema','Situação','Gravidade','Frequência','Etapas','Setores','Tema','O que está acontecendo','Impacto para o cliente','A causa é','Causa ou hipótese','Evidências','Próxima ação','Registrado em','Alterado em'],
+    ...(rd.itens||[]).filter(x=>{const d=dt(x);return d>=E.dDe&&d<=E.dAte}).sort((a,b)=>dt(a).localeCompare(dt(b))||a.criado-b.criado).map(x=>{const d=x.data;
+     return [dfmt(dt(x)),dgMesNome(dt(x).slice(0,7)),d.titulo||'',txt(DG_SIT,d.situacao),txt(DG_GRAV,d.gravidade),txt(DG_FREQ,d.frequencia),[...new Set((d.etapas||[]).map(nome))].join(', '),lista(d.setores),d.tema||'',d.descricao||'',d.impacto||'',txt(DG_CAUSA,d.causaTipo),d.causa||'',d.evidencias||'',d.proxima||'',dia(x.criado),dia(x.atualizado)]})]);
+  }
+  XLSX.writeFile(wb,`central-igreen-exportacao-${today()}.xlsx`);
+  toast(limitado?'Arquivo exportado. Atenção: havia registros demais e parte deles ficou de fora.':'Arquivo exportado',limitado);
+ }catch(e){toast(e.message||'Não foi possível exportar.',true)}
+ finally{X.ocupado=false;if(EX===X){exRedesenhar();msg('')}}
 }
 
 /* ---------- apresentação (igual à original, com a palavra por clique) ---------- */
