@@ -89,6 +89,12 @@ const initRegistros=()=>regPronto||(regPronto=(async()=>{
 const regTxt=(v,max,nome,obrig)=>{const s=v==null?'':v;if(typeof s!=='string'||s.length>max)fail(400,`${nome}: até ${max} caracteres.`);const t=s.trim();if(obrig&&!t)fail(400,`Informe ${nome.toLowerCase()}.`);return obrig?t:s};
 const regId=v=>typeof v==='string'&&!!v.trim()&&v.length<=100;
 const REG_FLUXOS=['retorno','recorrencia','desvio'];
+const regLista=(v,nome,ok)=>{const L=v==null?[]:v;if(!Array.isArray(L)||L.length>50||!L.every(ok))fail(400,`${nome}: lista inválida.`);return L};
+/* setores digitados: sem espaços nas pontas e sem repetir maiúsculas/minúsculas */
+const regSetores=v=>{const vistos=new Set();return regLista(v,'Setores',s=>typeof s==='string'&&s.trim().length>0&&s.length<=100).map(s=>s.trim()).filter(s=>{const k=s.toLowerCase();if(vistos.has(k))return false;vistos.add(k);return true})};
+const regOpcao=(v,L,nome,obrig)=>{if(v==null||v===''){if(obrig)fail(400,`Informe: ${nome}.`);return ''}if(!L.includes(v))fail(400,`${nome}: opção inválida.`);return v};
+const regDia=(v,nome)=>{const d=v==null?'':v;if(d!==''&&!isDia(d))fail(400,`${nome}: data inválida.`);return d};
+const REG_PJ_STATUS=['ideia','planejado','andamento','standby','aguardando','concluido','cancelado'];
 /* campos aceitos em cada área; qualquer outro é ignorado */
 /* 'grupo': áreas que dependem umas das outras gravam uma de cada vez (etapas e caminhos da jornada) */
 const REG_AREAS={
@@ -113,9 +119,26 @@ const REG_AREAS={
    impacto:regTxt(x.impacto,4000,'Impacto para o cliente'),frequencia:opcao(x.frequencia,['diaria','semanal','quinzenal','mensal','pontual','nao_medida'],'Frequência'),
    gravidade:opcao(x.gravidade,['critica','alta','media','baixa'],'Gravidade',true),causaTipo:opcao(x.causaTipo,['hipotese','confirmada'],'Tipo de causa',true),
    causa:regTxt(x.causa,4000,'Causa'),evidencias:regTxt(x.evidencias,4000,'Evidências'),proxima:regTxt(x.proxima,1000,'Próxima ação'),
-   situacao:opcao(x.situacao,['ativo','investigacao','reduzido','resolvido'],'Situação',true)}}}};
+   situacao:opcao(x.situacao,['ativo','investigacao','reduzido','resolvido'],'Situação',true)}}},
+ /* projeto ou iniciativa; etapas e problemas são ids da Jornada e dos Diagnósticos (um excluído depois continua listado) */
+ projeto:{grupo:'projeto',ordenada:false,limite:500,campos:x=>{
+  const prev=x.previsao==null?'':x.previsao;if(prev!==''&&!(typeof prev==='string'&&/^\d{4}-(0[1-9]|1[0-2])$/.test(prev)))fail(400,'Previsão de atuação inválida.');
+  return {nome:regTxt(x.nome,150,'O nome do projeto',true),status:regOpcao(x.status,REG_PJ_STATUS,'Status',true),prioridade:regOpcao(x.prioridade,['critica','alta','media','baixa'],'Prioridade',true),
+   responsavel:regTxt(x.responsavel,120,'Responsável').trim(),setores:regSetores(x.setores),etapas:[...new Set(regLista(x.etapas,'Etapas',regId))],problemas:[...new Set(regLista(x.problemas,'Problemas',regId))],
+   objetivo:regTxt(x.objetivo,2000,'Objetivo'),acao:regTxt(x.acao,4000,'Ação proposta'),proxima:regTxt(x.proxima,1000,'Próxima ação'),
+   inicio:regDia(x.inicio,'Início previsto'),prazo:regDia(x.prazo,'Prazo'),concluidoEm:regDia(x.concluidoEm,'Data de conclusão'),
+   dependeDe:regTxt(x.dependeDe,1000,'Depende de'),impedimentos:regTxt(x.impedimentos,2000,'Impedimentos'),
+   indicador:regTxt(x.indicador,500,'Indicador de sucesso'),linhaBase:regTxt(x.linhaBase,100,'Valor de antes'),meta:regTxt(x.meta,100,'Meta'),atual:regTxt(x.atual,100,'Valor atual'),
+   resultado:regTxt(x.resultado,2000,'Resultado alcançado'),validacao:regOpcao(x.validacao,['nao_avaliado','aguardando','comprovada','parcial','sem_efeito','piorou'],'Validação')||'nao_avaliado',
+   previsao:prev,reavaliar:regDia(x.reavaliar,'Data de reavaliação'),motivoAguardar:regTxt(x.motivoAguardar,2000,'Por que aguardar'),condicao:regTxt(x.condicao,1000,'Condição para reavaliar')}}},
+ /* um registro no histórico de um projeto; mudanças de status são registradas pela tela */
+ projeto_hist:{grupo:'projeto',ordenada:false,limite:2000,campos:x=>{
+  if(!regId(x.projeto))fail(400,'Projeto inválido.');
+  const tipo=regOpcao(x.tipo,['atualizacao','decisao','marco','status'],'Tipo',true),dia=regDia(x.dia,'Data');if(!dia)fail(400,'Informe a data.');
+  return {projeto:x.projeto,tipo,dia,texto:regTxt(x.texto,1000,'O texto',true)}}}};
 /* registros que dependem de outros: um caminho só existe entre etapas que existem */
 const regRefs=async(client,area,d)=>{
+ if(area==='projeto_hist'){if(!(await client.query("SELECT 1 FROM cp_registros WHERE area='projeto' AND id=$1",[d.projeto])).rows.length)fail(400,'Projeto não encontrado.');return}
  if(area!=='jornada_fluxo')return;
  const q=await client.query("SELECT id FROM cp_registros WHERE area='jornada_etapa' AND id=ANY($1)",[[d.de,d.para]]);
  if(q.rows.length!==new Set([d.de,d.para]).size)fail(400,'Etapa de origem ou de destino não encontrada.');
@@ -229,9 +252,9 @@ export default async function handler(req,res){
    return res.json({ok:true,novos,atualizados,ignorados});
   }
   else if(action==='regList'){
-   regArea(b.area);
-   const q=await pool.query(`SELECT * FROM cp_registros WHERE area=$1 ORDER BY ordem NULLS LAST,criado,id LIMIT ${REG_LIMITE+1}`,[b.area]);
-   return res.json({itens:q.rows.slice(0,REG_LIMITE).map(regRow),limitado:q.rows.length>REG_LIMITE});
+   const lim=regArea(b.area).limite||REG_LIMITE;
+   const q=await pool.query(`SELECT * FROM cp_registros WHERE area=$1 ORDER BY ordem NULLS LAST,criado,id LIMIT ${lim+1}`,[b.area]);
+   return res.json({itens:q.rows.slice(0,lim).map(regRow),limitado:q.rows.length>lim});
   }
   else if(action==='regSave'){
    const A=regArea(b.area),d=A.campos(b.data&&typeof b.data==='object'&&!Array.isArray(b.data)?b.data:fail(400,'Dados inválidos.')),agora=Date.now();
@@ -242,12 +265,13 @@ export default async function handler(req,res){
     await regRefs(client,b.area,d);
     if(!b.id){
      const n=(await client.query('SELECT COUNT(*)::int AS n,COALESCE(MAX(ordem),0)+1 AS o FROM cp_registros WHERE area=$1',[b.area])).rows[0];
-     if(n.n>=REG_LIMITE)fail(400,`Esta área já tem o máximo de ${REG_LIMITE} registros.`);
+     const lim=A.limite||REG_LIMITE;if(n.n>=lim)fail(400,`Esta área já tem o máximo de ${lim} registros.`);
      /* nova etapa entra no fim da ordem */
      item=(await client.query('INSERT INTO cp_registros(id,area,data,ordem,criado,criado_por,atualizado,atualizado_por) VALUES($1,$2,$3,$4,$5,$6,$5,$6) RETURNING *',[uid(),b.area,JSON.stringify(d),A.ordenada?n.o:null,agora,u.id])).rows[0];
     }else{
-     const r=(await client.query('SELECT area,atualizado FROM cp_registros WHERE id=$1',[b.id])).rows[0];
+     const r=(await client.query("SELECT area,atualizado,data->>'projeto' AS projeto FROM cp_registros WHERE id=$1",[b.id])).rows[0];
      if(!r||r.area!==b.area)fail(404,'Registro não encontrado.');
+     if(b.area==='projeto_hist'&&r.projeto!==d.projeto)fail(400,'Um registro do histórico não pode mudar de projeto.');
      if(b.versao!=null&&b.versao!==Number(r.atualizado))fail(409,'Este registro foi alterado por outra pessoa. Recarregue.');
      item=(await client.query('UPDATE cp_registros SET data=$2,atualizado=$3,atualizado_por=$4 WHERE id=$1 RETURNING *',[b.id,JSON.stringify(d),Math.max(agora,Number(r.atualizado)+1),u.id])).rows[0];
     }
@@ -262,6 +286,8 @@ export default async function handler(req,res){
     if(!r||r.area!==b.area)fail(404,'Registro não encontrado.');
     /* excluir uma etapa exclui junto os caminhos que saem dela ou chegam nela */
     if(r.area==='jornada_etapa')removidos=(await client.query("DELETE FROM cp_registros WHERE area='jornada_fluxo' AND (data->>'de'=$1 OR data->>'para'=$1)",[String(b.id)])).rowCount;
+    /* excluir um projeto exclui junto o histórico dele */
+    if(r.area==='projeto')removidos=(await client.query("DELETE FROM cp_registros WHERE area='projeto_hist' AND data->>'projeto'=$1",[String(b.id)])).rowCount;
     await client.query('DELETE FROM cp_registros WHERE id=$1',[String(b.id)]);
     await client.query('COMMIT')}catch(e){await client.query('ROLLBACK');throw e}finally{client.release()}
    return res.json({ok:true,removidos});
