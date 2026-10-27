@@ -616,7 +616,27 @@ button.jrlab:hover{background:var(--card2)}
 .jrfl{margin:0;padding:0;list-style:none;display:grid;gap:8px}
 .jrfl li{display:flex;flex-wrap:wrap;align-items:center;gap:6px;overflow-wrap:anywhere}
 @media (max-width:720px){.jrgrid{grid-template-columns:1fr}}
-/* ===== tema claro (o escuro continua sendo o padrão) ===== */
+/* ===== diagnósticos: números do topo, filtros e tabela ===== */
+.dgnums{margin-bottom:var(--gap)}
+.dgn{display:block;text-align:left;color:var(--tx);cursor:pointer}
+.dgn:hover{background:var(--card2)}
+.dgn .l,.dgn .v{display:block}
+.dgn .v{margin:8px 0 0}
+.dgfil{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.dgfil input,.dgfil select{height:38px;max-width:100%;background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:0 12px;font-size:14px}
+.dgfil input{flex:1 1 220px;min-width:0}
+.dgcont{margin:0 0 8px}
+.dgpan{padding:0}
+.dgtab td{vertical-align:top}
+.dglink{background:none;border:0;padding:0;text-align:left;font-weight:500;color:var(--tx);cursor:pointer;overflow-wrap:anywhere}
+.dglink:hover{text-decoration:underline}
+.dgsm{font-size:13px;color:var(--mu);max-width:220px;overflow-wrap:anywhere}
+.dgset{border:0;margin:0;padding:0;min-width:0}
+.dgset legend{font-size:12px;color:var(--mu);padding:0;margin-bottom:6px}
+.dgchks{display:flex;flex-wrap:wrap;gap:6px}
+.dgchk{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--bd);border-radius:99px;padding:5px 12px;font-size:13px;cursor:pointer;background:var(--bg)}
+.dgchk:has(input:checked){border-color:var(--pri);background:var(--card2)}
+.dgchk input{margin:0;accent-color:var(--pri)}/* ===== tema claro (o escuro continua sendo o padrão) ===== */
 :root[data-theme="light"]{
 --bg:#F3F6F4;--card:#FFFFFF;--card2:#EAF0EC;--bd:#D6DED9;--bd2:#B7C4BC;
 --pri:#007A13;--pri-h:#006A10;--on:#FFFFFF;--tx:#16201B;--mu:#56655D;--mu2:#5F6E66;
@@ -688,7 +708,7 @@ button.jrlab:hover{background:var(--card2)}
       <button class="cat so-adm" data-cat="an" aria-expanded="false" aria-controls="cat-an"><svg class="i" viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Análises<svg class="i chev" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>
       <div class="sub so-adm" id="cat-an" hidden>
         <button data-p="an-jornada">Jornada do Cliente</button>
-        <button data-p="an-diag">Diagnósticos<span class="eb">Em breve</span></button>
+        <button data-p="an-diag">Diagnósticos</button>
         <button data-p="an-perg">Perguntas-chave<span class="eb">Em breve</span></button>
         <button data-p="an-setor">Por setor<span class="eb">Em breve</span></button>
       </div>
@@ -713,6 +733,7 @@ button.jrlab:hover{background:var(--card2)}
     <section class="page" id="p-palavra"></section>
     <section class="page" id="p-agenda"></section>
     <section class="page" id="p-an-jornada"></section>
+    <section class="page" id="p-an-diag"></section>
     <section class="page" id="p-embreve"></section>
     <section class="page" id="p-config"></section>
   </main>
@@ -954,10 +975,10 @@ function render(){
  $('app').classList.toggle('nao-adm',!isAdmin());
  document.querySelectorAll('#nav button[data-p]').forEach(b=>{const on=b.dataset.p===page;b.classList.toggle('on',on);on?b.setAttribute('aria-current','page'):b.removeAttribute('aria-current')});
  rMenuCat();
- $('pageTitle').textContent=({inicio:'Visão Geral',qualidade:'Qualidade',operacoes:'Operações',palavra:'Palavra da Semana',agenda:'Agenda e Demandas','an-jornada':'Jornada do Cliente',config:'Configurações'})[page]||(EMB[page]||[])[0]||'';
+ $('pageTitle').textContent=({inicio:'Visão Geral',qualidade:'Qualidade',operacoes:'Operações',palavra:'Palavra da Semana',agenda:'Agenda e Demandas','an-jornada':'Jornada do Cliente','an-diag':'Diagnósticos',config:'Configurações'})[page]||(EMB[page]||[])[0]||'';
  document.querySelectorAll('.page').forEach(p=>p.classList.toggle('on',p.id==='p-'+(EMB[page]?'embreve':page)));
- document.querySelector('.wsel').hidden=page==='agenda'||page==='an-jornada'||!!EMB[page];
- if(EMB[page])rEmBreve();else if(page==='an-jornada')rJornada();else if(page==='inicio')rInicio(w);else if(page==='palavra')rPalavra(w);else if(page==='agenda')rAgenda();else if(page==='config'){if(!(['setores','jornada'].includes(cfgView)&&render.cfgShown===cfgView&&!render.force))rConfig();render.cfgShown=cfgView}else rFrente(w,page==='qualidade'?'q':'o');
+ document.querySelector('.wsel').hidden=page==='agenda'||page==='an-jornada'||page==='an-diag'||!!EMB[page];
+ if(EMB[page])rEmBreve();else if(page==='an-jornada')rJornada();else if(page==='an-diag')rDiag();else if(page==='inicio')rInicio(w);else if(page==='palavra')rPalavra(w);else if(page==='agenda')rAgenda();else if(page==='config'){if(!(['setores','jornada'].includes(cfgView)&&render.cfgShown===cfgView&&!render.force))rConfig();render.cfgShown=cfgView}else rFrente(w,page==='qualidade'?'q':'o');
  if(ED)rEd();
 }
 
@@ -965,7 +986,6 @@ function render(){
 const PAG_COLAB=['qualidade','operacoes','palavra','agenda'];
 /* áreas ainda não construídas: [título, categoria, o que a área vai fazer] */
 const EMB={
- 'an-diag':['Diagnósticos','Análises','Registro dos problemas da experiência: o que acontece, onde acontece, impacto, gravidade, causa e evidências.'],
  'an-perg':['Perguntas-chave','Análises','Respostas calculadas a partir dos dados reais, como onde estão os pontos de ruptura e quais problemas ainda não têm plano de ação.'],
  'an-setor':['Análises por setor','Análises','Evolução de Qualidade e Operações por setor, comparação entre setores e problemas recorrentes, com filtro de período.'],
  'pm-proj':['Projetos e Iniciativas','Projetos e Melhorias','Acompanhamento dos projetos: status, prioridade, responsável, setores, prazos e resultados.'],
@@ -1167,7 +1187,7 @@ async function delAg(id,cancelar){const x=agAchar(id);if(!x)return;
 document.addEventListener('click',e=>{
  const t=e.target.closest('button');if(!t)return;
  /* ao sair, a agenda da conta anterior é apagada da memória e da tela */
- if(t.id==='logout'){AG=agVazio(null);$('p-agenda').innerHTML='';JR=jrVazio(null);$('p-an-jornada').innerHTML='';return}
+ if(t.id==='logout'){AG=agVazio(null);$('p-agenda').innerHTML='';JR=jrVazio(null);$('p-an-jornada').innerHTML='';DG=dgVazio(null);$('p-an-diag').innerHTML='';return}
  if(t.getAttribute('aria-disabled')==='true')return;const d=t.dataset;let foco=null;
  if(d.agaba){AG.aba=d.agaba;foco=`[data-agaba="${d.agaba}"]`}
  else if('agenc' in d){AG.encerradas=!AG.encerradas;foco='[data-agenc]'}
@@ -1217,13 +1237,14 @@ const jrNome=id=>{const e=jrEtapa(id);return e?e.data.nome:'Etapa excluída'};
 const jrTipo=k=>(JR_TIPOS[k]||[k])[0];
 /* setores da jornada são escritos à mão em cada etapa (não usam o cadastro de Setores do sistema) */
 const jrSetores=x=>x.data.setores.filter(s=>typeof s==='string'&&s.trim());
-/* nomes já usados em outras etapas, sem repetir maiúsculas/minúsculas: viram sugestões ao digitar */
-const jrSugestoes=()=>{const m=new Map();(JR.etapas||[]).forEach(e=>jrSetores(e).forEach(s=>{const k=s.trim().toLowerCase();if(!m.has(k))m.set(k,s.trim())}));return [...m.values()].sort((a,b)=>a.localeCompare(b))};
+/* nomes já usados na Jornada e nos Diagnósticos, sem repetir maiúsculas/minúsculas: viram sugestões ao digitar */
+const jrSugestoes=()=>{const m=new Map(),add=s=>{const k=s.trim().toLowerCase();if(k&&!m.has(k))m.set(k,s.trim())};
+ (JR.etapas||[]).forEach(e=>jrSetores(e).forEach(add));(DG.itens||[]).forEach(x=>x.data.setores.forEach(add));return [...m.values()].sort((a,b)=>a.localeCompare(b))};
 /* só os caminhos cujas duas pontas ainda existem */
 const jrFluxos=()=>JR.fluxos.filter(f=>jrEtapa(f.data.de)&&jrEtapa(f.data.para));
 const jrLigados=id=>jrFluxos().filter(f=>f.data.de===id||f.data.para===id);
 /* a aba de Configurações só é refeita quando os dados da jornada mudam (como a de Setores), para não tirar o foco a cada atualização */
-const jrRedesenhar=()=>{if(page==='an-jornada'||(page==='config'&&cfgView==='jornada')){
+const jrRedesenhar=()=>{if(page==='an-diag')return render();if(page==='an-jornada'||(page==='config'&&cfgView==='jornada')){
  /* mantém a rolagem lateral da linha do tempo de Configurações ao redesenhar */
  const t=document.querySelector('#p-config .jrtrilho'),x=t?t.scrollLeft:0;render.cfgShown=null;render();const n=document.querySelector('#p-config .jrtrilho');if(n)n.scrollLeft=x}};
 /* uma leitura por vez; se outra for pedida no meio, roda de novo no fim. Resposta de outra conta é descartada */
@@ -1305,10 +1326,11 @@ function rEdJrEtapa(){const{id,x}=ED,d=x.data;if(ED.rendered)return;ED.rendered=
  $('ed').innerHTML=`${jrTopo(id,'Nova etapa',id?esc(d.nome):'Adicionar etapa')}
  <div class="edb"><div class="f"><label for="jr_nome">Nome da etapa</label><input id="jr_nome" maxlength="120" value="${esc(d.nome)}" autocomplete="off"><span class="msg"></span></div>
  ${ta('descricao','Descrição')}
- <div class="f"><label for="jr_setor">Setores que participam</label><div class="jrtags" id="jr_tags"></div><input id="jr_setor" list="jr_sug" maxlength="100" placeholder="Digite o setor e aperte Enter" autocomplete="off"><datalist id="jr_sug"></datalist><span class="msg" data-h="Ao digitar, aparecem os setores já usados em outras etapas.">Ao digitar, aparecem os setores já usados em outras etapas.</span></div>
+ <div class="f"><label for="jr_setor">Setores que participam</label><div class="jrtags" id="jr_tags"></div><input id="jr_setor" list="jr_sug" maxlength="100" placeholder="Digite o setor e aperte Enter" autocomplete="off"><datalist id="jr_sug"></datalist><span class="msg" data-h="Ao digitar, aparecem os setores já usados na Jornada e nos Diagnósticos.">Ao digitar, aparecem os setores já usados na Jornada e nos Diagnósticos.</span></div>
  ${ta('processos','Processos que acontecem')}${ta('motivos','Motivos de contato e reclamações')}${ta('riscos','Problemas que podem surgir')}
  ${jrAcoes(id)}</div>`;jrTags()}
-/* etiquetas de setor: Enter ou vírgula adiciona; Backspace no campo vazio tira a última */
+/* etiquetas de setor (painéis de etapa e de diagnóstico, os que têm ED.setores):
+   Enter ou vírgula adiciona; Backspace no campo vazio tira a última */
 function jrTags(){const L=ED.setores,k=new Set(L.map(s=>s.toLowerCase()));
  $('jr_tags').innerHTML=L.map((s,i)=>`<span class="chip">${esc(s)}<button type="button" class="jrrm" data-jrsrm="${i}" aria-label="Remover ${esc(s)}">${ICO.x}</button></span>`).join('');
  $('jr_sug').innerHTML=jrSugestoes().filter(s=>!k.has(s.toLowerCase())).map(s=>`<option value="${esc(s)}">`).join('')}
@@ -1317,14 +1339,14 @@ function jrAddSetor(){const i=$('jr_setor'),L=i.value.split(',').map(s=>s.trim()
  const box=i.closest('.f'),msg=(m,resto)=>{i.value=resto.join(', ');jrTags();box.classList.add('bad');box.querySelector('.msg').textContent=m;return false};
  for(let k=0;k<L.length;k++){const v=L[k],igual=s=>s.toLowerCase()===v.toLowerCase();
   if(v.length>100)return msg('Use até 100 caracteres.',L.slice(k));
-  if(!ED.setores.some(igual)){if(ED.setores.length>=50)return msg('Use no máximo 50 setores por etapa.',L.slice(k));ED.setores.push(jrSugestoes().find(igual)||v)}}
+  if(!ED.setores.some(igual)){if(ED.setores.length>=50)return msg('Use no máximo 50 setores.',L.slice(k));ED.setores.push(jrSugestoes().find(igual)||v)}}
  i.value='';jrTags();return true}
 /* roda antes do atalho geral do painel (Enter = salvar): Enter com texto no campo vira etiqueta */
-$('ed').addEventListener('keydown',e=>{if(e.target.id!=='jr_setor'||!ED||ED.kind!=='jretapa'||e.isComposing)return;
+$('ed').addEventListener('keydown',e=>{if(e.target.id!=='jr_setor'||!ED||!ED.setores||e.isComposing)return;
  if((e.key==='Enter'&&e.target.value.trim())||e.key===','){e.preventDefault();e.stopPropagation();jrAddSetor()}
  else if(e.key==='Backspace'&&!e.target.value&&!e.repeat&&ED.setores.length){ED.setores.pop();jrTags()}},true);
 /* vírgula que chega sem tecla identificada (teclado do celular) ou texto colado com vírgulas */
-$('ed').addEventListener('input',e=>{if(e.target.id==='jr_setor'&&ED&&ED.kind==='jretapa'&&!e.isComposing&&e.target.value.includes(','))setTimeout(jrAddSetor)});
+$('ed').addEventListener('input',e=>{if(e.target.id==='jr_setor'&&ED&&ED.setores&&!e.isComposing&&e.target.value.includes(','))setTimeout(jrAddSetor)});
 function rEdJrFluxo(){const{id,x}=ED,d=x.data;if(ED.rendered)return;ED.rendered=true;
  const op=v=>`<option value="">Escolha a etapa</option>${JR.etapas.map((e,i)=>`<option value="${esc(e.id)}"${e.id===v?' selected':''}>${i+1}. ${esc(e.data.nome)}</option>`).join('')}`;
  $('ed').innerHTML=`${jrTopo(id,'Novo caminho',id?'Caminho fora da ordem':'Adicionar caminho')}
@@ -1380,7 +1402,134 @@ document.addEventListener('click',e=>{const t=e.target.closest&&e.target.closest
  else if(d.jrmover)moverJr(d.jrmover,+d.jrdir);
  else if('jrsalvar' in d)saveJr(t);
  else if('jrexcluir' in d)delJr(t);
- else if(d.jrsrm!==undefined&&ED&&ED.kind==='jretapa'){ED.setores.splice(+d.jrsrm,1);jrTags();$('jr_setor').focus()}
+ else if(d.jrsrm!==undefined&&ED&&ED.setores){ED.setores.splice(+d.jrsrm,1);jrTags();$('jr_setor').focus()}
+});
+
+/* ---------- diagnósticos ----------
+   problemas da experiência; só administradores. As etapas vêm da Jornada; os setores são etiquetas digitadas
+   (as mesmas sugestões da Jornada). Uma etapa excluída continua guardada no problema e aparece como "Etapa excluída" */
+const DG_GRAV={critica:['Crítica','er',4],alta:['Alta','wa',3],media:['Média','',2],baixa:['Baixa','ln',1]};
+const DG_SIT={ativo:['Ativo','er'],investigacao:['Em investigação','wa'],reduzido:['Reduzido','ln'],resolvido:['Resolvido','ok']};
+const DG_FREQ={diaria:'Diária',semanal:'Semanal',quinzenal:'Quinzenal',mensal:'Mensal',pontual:'Pontual',nao_medida:'Não medida'};
+const DG_CAUSA={hipotese:'Hipótese a validar',confirmada:'Causa identificada'};
+const dgVazio=dono=>({itens:null,limitado:false,dono,carregando:false,denovo:false,erro:false,html:null,adiado:false,f:{q:'',sit:'ativos',grav:'',etapa:'',setor:''}});
+let DG=dgVazio(null);
+const dgM=(M,k)=>Object.hasOwn(M,k)?M[k]:null;
+const dgAtivo=x=>x.data.situacao==='ativo'||x.data.situacao==='investigacao';
+const dgChip=(M,k)=>{const v=dgM(M,k);return v?`<span class="chip ${v[1]}">${esc(v[0])}</span>`:''};
+/* nomes das etapas só depois de a Jornada carregar (antes disso, não dá para saber se foi excluída) */
+const dgEtapas=x=>JR.etapas?[...new Set(x.data.etapas.map(jrNome))].join(', '):x.data.etapas.length?(JR.erro?'Não carregadas':'…'):'';
+const dgRedesenhar=()=>{if(page==='an-diag')render()};
+async function dgCarregar(){
+ if(!isAdmin())return;
+ if(DG.dono!==meId)DG=dgVazio(meId);
+ const j=DG;if(j.carregando){j.denovo=true;return}j.carregando=true;
+ try{const r=await DB.regList('diagnostico');if(j!==DG)return;
+  const itens=r.itens||[],mudou=JSON.stringify(j.itens)!==JSON.stringify(itens);
+  Object.assign(j,{itens,limitado:!!r.limitado,erro:false});if(mudou)dgRedesenhar();
+ }catch(e){if(j===DG&&!j.itens){j.erro=true;dgRedesenhar()}}
+ finally{j.carregando=false;if(j.denovo&&j===DG){j.denovo=false;dgCarregar()}}
+}
+function dgLista(){const f=DG.f,q=f.q.trim().toLowerCase(),st=f.setor.toLowerCase(),peso=x=>(dgM(DG_GRAV,x.data.gravidade)||[0,0,0])[2];
+ return DG.itens.filter(x=>{const d=x.data;
+  if(f.sit==='ativos'&&!dgAtivo(x))return false;
+  if(f.sit==='fechados'&&d.situacao!=='resolvido'&&d.situacao!=='reduzido')return false;
+  if(Object.hasOwn(DG_SIT,f.sit)&&d.situacao!==f.sit)return false;
+  if(f.grav&&d.gravidade!==f.grav)return false;
+  if(f.etapa&&!d.etapas.includes(f.etapa))return false;
+  if(st&&!d.setores.some(s=>s.toLowerCase()===st))return false;
+  return !q||[d.titulo,d.descricao,d.causa,d.tema,d.impacto,d.evidencias,d.proxima].join(' ').toLowerCase().includes(q)})
+ /* mais graves primeiro; depois os registrados mais recentemente */
+ .sort((a,b)=>peso(b)-peso(a)||(b.data.data||'').localeCompare(a.data.data||'')||b.criado-a.criado)}
+function dgResultado(){
+ if(!DG.itens.length)return `<div class="panel embreve"><p class="muted">Nenhum problema registrado ainda. Registre o que está acontecendo, onde acontece na jornada e qual o impacto para o cliente.</p><button class="btn pri" data-dgabrir="">${ICO.plus}Registrar problema</button></div>`;
+ const R=dgLista();if(!R.length)return '<div class="panel"><p class="muted">Nenhum problema com esses filtros.</p></div>';
+ const corta=(s,n)=>{const c=Array.from(s);return c.length>n?c.slice(0,n-1).join('')+'…':s};
+ const causa=d=>d.causa&&d.causa.trim()?`<span class="none">${d.causaTipo==='confirmada'?'Confirmada':'Hipótese'}:</span> ${esc(corta(d.causa.trim(),90))}`:'—';
+ const linha=x=>{const d=x.data;return `<tr data-dgrow="${esc(x.id)}"><td><button class="dglink" data-dgabrir="${esc(x.id)}">${esc(d.titulo)}</button>${d.tema?`<span class="by">Tema: ${esc(d.tema)}</span>`:''}</td><td>${dgChip(DG_GRAV,d.gravidade)}</td><td class="dgsm">${esc(dgM(DG_FREQ,d.frequencia)||'—')}</td><td class="dgsm">${esc(dgEtapas(x)||'—')}</td><td class="dgsm">${esc(d.setores.join(', ')||'—')}</td><td class="dgsm">${causa(d)}</td><td>${dgChip(DG_SIT,d.situacao)}</td></tr>`};
+ return `<p class="muted dgcont">${R.length} ${R.length===1?'problema':'problemas'}</p><div class="panel dgpan"><div class="tw"><table class="dgtab"><thead><tr><th>Problema</th><th>Gravidade</th><th>Frequência</th><th>Etapas</th><th>Setores</th><th>Causa</th><th>Situação</th></tr></thead><tbody>${R.map(linha).join('')}</tbody></table></div></div>`}
+function dgFiltros(){const f=DG.f,o=(v,t,cur)=>`<option value="${esc(v)}"${v===cur?' selected':''}>${esc(t)}</option>`;
+ const setores=[...new Map(DG.itens.flatMap(x=>x.data.setores).map(s=>[s.toLowerCase(),s])).values()].sort((a,b)=>a.localeCompare(b));
+ /* filtro de uma etapa ou setor que deixou de existir não pode continuar valendo escondido */
+ if(f.etapa&&JR.etapas&&!jrEtapa(f.etapa))f.etapa='';
+ if(f.setor&&!setores.some(s=>s.toLowerCase()===f.setor.toLowerCase()))f.setor='';
+ return `<div class="dgfil"><input id="dg_q" type="search" maxlength="100" placeholder="Buscar problema, causa, tema…" aria-label="Buscar problema" value="${esc(f.q)}" autocomplete="off">
+ <select id="dg_sit" aria-label="Situação">${o('','Todas as situações',f.sit)}${o('ativos','Ativos e em investigação',f.sit)}${o('fechados','Resolvidos ou reduzidos',f.sit)}${Object.entries(DG_SIT).map(([k,[t]])=>o(k,t,f.sit)).join('')}</select>
+ <select id="dg_grav" aria-label="Gravidade">${o('','Todas as gravidades',f.grav)}${Object.entries(DG_GRAV).map(([k,[t]])=>o(k,t,f.grav)).join('')}</select>
+ <select id="dg_etapa" aria-label="Etapa da jornada">${o('','Todas as etapas',f.etapa)}${(JR.etapas||[]).map((e,i)=>o(e.id,`${i+1}. ${e.data.nome}`,f.etapa)).join('')}</select>
+ <select id="dg_setor" aria-label="Setor">${o('','Todos os setores',f.setor)}${setores.map(s=>o(s,s,f.setor)).join('')}</select></div>`}
+function rDiag(){
+ if(DG.dono!==meId)dgCarregar();if(JR.dono!==meId)jrCarregar();
+ const L=DG.itens;let h;
+ if(!L)h=DG.erro?`<div class="panel cfgp"><p class="muted">Não foi possível carregar os diagnósticos.</p><div><button class="btn sm" data-dgrecarregar>Tentar de novo</button></div></div>`:'<div class="panel"><p class="muted" role="status">Carregando…</p></div>';
+ else{const A=L.filter(dgAtivo),n=(t,v,f,c)=>`<button class="kpi dgn" data-dgfiltro="${f}"><span class="l">${t}</span><span class="v${c&&v?' '+c:''}">${v}</span></button>`;
+  h=`${DG.limitado?'<div class="banner"><span class="dot wa"></span><div>Há muitos registros: apenas os 1.000 primeiros estão sendo exibidos.</div></div>':''}<div class="kpis dgnums">${n('Problemas ativos',A.length,'ativos','')}${n('Críticos ativos',A.filter(x=>x.data.gravidade==='critica').length,'criticos','er')}${n('Em investigação',L.filter(x=>x.data.situacao==='investigacao').length,'investigacao','wa')}${n('Resolvidos ou reduzidos',L.filter(x=>x.data.situacao==='resolvido'||x.data.situacao==='reduzido').length,'fechados','')}</div>${dgFiltros()}<div id="dg_res">${dgResultado()}</div>`}
+ const html=`<header class="phead"><div><p class="kick">Análises</p><h1>Diagnósticos</h1><p class="sub">Os problemas da experiência do cliente: o que acontece, onde acontece na jornada, impacto, gravidade, causa e evidências.</p></div><div class="tools"><button class="btn pri" data-dgabrir="">${ICO.plus}Registrar problema</button></div></header>${h}`;
+ if(html===DG.html)return;
+ /* não redesenha enquanto a pessoa usa a busca ou os filtros; redesenha ao sair deles */
+ const a=document.activeElement;if(a&&a.closest&&a.closest('#p-an-diag .dgfil')){DG.adiado=true;dgAtualizar();return}
+ DG.html=html;$('p-an-diag').innerHTML=html;
+}
+/* busca e filtros trocam só a tabela, sem tirar o foco */
+const dgAtualizar=()=>{const r=$('dg_res');if(r&&DG.itens)r.innerHTML=dgResultado()};
+document.addEventListener('input',e=>{if(e.target.id==='dg_q'){DG.f.q=e.target.value;dgAtualizar()}});
+document.addEventListener('change',e=>{const k={dg_sit:'sit',dg_grav:'grav',dg_etapa:'etapa',dg_setor:'setor'}[e.target.id];if(k){DG.f[k]=e.target.value;dgAtualizar()}});
+document.addEventListener('focusout',e=>{if(e.target.closest&&e.target.closest('#p-an-diag .dgfil')&&DG.adiado){DG.adiado=false;setTimeout(()=>page==='an-diag'&&rDiag())}});
+function openDiag(id){
+ const x=id?(DG.itens||[]).find(y=>y.id===id):{data:{titulo:'',descricao:'',etapas:[],setores:[],tema:'',data:today(),impacto:'',frequencia:'',gravidade:'media',causaTipo:'hipotese',causa:'',evidencias:'',proxima:'',situacao:'ativo'}};
+ if(!x)return;ED={kind:'diag',id,x:clone(x),setores:x.data.setores.slice()};rEd();showEd()}
+function rEdDiag(){const{id,x}=ED,d=x.data;if(ED.rendered)return;ED.rendered=true;
+ const sel=(k,l,M,vazio)=>`<div class="f"><label for="dg_${k}">${l}</label><select id="dg_${k}">${vazio?`<option value="">${vazio}</option>`:''}${Object.entries(M).map(([v,t])=>`<option value="${v}"${d[k]===v?' selected':''}>${esc(Array.isArray(t)?t[0]:t)}</option>`).join('')}</select></div>`;
+ const ta=(k,l,ph)=>`<div class="f"><label for="dg_${k}">${l}</label><textarea id="dg_${k}" maxlength="4000"${ph?` placeholder="${ph}"`:''}>${esc(d[k]||'')}</textarea></div>`;
+ /* guarda quais etapas viraram caixas nesta tela: ao salvar, as que não apareceram (Jornada ainda carregando ou etapa excluída) continuam no problema */
+ const E=JR.etapas||[];ED.mostradas=new Set(E.map(e=>e.id));const temas=[...new Map((DG.itens||[]).filter(y=>y.data.tema).map(y=>[y.data.tema.toLowerCase(),y.data.tema])).values()].sort((a,b)=>a.localeCompare(b));
+ const etapas=E.length?`<div class="dgchks">${E.map((e,i)=>`<label class="dgchk"><input type="checkbox" value="${esc(e.id)}"${d.etapas.includes(e.id)?' checked':''}>${i+1}. ${esc(e.data.nome)}</label>`).join('')}</div>`:`<p class="muted">${!JR.etapas?(JR.erro?'Não foi possível carregar as etapas da Jornada. As etapas já ligadas a este problema serão mantidas.':'Carregando as etapas da Jornada… As etapas já ligadas a este problema serão mantidas.'):'Nenhuma etapa cadastrada na Jornada do Cliente.'}</p>`;
+ $('ed').innerHTML=`<div class="edh"><div class="row"><span>Análises · Diagnósticos</span><button class="ico" data-edclose aria-label="Fechar">${ICO.x}</button></div><div><div class="k">${id?'Editar problema':'Novo problema'}</div><h3>${id?esc(d.titulo):'Registrar problema'}</h3></div></div>
+ <div class="edb"><div class="f"><label for="dg_titulo">Título do problema</label><input id="dg_titulo" maxlength="150" value="${esc(d.titulo)}" autocomplete="off"><span class="msg"></span></div>
+ ${ta('descricao','O que está acontecendo')}
+ <fieldset class="dgset"><legend>Onde acontece na jornada</legend>${etapas}</fieldset>
+ <div class="f"><label for="jr_setor">Setores envolvidos</label><div class="jrtags" id="jr_tags"></div><input id="jr_setor" list="jr_sug" maxlength="100" placeholder="Digite o setor e aperte Enter" autocomplete="off"><datalist id="jr_sug"></datalist><span class="msg" data-h="Ao digitar, aparecem os setores já usados na Jornada e nos Diagnósticos.">Ao digitar, aparecem os setores já usados na Jornada e nos Diagnósticos.</span></div>
+ <div class="g2"><div class="f"><label for="dg_tema">Tema</label><input id="dg_tema" list="dg_temas" maxlength="100" value="${esc(d.tema)}" autocomplete="off"><datalist id="dg_temas">${temas.map(t=>`<option value="${esc(t)}">`).join('')}</datalist><span class="msg" data-h="Use o mesmo tema em problemas parecidos.">Use o mesmo tema em problemas parecidos.</span></div>
+ <div class="f"><label for="dg_data">Data de registro</label><input id="dg_data" type="date" value="${esc(d.data||'')}"><span class="msg"></span></div></div>
+ ${ta('impacto','Impacto para o cliente')}
+ <div class="g2">${sel('gravidade','Gravidade',DG_GRAV)}${sel('frequencia','Frequência',DG_FREQ,'Não informada')}</div>
+ <div class="g2">${sel('causaTipo','A causa é',DG_CAUSA)}${sel('situacao','Situação',DG_SIT)}</div>
+ ${ta('causa','Causa ou hipótese')}${ta('evidencias','Evidências que sustentam o diagnóstico','Tickets, monitorias, relatos, números (com fonte e período)')}
+ <div class="f"><label for="dg_proxima">Próxima ação necessária</label><input id="dg_proxima" maxlength="1000" value="${esc(d.proxima||'')}" autocomplete="off"></div>
+ ${id?`<div class="last">Registrado em ${tsTxt(x.criado)}${x.atualizado!==x.criado?` · alterado em ${tsTxt(x.atualizado)}`:''}</div>`:''}
+ <div class="eda"><button class="btn pri" data-dgsalvar>${id?'Salvar':'Registrar'}</button><button class="btn" data-edclose>Cancelar</button>${id?`<button class="btn dan" data-dgexcluir>${ICO.del}Excluir</button>`:''}</div></div>`;
+ jrTags()}
+async function saveDiag(btn){const ed=ED,{id,x}=ed,v=k=>$('dg_'+k).value;
+ const erro=(k,m)=>{const b=$('dg_'+k).closest('.f');b.classList.add('bad');b.querySelector('.msg').textContent=m;$('dg_'+k).focus()};
+ const titulo=v('titulo').trim();if(!titulo)return erro('titulo','Digite o título do problema.');
+ if(!jrAddSetor())return $('jr_setor').focus();
+ /* etapas que não viraram caixa na tela (excluídas ou ainda não carregadas) continuam guardadas no problema */
+ const marc=[...$('ed').querySelectorAll('.dgchks input:checked')].map(i=>i.value),fora=x.data.etapas.filter(e=>!ED.mostradas.has(e));
+ const data={titulo,descricao:v('descricao'),etapas:[...new Set([...marc,...fora])],setores:ED.setores.slice(),tema:v('tema').trim(),data:v('data'),impacto:v('impacto'),
+  frequencia:v('frequencia'),gravidade:v('gravidade'),causaTipo:v('causaTipo'),causa:v('causa'),evidencias:v('evidencias'),proxima:v('proxima'),situacao:v('situacao')};
+ const lbl=btn.innerHTML;btn.textContent='Salvando…';btn.setAttribute('aria-disabled','true');
+ try{await DB.regSave(id?{area:'diagnostico',id,versao:x.atualizado,data}:{area:'diagnostico',data});if(ED===ed)closeEd();toast(id?'Problema salvo':'Problema registrado')}
+ catch(e){btn.innerHTML=lbl;btn.removeAttribute('aria-disabled');const c=agConflito(e);toast(c||e.message,true);if(c&&ED===ed)closeEd()}
+ dgCarregar();
+}
+async function delDiag(btn){const ed=ED,{id,x}=ed;
+ if(!await confirmBox('Excluir problema?',`O problema "${x.data.titulo}" será excluído. Isso não pode ser desfeito.`,'Excluir problema',true))return;
+ btn.setAttribute('aria-disabled','true');
+ try{await DB.regDelete('diagnostico',id);if(ED===ed)closeEd();toast('Problema excluído')}
+ catch(e){btn.removeAttribute('aria-disabled');const c=agConflito(e);toast(c||e.message,true);if(c&&ED===ed)closeEd()}
+ dgCarregar();
+}
+/* atalhos dos números do topo: cada um aplica um filtro */
+/* limpam também busca, etapa e setor, para a tabela bater com o número clicado */
+const DG_ATALHO=Object.fromEntries(Object.entries({ativos:['ativos',''],criticos:['ativos','critica'],investigacao:['investigacao',''],fechados:['fechados','']}).map(([k,[sit,grav]])=>[k,{q:'',sit,grav,etapa:'',setor:''}]));
+document.addEventListener('click',e=>{
+ const tr=e.target.closest&&e.target.closest('tr[data-dgrow]');if(tr&&!e.target.closest('button')){openDiag(tr.dataset.dgrow);return}
+ const t=e.target.closest&&e.target.closest('button');if(!t||t.getAttribute('aria-disabled')==='true')return;const d=t.dataset;
+ if(d.dgabrir!==undefined)openDiag(d.dgabrir||null);
+ else if(d.dgfiltro&&Object.hasOwn(DG_ATALHO,d.dgfiltro)){Object.assign(DG.f,DG_ATALHO[d.dgfiltro]);rDiag();const b=document.querySelector(`[data-dgfiltro="${d.dgfiltro}"]`);b&&b.focus()}
+ else if('dgrecarregar' in d){DG=dgVazio(null);render()}
+ else if('dgsalvar' in d)saveDiag(t);
+ else if('dgexcluir' in d)delDiag(t);
 });
 
 /* ---------- seletor de ano, mês e semana ---------- */
@@ -1505,7 +1654,7 @@ async function saveColab(){const{id}=ED,nome=$('c_nome').value.trim().replace(/\
  const k=x=>norm(x).normalize('NFD').replace(/[\u0300-\u036f]/g,'');if(COLS_().some(c=>c.id!==id&&k(c.nome)===k(nome))){box.classList.add('bad');box.querySelector('.msg').textContent='Já existe um colaborador com esse nome.';return}
  await saveSettings(s=>{s.colaboradores=(s.colaboradores||[]).slice();if(id){const c=s.colaboradores.find(x=>x.id===id);if(c){c.nome=nome;c.ativo=ativo}}else s.colaboradores.push({id:'c'+uid(),nome,ativo,criado:Date.now()})},id?'Colaborador salvo':'Colaborador adicionado');closeEd()}
 function openUser(id){const u=id?S.users.find(x=>x.id===id):{nome:'',usuario:'',admin:false};if(!u)return;ED={kind:'user',id,u:clone(u)};rEd();showEd()}
-function rEd(){if(!ED)return;if(ED.kind==='agenda')return rEdAg();if(ED.kind==='jretapa')return rEdJrEtapa();if(ED.kind==='jrfluxo')return rEdJrFluxo();if(ED.kind==='plan')return rEdPlan();if(ED.kind==='user')return rEdUser();if(ED.kind==='colab')return rEdColab();
+function rEd(){if(!ED)return;if(ED.kind==='agenda')return rEdAg();if(ED.kind==='jretapa')return rEdJrEtapa();if(ED.kind==='jrfluxo')return rEdJrFluxo();if(ED.kind==='diag')return rEdDiag();if(ED.kind==='plan')return rEdPlan();if(ED.kind==='user')return rEdUser();if(ED.kind==='colab')return rEdColab();
  const w=Wk(),{f}=ED,st=steps(f);if(ED.i>=st.length)ED.i=st.length-1;const i=ED.i,id=st[i],ro=!canEdit(w),isS=id==='sla';const r=isS?{}:((f==='q'?w.q:w.o)[id]||{});
  if(document.activeElement&&$('ed').contains(document.activeElement)&&ED.rendered===`${sel}|${f}|${i}`)return;ED.rendered=`${sel}|${f}|${i}`;
  const done=k=>k==='sla'?isN(w.sla):rowDone(f,(f==='q'?w.q:w.o)[k]||{});
@@ -1561,7 +1710,7 @@ async function saveUser(btn){const{id}=ED,q=k=>{const x=$('ed').querySelector(`[
   closeEd();if(id===meId&&!admin){page='inicio';cfgView=null;toast('Usuário salvo. Você não é mais administrador.')}else toast(id?'Usuário salvo':'Usuário adicionado');render()}
  catch(e){toast(e.message||errMsg(e),true);btn.textContent=id?'Salvar':'Adicionar';btn.removeAttribute('aria-disabled')}}
 $('ed').addEventListener('input',e=>{const b=e.target.closest('.f.bad');if(b){b.classList.remove('bad');const m=b.querySelector('.msg');m.textContent=m.dataset.h||''}});
-$('ed').addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.matches('input')){e.preventDefault();const b=$('ed').querySelector('[data-edsave="1"],[data-usave],[data-plsave],[data-csave],[data-jrsalvar]');b&&b.click()}});
+$('ed').addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.matches('input')){e.preventDefault();const b=$('ed').querySelector('[data-edsave="1"],[data-usave],[data-plsave],[data-csave],[data-jrsalvar],[data-dgsalvar]');b&&b.click()}});
 $('edScrim').onclick=closeEd;
 
 /* ---------- semanas: fechar, reabrir, excluir ---------- */
@@ -1785,6 +1934,7 @@ async function onData(d){
  if(!sel||!S.weeks[sel]){const p=prevOf(cur);sel=new Date().getDay()===1&&p?p.inicio:cur}
  if(page==='agenda')agCarregar(true);
  if(page==='an-jornada'||(page==='config'&&cfgView==='jornada'))jrCarregar();
+ if(page==='an-diag'){dgCarregar();jrCarregar()}
  render();
 }
 async function boot(){
