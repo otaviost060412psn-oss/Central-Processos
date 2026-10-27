@@ -573,6 +573,9 @@ button.plc.miss:hover{background:var(--card2)}
 /* cores dos caminhos fora da ordem (escuro e claro) */
 :root{--jr-ret:#4F9DFF;--jr-rec:#FFB86B;--jr-des:#B98CFF}
 :root[data-theme="light"]{--jr-ret:#1F63C4;--jr-rec:#A85A06;--jr-des:#7446C2}
+/* calor da jornada: cor do problema ativo mais grave da etapa */
+:root{--jq-cri:var(--er);--jq-alt:#FF8A3D;--jq-med:#F5D04F;--jq-bai:var(--mu2)}
+:root[data-theme="light"]{--jq-alt:#E06A00;--jq-med:#9A7B00}
 /* larguras fixas (cartão 210px, seta 44px): o desenho das linhas usa as mesmas medidas (JR_W e JR_G) */
 .jrbox{margin-bottom:var(--gap)}
 .jrtrilho{overflow-x:auto;padding:2px 2px 10px}
@@ -602,6 +605,17 @@ button.jrlab:hover{background:var(--card2)}
 .jrc .k{font-size:12px;color:var(--mu)}
 .jrc b{font-size:16px;font-weight:600;line-height:1.3;overflow-wrap:anywhere}
 .jrc small{font-size:12px;color:var(--mu)}
+.jrc.jrq{box-shadow:inset 0 4px 0 var(--q)}
+.jrqt{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:500;color:var(--tx)}
+.jrqi{display:inline-block;flex:none;width:14px;height:4px;border-radius:2px;background:var(--q)}
+.jrqt .jrqi{width:8px;height:8px;border-radius:50%}
+.jrqleg{margin:0 0 12px}
+.vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.jrprob{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.jrpb{width:100%;display:flex;flex-wrap:wrap;align-items:center;gap:8px;text-align:left;background:var(--bg);border:1px solid var(--bd);border-radius:10px;padding:9px 12px;color:var(--tx);cursor:pointer}
+.jrpb:hover{border-color:var(--bd2);background:var(--card2)}
+.jrpb>span:first-child{flex:1 1 200px;min-width:0;font-weight:500;overflow-wrap:anywhere}
+.jrpch{display:flex;flex-wrap:wrap;gap:6px}
 .jrst{display:flex;flex-wrap:wrap;gap:4px;min-width:0}
 /* setor de nome longo quebra a linha em vez de alargar o cartão (o desenho das linhas depende da largura fixa) */
 .jrst .chip{white-space:normal;overflow-wrap:anywhere;max-width:100%}
@@ -1282,17 +1296,32 @@ function jrDetalhe(id){const x=jrEtapa(id),i=JR.etapas.indexOf(x),C=jrLigados(id
  const bloco=(t,v)=>`<div><h3>${t}</h3>${v&&v.trim()?`<p class="jrtx">${esc(v)}</p>`:'<p class="muted">Não registrado.</p>'}</div>`;
  return `<div class="panel jrdet"><div><p class="kick">Etapa ${i+1} de ${JR.etapas.length}</p><h2>${esc(x.data.nome)}</h2>${x.data.descricao?`<p class="jrtx">${esc(x.data.descricao)}</p>`:''}</div>
  <div class="jrgrid">${bloco('Setores envolvidos',jrSetores(x).join(', '))}${bloco('Processos que acontecem',x.data.processos)}${bloco('Motivos de contato e reclamações',x.data.motivos)}${bloco('Problemas que podem surgir',x.data.riscos)}</div>
+ <div><h3>Problemas ativos nesta etapa</h3>${jrProbLista(id)}</div>
  <div><h3>Caminhos fora da ordem</h3>${C.length?`<ul class="jrfl">${C.map(jrFluxoLi).join('')}</ul>`:'<p class="muted">Nenhum caminho fora da ordem passa por esta etapa.</p>'}</div></div>`}
 /* linha do tempo: cartões de largura fixa, para as linhas dos caminhos saírem do meio de cada cartão.
    A mesma linha aparece na página (só para ver) e em Configurações (para editar) */
 const JR_W=210,JR_G=44,JR_COR={retorno:'var(--jr-ret)',recorrencia:'var(--jr-rec)',desvio:'var(--jr-des)'},JR_TRACO={retorno:'',recorrencia:'6 4',desvio:'2 5'};
+/* calor: problemas ativos (ativos e em investigação, de todos os meses) ligados à etapa, do mais grave para o menos grave;
+   null enquanto os diagnósticos não carregaram. Gravidade desconhecida conta como baixa */
+const JR_CALOR={critica:'var(--jq-cri)',alta:'var(--jq-alt)',media:'var(--jq-med)',baixa:'var(--jq-bai)'};
+const jrGrav=x=>Object.hasOwn(JR_CALOR,x.data.gravidade)?x.data.gravidade:'baixa';
+const jrProblemas=id=>{if(DG.dono!==meId||!DG.itens)return null;const peso=x=>DG_GRAV[jrGrav(x)][2];
+ return DG.itens.filter(x=>dgAtivo(x)&&x.data.etapas.includes(id)).sort((a,b)=>peso(b)-peso(a)||(b.data.data||'').localeCompare(a.data.data||'')||b.criado-a.criado)};
+const jrProbLista=id=>{const P=jrProblemas(id);
+ if(!P)return DG.dono===meId&&DG.erro?'<p class="muted">Não foi possível carregar os diagnósticos.</p><button class="btn sm" data-dgrecarregar>Tentar de novo</button>':'<p class="muted">Carregando os diagnósticos…</p>';
+ if(!P.length)return '<p class="muted">Nenhum problema ativo ligado a esta etapa.</p>';
+ return `<ul class="jrprob">${P.map(x=>`<li><button class="jrpb" data-jrdiag="${esc(x.id)}"><span>${esc(x.data.titulo)}</span><span class="jrpch">${dgChip(DG_GRAV,x.data.gravidade)}${dgChip(DG_SIT,x.data.situacao)}</span></button></li>`).join('')}</ul>`};
+/* legenda das cores, só quando alguma etapa tem problema ativo */
+const jrCalorLeg=()=>(JR.etapas||[]).some(e=>(jrProblemas(e.id)||[]).length)?`<div class="agleg jrqleg"><span>Cor no topo da etapa = problema ativo mais grave:</span>${Object.entries(JR_CALOR).map(([k,c])=>`<span><i class="jrqi" style="--q:${c}"></i>${esc(DG_GRAV[k][0])}</span>`).join('')}</div>`:'';
 const jrCorta=s=>{const c=Array.from(s);return c.length>26?c.slice(0,25).join('')+'…':s};
 function jrLinha(edit){
  const E=JR.etapas,F=jrFluxos(),pos={},tr=JR.ocupado?' aria-disabled="true"':'',v=edit?'e':'v';E.forEach((x,i)=>pos[x.id]=i);
  const n=E.length+(edit?1:0),W=n*JR_W+(n-1)*JR_G,cx=i=>i*(JR_W+JR_G)+JR_W/2;
  const conteudo=(x,i)=>{const k=jrLigados(x.id).length,st=jrSetores(x);return `<span class="k">Etapa ${i+1}</span><b>${esc(x.data.nome)}</b>${st.length?`<span class="jrst">${st.map(s=>`<span class="chip ln">${esc(s)}</span>`).join('')}</span>`:''}${k?`<small>${k} ${k===1?'caminho fora da ordem':'caminhos fora da ordem'}</small>`:''}`};
  const card=(x,i)=>{const nm=esc(x.data.nome);
-  if(!edit){const on=x.id===JR.sel;return `<button class="jrc${on?' on':''}" data-jrsel="${esc(x.id)}" aria-pressed="${on}">${conteudo(x,i)}</button>`}
+  if(!edit){const on=x.id===JR.sel,P=jrProblemas(x.id)||[],g=P.length?jrGrav(P[0]):'';
+   const calor=P.length?`<span class="jrqt"><i class="jrqi" aria-hidden="true"></i>${P.length} ${P.length===1?'problema ativo':'problemas ativos'}<span class="vh">, gravidade mais alta: ${esc(DG_GRAV[g][0])}</span></span>`:'';
+   return `<button class="jrc${on?' on':''}${g?' jrq':''}"${g?` style="--q:${JR_CALOR[g]}"`:''} data-jrsel="${esc(x.id)}" aria-pressed="${on}">${conteudo(x,i)}${calor}</button>`}
   return `<div class="jrc ed"><button class="jrcb" data-jretapa="${esc(x.id)}" aria-label="Editar etapa ${i+1}, ${nm}">${conteudo(x,i)}</button><span class="jrmv"><button class="ico" data-jrmover="${esc(x.id)}" data-jrdir="-1" aria-label="Mover ${nm} para a esquerda"${i===0?' aria-disabled="true"':tr}>${ICO.l}</button><button class="ico" data-jrmover="${esc(x.id)}" data-jrdir="1" aria-label="Mover ${nm} para a direita"${i===E.length-1?' aria-disabled="true"':tr}>${ICO.r}</button></span></div>`};
  const seta=i=>`<span class="jrseta" aria-hidden="true">${i<E.length?'→':''}</span>`;
  const fila=E.map((x,i)=>`${i?seta(i):''}${card(x,i)}`).join('')+(edit?`${E.length?seta(E.length):''}<button class="jrc jrnova" data-jretapa="">${ICO.plus}Nova etapa</button>`:'');
@@ -1314,11 +1343,11 @@ function jrLinha(edit){
  return `<div class="jrtrilho" role="group" aria-label="Etapas da jornada"><div class="jrcanvas" style="width:${W}px"><div class="jrfila">${fila}</div>${H?`<div class="jrarcos" style="height:${H}px"><svg width="${W}" height="${H}" aria-hidden="true" focusable="false"><defs>${marcas}</defs>${arcos}</svg>${etq}</div>`:''}</div></div>${leg}`;
 }
 function rJornada(){
- if(JR.dono!==meId)jrCarregar();
+ if(JR.dono!==meId)jrCarregar();if(DG.dono!==meId)dgCarregar();
  const E=JR.etapas;let h;
  if(!E)h=jrEstado();
  else if(!E.length)h=`<div class="panel embreve"><p class="muted">Nenhuma etapa cadastrada ainda. As etapas são cadastradas em Configurações › Jornada do Cliente.</p><button class="btn pri" data-jrcfg>${ICO.plus}Cadastrar etapas</button></div>`;
- else{if(!jrEtapa(JR.sel))JR.sel=E[0].id;h=`<div class="jrbox">${jrLinha(false)}</div>${jrDetalhe(JR.sel)}`}
+ else{if(!jrEtapa(JR.sel))JR.sel=E[0].id;h=`<div class="jrbox">${jrCalorLeg()}${jrLinha(false)}</div>${jrDetalhe(JR.sel)}`}
  const html=`<header class="phead"><div><p class="kick">Análises</p><h1>Jornada do Cliente</h1><p class="sub">As etapas pelas quais o cliente passa, com os setores envolvidos, os motivos de contato e os caminhos fora da ordem.</p></div><div class="tools"><button class="btn" data-jrcfg>${ICO.edit}Editar etapas</button></div></header>${h}`;
  /* só redesenha quando algo mudou, mantendo a rolagem lateral das etapas e o foco de quem usa o teclado */
  if(html===JR.html)return;
@@ -1413,6 +1442,9 @@ async function moverJr(id,dir){const j=JR,E=j.etapas;if(j.ocupado||!E)return;
 document.addEventListener('click',e=>{const t=e.target.closest&&e.target.closest('button');if(!t||t.getAttribute('aria-disabled')==='true')return;const d=t.dataset;
  if(d.jrsel){JR.sel=d.jrsel;rJornada();const b=document.querySelector(`[data-jrsel="${CSS.escape(d.jrsel)}"]`);b&&b.focus()}
  else if('jrcfg' in d){page='config';cfgView='jornada';render.cfgShown=null;closeMenu();closeEd();render();scrollTo({top:0})}
+ /* problema listado na etapa: abre Diagnósticos sem filtros, com esse problema já aberto */
+ else if(d.jrdiag){const id=d.jrdiag;Object.assign(DG.f,{q:'',mes:'',sit:'',grav:'',etapa:'',setor:''});DG.abertos.add(id);page='an-diag';closeMenu();closeEd();render();
+  const b=document.querySelector(`[data-dgtog="${CSS.escape(id)}"]`);if(b){b.focus({preventScroll:true});b.closest('tr').scrollIntoView({block:'center'})}else scrollTo({top:0})}
  else if('jrrecarregar' in d){JR=jrVazio(null);render.cfgShown=null;render()}
  else if(d.jretapa!==undefined)openJrEtapa(d.jretapa||null);
  else if(d.jrfluxo!==undefined)openJrFluxo(d.jrfluxo||null);
@@ -1440,7 +1472,7 @@ const dgAtivo=x=>x.data.situacao==='ativo'||x.data.situacao==='investigacao';
 const dgChip=(M,k)=>{const v=dgM(M,k);return v?`<span class="chip ${v[1]}">${esc(v[0])}</span>`:''};
 /* nomes das etapas só depois de a Jornada carregar (antes disso, não dá para saber se foi excluída) */
 const dgEtapas=x=>JR.etapas?[...new Set(x.data.etapas.map(jrNome))].join(', '):x.data.etapas.length?(JR.erro?'Não carregadas':'…'):'';
-const dgRedesenhar=()=>{if(page==='an-diag')render()};
+const dgRedesenhar=()=>{if(page==='an-diag'||page==='an-jornada')render()};
 async function dgCarregar(){
  if(!isAdmin())return;
  if(DG.dono!==meId)DG=dgVazio(meId);
@@ -1970,7 +2002,7 @@ async function onData(d){
  if(!sel||!S.weeks[sel]){const p=prevOf(cur);sel=new Date().getDay()===1&&p?p.inicio:cur}
  if(page==='agenda')agCarregar(true);
  if(page==='an-jornada'||(page==='config'&&cfgView==='jornada'))jrCarregar();
- if(page==='an-diag'){dgCarregar();jrCarregar()}
+ if(page==='an-diag'||page==='an-jornada')dgCarregar();if(page==='an-diag')jrCarregar();
  render();
 }
 async function boot(){
