@@ -1706,10 +1706,15 @@ const PJ_ST={ideia:['Ideia','ln'],planejado:['Planejado',''],andamento:['Em anda
 const PJ_VAL={nao_avaliado:'Não avaliado',aguardando:'Aguardando medição',comprovada:'Melhoria comprovada',parcial:'Melhoria parcial',sem_efeito:'Sem efeito',piorou:'Piorou'};
 const PJ_HT={atualizacao:['Atualização','in'],decisao:['Decisão',''],marco:['Etapa concluída','ok'],status:['Mudança de status','ln']};
 const PJ_FUT=['ideia','planejado','standby','aguardando'];
-const pjVazio=dono=>({itens:null,hist:null,limitado:false,dono,carregando:false,denovo:false,erro:false,html:null,fhtml:null,adiado:false,vista:'quadro',movendo:new Set(),f:{q:'',status:'',prio:'',setor:'',resp:''}});
+const pjVazio=dono=>({itens:null,hist:null,limitado:false,dono,carregando:false,denovo:false,erro:false,html:null,fhtml:null,adiado:false,vista:'quadro',movendo:new Set(),f:{q:'',mes:today().slice(0,7),status:'',prio:'',setor:'',resp:''}});
 let PJ=pjVazio(null);
 const pjAberto=x=>x.data.status!=='concluido'&&x.data.status!=='cancelado';
 const pjAtrasado=x=>pjAberto(x)&&!!x.data.prazo&&x.data.prazo<today();
+/* mês (AAAA-MM): o que estava na mesa naquele mês — criado até o fim do mês e, se já encerrado, encerrado nele ou depois.
+   No mês atual: todos os em aberto e os concluídos ou cancelados neste mês. Cancelado não tem data própria: vale a da última alteração */
+const pjCriadoMes=x=>ymd(new Date(x.criado)).slice(0,7);
+const pjNoMes=(x,m)=>{if(pjCriadoMes(x)>m)return false;if(pjAberto(x))return true;
+ const fim=x.data.status==='concluido'&&x.data.concluidoEm?x.data.concluidoEm:ymd(new Date(x.atualizado));return fim.slice(0,7)>=m};
 const pjPeso=x=>(dgM(DG_GRAV,x.data.prioridade)||[0,0,0])[2];
 const pjHist=id=>(PJ.hist||[]).filter(h=>h.data.projeto===id).sort((a,b)=>b.data.dia.localeCompare(a.data.dia)||b.criado-a.criado);
 const pjProbNome=id=>{const x=(DG.itens||[]).find(y=>y.id===id);return x?x.data.titulo:DG.itens?'Problema excluído':'…'};
@@ -1732,6 +1737,7 @@ const pjEstado=()=>PJ.erro?`<div class="panel cfgp"><p class="muted">Não foi po
 const pjAviso=()=>PJ.limitado?'<div class="banner"><span class="dot wa"></span><div>Há muitos registros: parte deles não está sendo exibida.</div></div>':'';
 function pjLista(){const f=PJ.f,q=f.q.trim().toLowerCase(),st=f.setor.toLowerCase(),rp=f.resp.toLowerCase();
  return PJ.itens.filter(x=>{const d=x.data;
+  if(f.mes&&!pjNoMes(x,f.mes))return false;
   if(f.status==='abertos'&&!pjAberto(x))return false;
   if(f.status==='parados'&&d.status!=='standby'&&d.status!=='aguardando')return false;
   if(f.status==='atrasados'&&!pjAtrasado(x))return false;
@@ -1765,7 +1771,11 @@ function pjFiltros(){const f=PJ.f,o=(v,t,cur)=>`<option value="${esc(v)}"${v===c
  /* filtro de um setor ou responsável que deixou de existir não pode continuar valendo escondido */
  if(f.setor&&!setores.some(s=>s.toLowerCase()===f.setor.toLowerCase()))f.setor='';
  if(f.resp&&!resp.some(s=>s.toLowerCase()===f.resp.toLowerCase()))f.resp='';
+ /* todos os meses desde o primeiro projeto até hoje, mais o escolhido (o filtro nunca fica valendo escondido) */
+ const hoje=today().slice(0,7),meses=new Set([hoje,...(f.mes?[f.mes]:[])]);let m=PJ.itens.reduce((a,x)=>{const c=pjCriadoMes(x);return c<a?c:a},hoje);
+ for(let i=0;m<hoje&&i<240;i++){meses.add(m);const[y,mm]=m.split('-').map(Number);m=mm===12?`${y+1}-01`:`${y}-${String(mm+1).padStart(2,'0')}`}
  return `<div class="dgfil"><input id="pjf_q" type="search" maxlength="100" placeholder="Buscar projeto, ação, responsável…" aria-label="Buscar projeto" value="${esc(f.q)}" autocomplete="off">
+ <select id="pjf_mes" aria-label="Mês">${[...meses].sort().reverse().map(k=>o(k,dgMesNome(k),f.mes)).join('')}${o('','Todos os meses',f.mes)}</select>
  <select id="pjf_status" aria-label="Status">${o('','Todos os status',f.status)}${o('abertos','Em aberto (sem concluídos e cancelados)',f.status)}${o('parados','Parados (stand-by ou aguardando)',f.status)}${o('atrasados','Atrasados',f.status)}${Object.entries(PJ_ST).map(([k,[t]])=>o(k,t,f.status)).join('')}</select>
  <select id="pjf_prio" aria-label="Prioridade">${o('','Todas as prioridades',f.prio)}${Object.entries(DG_GRAV).map(([k,[t]])=>o(k,t,f.prio)).join('')}</select>
  <select id="pjf_setor" aria-label="Setor">${o('','Todos os setores',f.setor)}${setores.map(s=>o(s,s,f.setor)).join('')}</select>
@@ -1783,7 +1793,7 @@ function rProj(){pjCarregarTudo();
  PJ.html=html;$('p-pm-proj').innerHTML=html}
 const pjAtualizar=()=>{const r=$('pj_res');if(r&&PJ.itens)r.innerHTML=pjResultado()};
 document.addEventListener('input',e=>{if(e.target.id==='pjf_q'){PJ.f.q=e.target.value;pjAtualizar()}});
-document.addEventListener('change',e=>{const k={pjf_status:'status',pjf_prio:'prio',pjf_setor:'setor',pjf_resp:'resp'}[e.target.id];if(k){PJ.f[k]=e.target.value;pjAtualizar()}});
+document.addEventListener('change',e=>{const k={pjf_mes:'mes',pjf_status:'status',pjf_prio:'prio',pjf_setor:'setor',pjf_resp:'resp'}[e.target.id];if(k){PJ.f[k]=e.target.value;pjAtualizar()}});
 document.addEventListener('focusout',e=>{if(e.target.closest&&e.target.closest('#p-pm-proj .dgfil')&&PJ.adiado){PJ.adiado=false;setTimeout(()=>page==='pm-proj'&&rProj())}});
 /* planejamento futuro: ideias, planejados, em stand-by e aguardando; reavaliação vencida primeiro, depois pelo mês previsto */
 function rFut(){pjCarregarTudo();
@@ -1861,6 +1871,8 @@ async function saveProj(btn){const ed=ED,{id,x}=ed,v=k=>$('pj_'+k).value;
  const lbl=btn.innerHTML;btn.textContent='Salvando…';btn.setAttribute('aria-disabled','true');
  try{const r=await DB.regSave(id?{area:'projeto',id,versao:x.atualizado,data}:{area:'projeto',data});
   if(antes!==status)try{await pjHistStatus(r.item.id,antes,status)}catch(e){}
+  /* projeto novo é criado hoje: com um mês passado no filtro ele sumiria da lista */
+  if(!id&&PJ.f.mes&&PJ.f.mes<today().slice(0,7))PJ.f.mes=today().slice(0,7);
   if(ED===ed)closeEd();toast(id?'Projeto salvo':'Projeto criado')}
  catch(e){btn.innerHTML=lbl;btn.removeAttribute('aria-disabled');const c=agConflito(e);toast(c||e.message,true);if(c&&ED===ed)closeEd()}
  pjCarregar()}
@@ -1898,7 +1910,7 @@ document.addEventListener('dragstart',e=>{const c=e.target.closest&&e.target.clo
 document.addEventListener('dragend',e=>{const c=e.target.closest&&e.target.closest('[data-pjcard]');c&&c.classList.remove('arr');pjLimparAlvo();setTimeout(()=>{pjArrastando=null})});
 document.addEventListener('dragover',e=>{const col=pjColDe(e);if(!col)return;e.preventDefault();e.dataTransfer.dropEffect='move';if(!col.classList.contains('alvo')){pjLimparAlvo();col.classList.add('alvo')}});
 document.addEventListener('drop',e=>{const col=pjColDe(e);if(!col)return;e.preventDefault();pjLimparAlvo();const id=e.dataTransfer.getData(PJ_DND);if(id&&id===pjArrastando)moverPj(id,col.dataset.pjcol);pjArrastando=null});
-/* atalhos dos números do topo: aplicam um filtro e limpam os outros */
+/* atalhos dos números do topo: aplicam um filtro e limpam os outros (inclusive o mês: os números contam todos os meses) */
 const PJ_ATALHO={andamento:'andamento',parados:'parados',atrasados:'atrasados',concluido:'concluido'};
 document.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.matches&&e.target.matches('.pjc[data-pjabrir]')){e.preventDefault();openProj(e.target.dataset.pjabrir)}});
 document.addEventListener('click',e=>{
@@ -1908,7 +1920,7 @@ document.addEventListener('click',e=>{
  if(d.pjnovo!==undefined)openProj(null,d.pjnovo||null);
  else if(d.pjabrir)openProj(d.pjabrir);
  else if((d.pjvista==='quadro'||d.pjvista==='tabela')&&PJ.vista!==d.pjvista){PJ.vista=d.pjvista;rProj();const b=document.querySelector(`[data-pjvista="${d.pjvista}"]`);b&&b.focus()}
- else if(d.pjfiltro&&Object.hasOwn(PJ_ATALHO,d.pjfiltro)){Object.assign(PJ.f,{q:'',status:PJ_ATALHO[d.pjfiltro],prio:'',setor:'',resp:''});rProj();const b=document.querySelector(`[data-pjfiltro="${d.pjfiltro}"]`);b&&b.focus()}
+ else if(d.pjfiltro&&Object.hasOwn(PJ_ATALHO,d.pjfiltro)){Object.assign(PJ.f,{q:'',mes:'',status:PJ_ATALHO[d.pjfiltro],prio:'',setor:'',resp:''});rProj();const b=document.querySelector(`[data-pjfiltro="${d.pjfiltro}"]`);b&&b.focus()}
  else if('pjrecarregar' in d){PJ=pjVazio(null);render()}
  else if('pjsalvar' in d)saveProj(t);
  else if('pjexcluir' in d)delProj(t);
@@ -2185,13 +2197,13 @@ $('loginForm').onsubmit=async e=>{e.preventDefault();loginErr('');const b=$('lbt
 
 /* ---------- Excel ---------- */
 /* ---------- exportar dados (Configurações): áreas escolhidas, cada uma com seu período, num Excel só ---------- */
-const EX_AREAS=[['cal','Calibragem Semanal'],['ag','Agenda e Demandas'],['an','Análises']];
+const EX_AREAS=[['cal','Calibragem Semanal'],['ag','Agenda e Demandas'],['an','Análises'],['pm','Projetos e Melhorias']];
 const EX_DSH=[['mes','Mês atual'],['mesant','Mês anterior'],['tri','Últimos 3 meses'],['ano','Este ano']];
 const exRange=k=>{const d=new Date(),y=d.getFullYear(),m=d.getMonth(),fim=(a,b)=>ymd(new Date(a,b+1,0));
  return k==='mes'?[ymd(new Date(y,m,1)),fim(y,m)]:k==='mesant'?[ymd(new Date(y,m-1,1)),fim(y,m-1)]:k==='tri'?[ymd(new Date(y,m-2,1)),fim(y,m)]:k==='ano'?[y+'-01-01',y+'-12-31']:null};
 const exSemanas=k=>k==='tudo'?(ids().length?[ids()[0],ids().at(-1)]:null):shortRange(k);
 const exSoma=(s,n)=>{const d=new Date(s+'T12:00:00');d.setDate(d.getDate()+n);return ymd(d)};
-const exNovo=()=>{const[aDe,aAte]=exRange('mes');return {cal:true,ag:false,an:false,cFrom:sel,cTo:sel,cShort:null,aDe,aAte,aShort:'mes',semPrazo:true,dDe:aDe,dAte:aAte,dShort:'mes',ocupado:false}};
+const exNovo=()=>{const[aDe,aAte]=exRange('mes');return {cal:true,ag:false,an:false,cFrom:sel,cTo:sel,cShort:null,aDe,aAte,aShort:'mes',semPrazo:true,dDe:aDe,dAte:aAte,dShort:'mes',pm:false,pDe:aDe,pAte:aAte,pShort:'mes',pAbertos:true,ocupado:false}};
 let EX=null;
 function rCfgExport(){if(!EX)EX=exNovo();if(!S.weeks[EX.cFrom]||!S.weeks[EX.cTo])Object.assign(EX,{cFrom:sel,cTo:sel,cShort:null});const E=EX,todas=EX_AREAS.every(([k])=>E[k]);
  const all=ids().slice().reverse(),opt=v=>all.map(id=>`<option value="${id}"${id===v?' selected':''}>${wkTxt(S.weeks[id])} ${id.slice(0,4)}${S.weeks[id].fechada?' · fechada':''}</option>`).join('');
@@ -2208,6 +2220,8 @@ function rCfgExport(){if(!EX)EX=exNovo();if(!S.weeks[EX.cFrom]||!S.weeks[EX.cTo]
  ${E.ag?`<div class="panel cfgp"><h3>Agenda e Demandas</h3><p class="muted">De toda a equipe: compromissos e demandas com data ou prazo no período, e demandas concluídas no período.</p>${datas('a','Período')}
   <div class="exchks">${chk('ex_semPrazo','Incluir também as demandas em aberto sem prazo (elas não têm data)',E.semPrazo)}</div></div>`:''}
  ${E.an?`<div class="panel cfgp"><h3>Análises</h3><p class="muted">Diagnósticos registrados no período, pela data de registro. A Jornada do Cliente (etapas e caminhos) não tem datas e sai completa.</p>${datas('d','Diagnósticos registrados')}</div>`:''}
+ ${E.pm?`<div class="panel cfgp"><h3>Projetos e Melhorias</h3><p class="muted">Projetos criados, com prazo ou concluídos no período, e o histórico registrado no período. O Planejamento Futuro faz parte dos projetos (ideias, planejados e pausados).</p>${datas('p','Período')}
+  <div class="exchks">${chk('ex_pAbertos','Incluir também todos os projetos em aberto, mesmo sem data no período',E.pAbertos)}</div></div>`:''}
  <div class="exa"><button class="btn pri" data-exgo${E.ocupado?' aria-disabled="true"':''}><svg class="i" viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>${E.ocupado?'Gerando…':'Exportar Excel'}</button><span class="muted" role="status" id="ex_msg"></span></div></div>`}
 /* redesenha só a aba, devolvendo o foco a quem estava sendo usado */
 const exRedesenhar=()=>{const b=$('ex_box');if(!b)return;const f=document.activeElement&&document.activeElement.closest('#ex_box')?document.activeElement:null,
@@ -2219,8 +2233,9 @@ document.addEventListener('change',e=>{const t=e.target;if(!EX||!t.closest||!t.c
  else if(t.dataset.exa)EX[t.dataset.exa]=t.checked;
  else if(id==='ex_cFrom'||id==='ex_cTo'){EX[id.slice(3)]=t.value;if(EX.cFrom>EX.cTo)[EX.cFrom,EX.cTo]=[EX.cTo,EX.cFrom];EX.cShort=null}
  else if(id==='ex_semPrazo'){EX.semPrazo=t.checked;return}
+ else if(id==='ex_pAbertos'){EX.pAbertos=t.checked;return}
  /* datas digitadas: só guarda, sem redesenhar enquanto a pessoa digita */
- else if(/^ex_[ad](De|Ate)$/.test(id)){EX[id.slice(3)]=t.value;EX[id[3]+'Short']=null;document.querySelectorAll(`[data-exds^="${id[3]}:"]`).forEach(b=>b.classList.remove('on'));return}
+ else if(/^ex_[adp](De|Ate)$/.test(id)){EX[id.slice(3)]=t.value;EX[id[3]+'Short']=null;document.querySelectorAll(`[data-exds^="${id[3]}:"]`).forEach(b=>b.classList.remove('on'));return}
  else return;
  exRedesenhar()});
 document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('#ex_box button');if(!b||!EX||EX.ocupado||b.getAttribute('aria-disabled')==='true')return;const d=b.dataset;
@@ -2229,7 +2244,7 @@ document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest
  else if('exgo' in d)exportXlsx()});
 async function exportXlsx(){if(!isAdmin()||!EX||EX.ocupado)return;const X=EX,E={...EX},msg=m=>{const s=$('ex_msg');if(s)s.textContent=m};
  if(!EX_AREAS.some(([k])=>E[k]))return msg('Marque pelo menos uma área.');
- for(const[p,t]of [['a','Agenda e Demandas'],['d','Análises']]){if(!E[p==='a'?'ag':'an'])continue;
+ for(const[p,t]of [['a','Agenda e Demandas'],['d','Análises'],['p','Projetos e Melhorias']]){if(!E[{a:'ag',d:'an',p:'pm'}[p]])continue;
   if(!E[p+'De']||!E[p+'Ate'])return msg(`Preencha as duas datas de ${t}.`);if(E[p+'De']>E[p+'Ate'])[E[p+'De'],E[p+'Ate']]=[E[p+'Ate'],E[p+'De']];
   if(![E[p+'De'],E[p+'Ate']].every(d=>/^\d{4}-\d{2}-\d{2}$/.test(d)&&d>='2000-01-01'&&d<='2100-12-31'))return msg(`Confira as datas de ${t}: use anos entre 2000 e 2100.`)}
  /* a agenda é buscada em várias consultas; períodos muito longos ficariam lentos */
@@ -2261,6 +2276,15 @@ async function exportXlsx(){if(!isAdmin()||!EX||EX.ocupado)return;const X=EX,E={
    add('Diagnósticos',[['Data de registro','Mês','Problema','Situação','Gravidade','Frequência','Etapas','Setores','Tema','O que está acontecendo','Impacto para o cliente','A causa é','Causa ou hipótese','Evidências','Próxima ação','Registrado em','Alterado em'],
     ...(rd.itens||[]).filter(x=>{const d=dt(x);return d>=E.dDe&&d<=E.dAte}).sort((a,b)=>dt(a).localeCompare(dt(b))||a.criado-b.criado).map(x=>{const d=x.data;
      return [dfmt(dt(x)),dgMesNome(dt(x).slice(0,7)),d.titulo||'',txt(DG_SIT,d.situacao),txt(DG_GRAV,d.gravidade),txt(DG_FREQ,d.frequencia),[...new Set((d.etapas||[]).map(nome))].join(', '),lista(d.setores),d.tema||'',d.descricao||'',d.impacto||'',txt(DG_CAUSA,d.causaTipo),d.causa||'',d.evidencias||'',d.proxima||'',dia(x.criado),dia(x.atualizado)]})]);
+  }
+  if(E.pm){const[rp,rh,re,rd]=await Promise.all([DB.regList('projeto'),DB.regList('projeto_hist'),DB.regList('jornada_etapa'),DB.regList('diagnostico')]);if(rp.limitado||rh.limitado||re.limitado||rd.limitado)limitado=true;
+   const P=rp.itens||[],noP=d=>!!d&&d>=E.pDe&&d<=E.pAte,aberto=x=>x.data.status!=='concluido'&&x.data.status!=='cancelado';
+   const nomeE=id=>{const e=(re.itens||[]).find(y=>y.id===id);return e?e.data.nome:'Etapa excluída'},nomeD=id=>{const x=(rd.itens||[]).find(y=>y.id===id);return x?x.data.titulo:'Problema excluído'};
+   const L=P.filter(x=>noP(ymd(new Date(x.criado)))||noP(x.data.prazo)||noP(x.data.concluidoEm)||(E.pAbertos&&aberto(x))).sort((a,b)=>a.criado-b.criado);
+   add('Projetos',[['Projeto','Status','Prioridade','Responsável','Setores','Etapas da jornada','Problemas ligados','Objetivo','Ação proposta','Próxima ação','Início previsto','Prazo','Atrasado','Concluído em','Depende de','Impedimentos','Indicador de sucesso','Valor de antes','Meta','Valor atual','Resultado alcançado','Validação do resultado','Previsão de atuação','Reavaliar em','Por que aguardar','Condição para reavaliar','Criado em','Alterado em'],
+    ...L.map(x=>{const d=x.data;return [d.nome,(PJ_ST[d.status]||[d.status])[0],(dgM(DG_GRAV,d.prioridade)||[''])[0],d.responsavel,d.setores.join(', '),[...new Set(d.etapas.map(nomeE))].join(', '),d.problemas.map(nomeD).join(', '),d.objetivo,d.acao,d.proxima,dfmt(d.inicio),dfmt(d.prazo),aberto(x)&&d.prazo&&d.prazo<today()?'Sim':'Não',dfmt(d.concluidoEm),d.dependeDe,d.impedimentos,d.indicador,d.linhaBase,d.meta,d.atual,d.resultado,PJ_VAL[d.validacao]||'',d.previsao?dgMesNome(d.previsao):'',dfmt(d.reavaliar),d.motivoAguardar,d.condicao,dia(x.criado),dia(x.atualizado)]})]);
+   const nomeP=id=>{const x=P.find(y=>y.id===id);return x?x.data.nome:'Projeto excluído'};
+   add('Projetos - Histórico',[['Data','Projeto','Tipo','O que aconteceu'],...(rh.itens||[]).filter(x=>noP(x.data.dia)).sort((a,b)=>a.data.dia.localeCompare(b.data.dia)||a.criado-b.criado).map(x=>[dfmt(x.data.dia),nomeP(x.data.projeto),(PJ_HT[x.data.tipo]||[x.data.tipo])[0],x.data.texto])]);
   }
   XLSX.writeFile(wb,`central-igreen-exportacao-${today()}.xlsx`);
   toast(limitado?'Arquivo exportado. Atenção: havia registros demais e parte deles ficou de fora.':'Arquivo exportado',limitado);
@@ -2301,16 +2325,16 @@ function rPcfg(){const all=ids().slice().reverse(),L=periodWeeks(pFrom,pTo),pend
   ${pend.length?`<div class="wa">${pend.length} ${pend.length===1?'semana com dados pendentes':'semanas com dados pendentes'}: ${pend.map(w=>wkTxt(w)).join(', ')}</div>`:'<div class="okk">Todas as semanas preenchidas</div>'}
   <div class="mu">${nf(Q.mon)} monitorias · ${PL} ${PL===1?'plano':'planos'} · ${PW} ${PW===1?'palavra':'palavras'}</div></div>`}
 /* "Apresentar" apresenta a área aberta: Visão Geral, Calibragem Semanal, Agenda e Demandas ou Análises */
-const PRES_MODO={inicio:'geral',cal:'cal',agenda:'ag',an:'an'};
+const PRES_MODO={inicio:'geral',cal:'cal',agenda:'ag',an:'an',pm:'pm'};
 const presModoDaPagina=()=>PRES_MODO[areaDe(page)]||null;
 let presModo='cal',pAg=null;
 function openPres(){const m=presModoDaPagina();if(!m||!isAdmin()||((m==='geral'||m==='cal')&&!Wk()))return;closeMenu();presModo=m;
- $('pcfgT').textContent={geral:'Apresentar a Visão Geral',cal:'Apresentar a Calibragem Semanal',ag:'Apresentar a Agenda e Demandas',an:'Apresentar as Análises'}[m];
- $('pcfgSub').textContent=m==='ag'?'Escolha o período. As demandas em aberto aparecem como estão hoje.':m==='an'?'A apresentação mostra a situação de hoje.':'Escolha o período. Ele sempre é formado por semanas inteiras.';
- if(m==='ag'){const[de,ate]=exRange('mes');pAg={de,ate,short:'mes'};rPcfgAg()}else if(m==='an')rPcfgAn();else{pFrom=pTo=sel;pShort=null;rPcfg()}
+ $('pcfgT').textContent={geral:'Apresentar a Visão Geral',cal:'Apresentar a Calibragem Semanal',ag:'Apresentar a Agenda e Demandas',an:'Apresentar as Análises',pm:'Apresentar os Projetos'}[m];
+ $('pcfgSub').textContent=m==='ag'?'Escolha o período. As demandas em aberto aparecem como estão hoje.':m==='pm'?'Escolha o período dos concluídos. Os projetos em aberto aparecem como estão hoje.':m==='an'?'A apresentação mostra a situação de hoje.':'Escolha o período. Ele sempre é formado por semanas inteiras.';
+ if(m==='ag'||m==='pm'){const[de,ate]=exRange('mes');pAg={de,ate,short:'mes'};rPcfgAg()}else if(m==='an')rPcfgAn();else{pFrom=pTo=sel;pShort=null;rPcfg()}
  $('pcfgMb').classList.add('show');setTimeout(()=>$('pcfgGo').focus(),30)}
 const pAgResumo=()=>{const{de,ate}=pAg,d=de&&ate?Math.round((Date.parse(ate)-Date.parse(de))/864e5)+1:0;
- return `<div class="k">Período</div><div class="big">${d>0?`${d} ${d===1?'dia':'dias'}`:'—'}</div><div>${d>0?`${dfmt(de)} a ${dfmt(ate)}`:'Preencha as duas datas'}</div><div class="mu">Equipe toda: demandas em aberto, concluídas no período e agenda do período</div>`};
+ return `<div class="k">Período</div><div class="big">${d>0?`${d} ${d===1?'dia':'dias'}`:'—'}</div><div>${d>0?`${dfmt(de)} a ${dfmt(ate)}`:'Preencha as duas datas'}</div><div class="mu">${presModo==='pm'?'Projetos em aberto como estão hoje, concluídos no período e planejamento futuro':'Equipe toda: demandas em aberto, concluídas no período e agenda do período'}</div>`};
 function rPcfgAg(){const{de,ate}=pAg;
  $('pcfgBody').innerHTML=`<div class="pc-l"><div class="pc-s" role="group" aria-label="Atalhos">${EX_DSH.map(([k,t])=>`<button class="${pAg.short===k?'on':''}" data-pagds="${k}">${t}</button>`).join('')}</div>
   <div class="frow"><div class="f"><label for="pAgDe">De</label><input id="pAgDe" type="date" value="${esc(de)}"></div><div class="f"><label for="pAgAte">Até</label><input id="pAgAte" type="date" value="${esc(ate)}"></div></div></div>
@@ -2322,7 +2346,7 @@ $('pcfgMb').addEventListener('click',e=>{const g=e.target.closest('[data-pagds]'
  const b=e.target.closest('[data-pshort]');if(!b)return;const r=shortRange(b.dataset.pshort);if(!r)return;[pFrom,pTo]=r;pShort=b.dataset.pshort;rPcfg()});
 $('pcfgMb').addEventListener('change',e=>{if(e.target.id==='pAgDe'||e.target.id==='pAgAte'){pAg[e.target.id==='pAgDe'?'de':'ate']=e.target.value;pAg.short=null;
   $('pcfgMb').querySelectorAll('[data-pagds]').forEach(b=>b.classList.remove('on'));const r=$('pcfgMb').querySelector('.pc-r');if(r)r.innerHTML=pAgResumo();return}
- if(presModo==='ag'||presModo==='an')return;
+ if(presModo==='ag'||presModo==='an'||presModo==='pm')return;
  if(e.target.id==='pFrom')pFrom=e.target.value;if(e.target.id==='pTo')pTo=e.target.value;if(pFrom>pTo)[pFrom,pTo]=[pTo,pFrom];pShort=null;rPcfg()});
 $('pcfgNo').onclick=closePcfg;
 $('pcfgGo').onclick=()=>presIr(false);
@@ -2425,22 +2449,40 @@ function buildSlidesAn(E,Dg){PWL=[];const hoje=today(),rod=`Situação em ${dfmt
  presLista(s,'Diagnósticos','Problemas ativos','Do mais grave para o menos grave.',rod,A,6,'<th>Problema</th><th>Gravidade</th><th>Situação</th><th>Etapas</th><th>Próxima ação</th>',x=>{const d=x.data,g=dgM(DG_GRAV,d.gravidade),st=dgM(DG_SIT,d.situacao);
   return `<tr><td><span class="nm">${esc(presCorta(d.titulo,50))}</span>${d.tema?`<span class="sub2">Tema: ${esc(presCorta(d.tema,40))}</span>`:''}</td><td>${g?`<span class="chip ${PRES_GCHIP[d.gravidade]}">${esc(g[0])}</span>`:'—'}</td><td>${st?`<span class="chip ${PRES_SCHIP[d.situacao]}">${esc(st[0])}</span>`:'—'}</td><td>${esc(presCorta([...new Set((d.etapas||[]).map(nome))].join(', ')||'—',50))}</td><td>${esc(presCorta(d.proxima||'—',60))}</td></tr>`},'Nenhum problema ativo.');
  presMontar(s)}
-/* busca os dados da área (Agenda e Análises), monta os slides e apresenta ou baixa */
+/* projetos: números, em andamento, atrasados e parados, concluídos no período (com o resultado) e planejamento futuro */
+const PRES_PJCHIP={ideia:'s',planejado:'s',andamento:'g',standby:'a',aguardando:'a',concluido:'g',cancelado:'s'},PRES_VCHIP={comprovada:'g',parcial:'a',sem_efeito:'w',piorou:'w'};
+function buildSlidesPm(P,de,ate){PWL=[];const hoje=today(),rod=`${dfmt(de)} a ${dfmt(ate)}`,ab=x=>x.data.status!=='concluido'&&x.data.status!=='cancelado',atr=x=>ab(x)&&!!x.data.prazo&&x.data.prazo<hoje;
+ const peso=x=>(dgM(DG_GRAV,x.data.prioridade)||[0,0,0])[2],ord=(a,b)=>peso(b)-peso(a)||(a.data.prazo||'9999').localeCompare(b.data.prazo||'9999');
+ const And=P.filter(x=>x.data.status==='andamento').sort(ord),Par=P.filter(x=>x.data.status==='standby'||x.data.status==='aguardando'),Atr=P.filter(atr);
+ const AP=[...new Set([...Atr,...Par])].sort(ord),Co=P.filter(x=>x.data.status==='concluido'&&x.data.concluidoEm&&x.data.concluidoEm>=de&&x.data.concluidoEm<=ate).sort((a,b)=>a.data.concluidoEm.localeCompare(b.data.concluidoEm));
+ const Fu=P.filter(x=>PJ_FUT.includes(x.data.status)).sort((a,b)=>((b.data.reavaliar&&b.data.reavaliar<=hoje)-(a.data.reavaliar&&a.data.reavaliar<=hoje))||(a.data.previsao||'9999').localeCompare(b.data.previsao||'9999'));
+ const st=x=>`<span class="chip ${PRES_PJCHIP[x.data.status]||'s'}">${esc((PJ_ST[x.data.status]||['—'])[0])}</span>`,pz=x=>x.data.prazo?`<span class="chip ${atr(x)?'w':'s'}">${dshort(x.data.prazo)}${atr(x)?' · atrasado':''}</span>`:'Sem prazo';
+ const s=[presCapa('Projetos e<br>Iniciativas','PROJETOS • MELHORIAS','Período de referência',`${dfmt(de)} a ${dfmt(ate)}`)];
+ s.push({t:'Resumo',h:presLado('Projetos e Melhorias','Resumo',`Projetos em aberto como estão em ${dfmt(hoje)}; concluídos no período escolhido.`,rod)+`<div class="body"><div class="sfx">${presNum('Em andamento',And.length,'Projetos sendo executados')}${presNum('Parados',Par.length,'Em stand-by ou aguardando dependência')}${presNum('Atrasados',Atr.length,'Prazo vencido (inclui os em andamento)',Atr.length>0)}${presNum('Concluídos no período',Co.length,'Encerrados entre as datas escolhidas')}</div></div>`});
+ presLista(s,'Projetos','Em andamento','',rod,And,7,'<th>Projeto</th><th>Responsável</th><th class="n">Prazo</th>',x=>`<tr><td><span class="nm">${esc(presCorta(x.data.nome,60))}</span>${x.data.proxima?`<span class="sub2">Próxima ação: ${esc(presCorta(x.data.proxima,80))}</span>`:''}</td><td>${esc(x.data.responsavel||'—')}</td><td class="n">${pz(x)}</td></tr>`,'Nenhum projeto em andamento.');
+ presLista(s,'Projetos','Atrasados e parados','',rod,AP,7,'<th>Projeto</th><th>Status</th><th class="n">Prazo</th>',x=>`<tr><td><span class="nm">${esc(presCorta(x.data.nome,60))}</span>${x.data.impedimentos||x.data.dependeDe?`<span class="sub2">${esc(presCorta(x.data.impedimentos||('Depende de: '+x.data.dependeDe),80))}</span>`:''}</td><td>${st(x)}</td><td class="n">${pz(x)}</td></tr>`,'Nenhum projeto atrasado ou parado.');
+ presLista(s,'Projetos','Concluídos no período','',rod,Co,6,'<th>Projeto</th><th>Concluído em</th><th>Resultado</th>',x=>`<tr><td><span class="nm">${esc(presCorta(x.data.nome,60))}</span>${x.data.resultado?`<span class="sub2">${esc(presCorta(x.data.resultado,90))}</span>`:''}</td><td>${dfmt(x.data.concluidoEm)}</td><td><span class="chip ${PRES_VCHIP[x.data.validacao]||'s'}">${esc(PJ_VAL[x.data.validacao]||'Não avaliado')}</span></td></tr>`,'Nenhum projeto concluído no período.');
+ presLista(s,'Planejamento Futuro','O que ainda não é agora','Ideias, planejados e pausados; reavaliação vencida primeiro.',rod,Fu,7,'<th>Iniciativa</th><th>Status</th><th>Previsão</th><th>Reavaliar em</th>',x=>{const v=x.data.reavaliar&&x.data.reavaliar<=hoje;return `<tr><td><span class="nm">${esc(presCorta(x.data.nome,55))}</span>${x.data.motivoAguardar?`<span class="sub2">${esc(presCorta(x.data.motivoAguardar,80))}</span>`:''}</td><td>${st(x)}</td><td>${x.data.previsao?esc(dgMesNome(x.data.previsao)):'—'}</td><td>${x.data.reavaliar?`<span class="chip ${v?'w':'s'}">${dfmt(x.data.reavaliar)}</span>`:'—'}</td></tr>`},'Nada no planejamento futuro.');
+ presMontar(s)}
+/* busca os dados da área (Agenda, Análises e Projetos), monta os slides e apresenta ou baixa */
 let presTok=0;
 async function presIr(baixar){const m=presModo,tk=++presTok,pg=page;
  if(m==='geral'||m==='cal'){closePcfg();const L=periodWeeks(pFrom,pTo);baixar?downloadPres(L,m):startPres(L,m);return}
- let de,ate;if(m==='ag'){({de,ate}=pAg);if(!de||!ate||![de,ate].every(d=>/^\d{4}-\d{2}-\d{2}$/.test(d)&&d>='2000-01-01'&&d<='2100-12-31'))return toast('Confira as datas do período.',true);
-  if(de>ate)[de,ate]=[ate,de];if((Date.parse(ate)-Date.parse(de))/864e5>366)return toast('Escolha um período de até 1 ano.',true)}
+ let de,ate;if(m==='ag'||m==='pm'){({de,ate}=pAg);if(!de||!ate||![de,ate].every(d=>/^\d{4}-\d{2}-\d{2}$/.test(d)&&d>='2000-01-01'&&d<='2100-12-31'))return toast('Confira as datas do período.',true);
+  if(de>ate)[de,ate]=[ate,de];
+  /* na Agenda o período vira várias consultas; nos Projetos ele só filtra os concluídos */
+  const anos=m==='pm'?5:1;if((Date.parse(ate)-Date.parse(de))/864e5>366*anos)return toast(`Escolha um período de até ${anos===1?'1 ano':anos+' anos'}.`,true)}
  closePcfg();toast('Preparando a apresentação…');let limitado=false;const lim=r=>{if(r.limitado)limitado=true;return r.itens||[]};
  try{if(m==='ag'){const C=new Map();
    const[ab,agd]=await Promise.all([DB.agendaList({pessoa:'*',demandas:'abertas'}),DB.agendaList({pessoa:'*',de,ate})]);
    for(let d=de;d<=ate;d=exSoma(d,31)){const f=[exSoma(d,30),ate].sort()[0];lim(await DB.agendaList({pessoa:'*',encerradas:true,desde:new Date(d+'T00:00:00').getTime(),ate:new Date(f+'T23:59:59.999').getTime()})).forEach(x=>C.set(x.id,x))}
    buildSlidesAg({abertas:lim(ab),concl:[...C.values()],agenda:lim(agd).filter(x=>x.tipo==='agenda')},de,ate)}
+  else if(m==='pm')buildSlidesPm(lim(await DB.regList('projeto')),de,ate);
   else{const[re,rd]=await Promise.all([DB.regList('jornada_etapa'),DB.regList('diagnostico')]);buildSlidesAn(lim(re),lim(rd))}
  }catch(e){if(tk===presTok)toast(e.message||'Não foi possível preparar a apresentação.',true);return}
  if(tk!==presTok||page!==pg||!meId||!isAdmin())return;
  if(limitado)toast('Atenção: havia registros demais e parte deles ficou de fora da apresentação.',true);
- if(baixar)m==='ag'?presBaixar(`Agenda e Demandas · ${dfmt(de)} a ${dfmt(ate)}`,`apresentacao-agenda-${de}-a-${ate}.html`):presBaixar(`Análises · ${dfmt(today())}`,`apresentacao-analises-${today()}.html`);
+ if(baixar)m==='ag'?presBaixar(`Agenda e Demandas · ${dfmt(de)} a ${dfmt(ate)}`,`apresentacao-agenda-${de}-a-${ate}.html`):m==='pm'?presBaixar(`Projetos · ${dfmt(de)} a ${dfmt(ate)}`,`apresentacao-projetos-${de}-a-${ate}.html`):presBaixar(`Análises · ${dfmt(today())}`,`apresentacao-analises-${today()}.html`);
  else presAbrir()}
 function show(i,back){si=Math.max(0,Math.min(slides.length-1,i));document.querySelectorAll('.sl').forEach((el,k)=>{el.classList.remove('on','bk');if(k===si){void el.offsetWidth;el.classList.add('on');if(back)el.classList.add('bk')}});
  document.querySelectorAll('#psegs i').forEach((el,k)=>el.classList.toggle('on',k<=si));$('pwhere').textContent=slides[si].t;$('pcount').textContent=`${si+1} / ${slides.length}`;$('pprev').disabled=si===0;$('pnext').disabled=si===slides.length-1}
