@@ -80,7 +80,7 @@ const AG_RESTORE_SET=['titulo','descricao','tipo','status','dia','hora_ini','hor
 const AG_LIMITE=2000;
 /* ---------- registros das áreas novas (Jornada, Diagnósticos, Projetos…) ----------
    uma tabela para todas; 'area' diz de que área é o registro e o servidor confere os campos de cada uma.
-   só administradores leem ou alteram; 'ordem' guarda a posição quando a área tem ordem (etapas da jornada) */
+   só administradores leem ou alteram, exceto as áreas de monitoria (ver leitura/escrita em REG_AREAS); 'ordem' guarda a posição quando a área tem ordem (etapas da jornada) */
 let regPronto=null;
 const initRegistros=()=>regPronto||(regPronto=(async()=>{
  await pool.query(`CREATE TABLE IF NOT EXISTS cp_registros(id text PRIMARY KEY,area text NOT NULL,data jsonb NOT NULL,ordem int,criado bigint NOT NULL,criado_por text NOT NULL,atualizado bigint NOT NULL,atualizado_por text NOT NULL)`);
@@ -135,9 +135,57 @@ const REG_AREAS={
  projeto_hist:{grupo:'projeto',ordenada:false,limite:2000,campos:x=>{
   if(!regId(x.projeto))fail(400,'Projeto inválido.');
   const tipo=regOpcao(x.tipo,['atualizacao','decisao','marco','status'],'Tipo',true),dia=regDia(x.dia,'Data');if(!dia)fail(400,'Informe a data.');
-  return {projeto:x.projeto,tipo,dia,texto:regTxt(x.texto,1000,'O texto',true)}}}};
+  return {projeto:x.projeto,tipo,dia,texto:regTxt(x.texto,1000,'O texto',true)}}},
+ /* monitorias: todos os usuários leem; agentes e critérios só administradores alteram; monitorias todos registram, corrigem e excluem.
+    'setor' é o id do setor em Configurações */
+ monit_agente:{grupo:'monit_cfg',ordenada:false,leitura:true,campos:x=>{
+  if(!regId(x.setor))fail(400,'Escolha o setor do agente.');
+  return {nome:regTxt(x.nome,120,'O nome do agente',true),setor:x.setor,ativo:x.ativo!==false}}},
+ /* critérios de um setor: o total de pontos e cada critério com o peso (pontos perdidos quando marcado) e se zera a monitoria */
+ monit_setor:{grupo:'monit_cfg',ordenada:false,leitura:true,campos:x=>{
+  if(!regId(x.setor))fail(400,'Setor inválido.');
+  const total=x.total;if(typeof total!=='number'||!Number.isFinite(total)||total<=0||total>100000)fail(400,'Total de pontos inválido.');
+  const L=x.criterios==null?[]:x.criterios;if(!Array.isArray(L)||L.length>100)fail(400,'Critérios: lista inválida.');
+  const ids=new Set(),criterios=L.map(c=>{if(!c||typeof c!=='object'||!regId(c.id)||c.id.length>40||ids.has(c.id))fail(400,'Critério inválido.');ids.add(c.id);
+   const peso=c.peso;if(typeof peso!=='number'||!Number.isFinite(peso)||peso<0||peso>100000)fail(400,'Peso inválido.');
+   return {id:c.id,nome:regTxt(c.nome,200,'O nome do critério',true),descricao:regTxt(c.descricao,2000,'A descrição do critério'),peso,zera:c.zera===true,ativo:c.ativo!==false}});
+  /* modo 'erros': o avaliador marca o que deu errado; 'acertos': os critérios começam marcados e desmarcar tira os pontos (os que zeram continuam sendo marcados).
+     Nos dois, a monitoria guarda em 'erros' os critérios em falha */
+  return {setor:x.setor,total,modo:regOpcao(x.modo,['erros','acertos'],'Modo')||'erros',zerarManual:x.zerarManual===true,criterios}}},
+ /* configuração geral das monitorias (um registro só): link da planilha de preenchimento */
+ monit_geral:{grupo:'monit_cfg',ordenada:false,leitura:true,campos:x=>{
+  const p=regTxt(x.planilha,1000,'O link da planilha').trim();if(p&&!/^https:\/\/[^\s<>"'\x00-\x1f\x7f]+$/i.test(p))fail(400,'Link inválido: use um endereço https:// sem espaços ou aspas.');
+  return {planilha:p}}},
+ /* uma monitoria: o servidor completa setor, nome do agente, critérios errados (com nome e peso do dia), total, pontos perdidos, nota e se foi zerada */
+ monitoria:{grupo:'monitoria',ordenada:false,leitura:true,escrita:true,limite:50000,lista:2000,periodo:'data',campos:x=>{
+  const data=regDia(x.data,'Data da monitoria');if(!data)fail(400,'Informe a data da monitoria.');
+  if(!regId(x.agente))fail(400,'Escolha o agente monitorado.');
+  const E=x.erros==null?[]:x.erros;if(!Array.isArray(E)||E.length>100||!E.every(c=>regId(c)&&c.length<=40))fail(400,'Critérios: lista inválida.');const erros=[...new Set(E)];
+  return {data,agente:x.agente,protocolo:regTxt(x.protocolo,100,'Protocolo').trim(),erros,zeradaManual:x.zeradaManual===true,observacao:regTxt(x.observacao,2000,'A observação',true)}}}};
 /* registros que dependem de outros: um caminho só existe entre etapas que existem */
-const regRefs=async(client,area,d)=>{
+const regRefs=async(client,area,d,id)=>{
+ /* um registro de critérios por setor */
+ if(area==='monit_geral'){if((await client.query("SELECT 1 FROM cp_registros WHERE area='monit_geral' AND id<>$1",[String(id||'')])).rows.length)fail(400,'A configuração geral já existe.');return}
+ if(area==='monit_setor'){if((await client.query("SELECT 1 FROM cp_registros WHERE area='monit_setor' AND data->>'setor'=$1 AND id<>$2",[d.setor,String(id||'')])).rows.length)fail(400,'Este setor já tem critérios cadastrados.');return}
+ if(area==='monitoria'){
+  const ag=(await client.query("SELECT data FROM cp_registros WHERE area='monit_agente' AND id=$1",[d.agente])).rows[0];
+  const antes=id?(await client.query("SELECT data FROM cp_registros WHERE area='monitoria' AND id=$1",[String(id)])).rows[0]:null;
+  /* correção do mesmo agente: setor, total e critérios ficam como eram no dia (o agente pode ter mudado de setor ou sido excluído) */
+  const mesmo=!!antes&&antes.data.agente===d.agente;
+  if(!mesmo&&(!ag||ag.data.ativo===false))fail(400,'Agente não encontrado ou inativo.');
+  d.setor=mesmo?antes.data.setor:ag.data.setor;d.agenteNome=ag?ag.data.nome:antes.data.agenteNome;
+  const cfg=mesmo?null:(await client.query("SELECT data FROM cp_registros WHERE area='monit_setor' AND data->>'setor'=$1",[d.setor])).rows[0];
+  if(!mesmo&&!cfg)fail(400,'Este setor ainda não tem critérios de monitoria.');
+  const cfgM=mesmo?(await client.query("SELECT data FROM cp_registros WHERE area='monit_setor' AND data->>'setor'=$1",[d.setor])).rows[0]:cfg;
+  /* critério já marcado vale como era; critério novo precisa existir e estar ativo nos critérios de hoje */
+  const velhos=new Map((mesmo?antes.data.erros:[]).map(c=>[c.id,c])),atuais=new Map((cfgM?cfgM.data.criterios:[]).filter(c=>c.ativo!==false).map(c=>[c.id,c]));
+  d.total=mesmo?antes.data.total:cfg.data.total;
+  d.erros=d.erros.map(cid=>{const c=velhos.get(cid)||atuais.get(cid);if(!c)fail(400,'Critério não encontrado ou inativo.');return {id:c.id,nome:c.nome,peso:c.peso,zera:!!c.zera}});
+  d.perdidos=d.erros.reduce((t,c)=>t+c.peso,0);
+  if(d.zeradaManual&&!(cfgM&&cfgM.data.zerarManual)&&!(mesmo&&antes.data.zeradaManual))fail(400,'Este setor não permite zerar a monitoria manualmente.');
+  d.zerada=d.zeradaManual||d.perdidos>=d.total||d.erros.some(c=>c.zera);
+  d.nota=d.zerada?0:Math.round((d.total-d.perdidos)/d.total*10000)/100;
+  return}
  if(area==='projeto_hist'){if(!(await client.query("SELECT 1 FROM cp_registros WHERE area='projeto' AND id=$1",[d.projeto])).rows.length)fail(400,'Projeto não encontrado.');return}
  if(area!=='jornada_fluxo')return;
  const q=await client.query("SELECT id FROM cp_registros WHERE area='jornada_etapa' AND id=ANY($1)",[[d.de,d.para]]);
@@ -220,7 +268,9 @@ export default async function handler(req,res){
    if(!q.rowCount)fail(404,'Registro não encontrado.');
    return res.json({ok:true});
   }
-  requireAdmin(u);
+  /* registros: colaboradores leem as áreas liberadas para leitura e gravam/excluem só as liberadas para escrita (monitorias); o resto é de administradores */
+  const regLivre=()=>{if(!['regList','regSave','regDelete'].includes(action)||typeof b.area!=='string'||!Object.hasOwn(REG_AREAS,b.area))return false;const A=REG_AREAS[b.area];return action==='regList'?!!A.leitura:!!A.escrita};
+  if(!regLivre())requireAdmin(u);
   if(action==='deleteWeek')await pool.query('DELETE FROM cp_weeks WHERE id=$1',[b.id]);
   else if(action==='saveSettings')await pool.query('INSERT INTO cp_settings(id,data) VALUES(1,$1) ON CONFLICT(id) DO UPDATE SET data=$1',[JSON.stringify(b.settings)]);
   else if(action==='restore'){
@@ -252,8 +302,10 @@ export default async function handler(req,res){
    return res.json({ok:true,novos,atualizados,ignorados});
   }
   else if(action==='regList'){
-   const lim=regArea(b.area).limite||REG_LIMITE;
-   const q=await pool.query(`SELECT * FROM cp_registros WHERE area=$1 ORDER BY ordem NULLS LAST,criado,id LIMIT ${lim+1}`,[b.area]);
+   const A=regArea(b.area),lim=A.lista||A.limite||REG_LIMITE;let q;
+   if(A.periodo){if(!isDia(b.de)||!isDia(b.ate)||b.de>b.ate||(Date.parse(b.ate)-Date.parse(b.de))/864e5>400)fail(400,'Período inválido.');
+    q=await pool.query(`SELECT * FROM cp_registros WHERE area=$1 AND data->>'${A.periodo}' BETWEEN $2 AND $3 ORDER BY data->>'${A.periodo}',criado,id LIMIT ${lim+1}`,[b.area,b.de,b.ate])}
+   else q=await pool.query(`SELECT * FROM cp_registros WHERE area=$1 ORDER BY ordem NULLS LAST,criado,id LIMIT ${lim+1}`,[b.area]);
    return res.json({itens:q.rows.slice(0,lim).map(regRow),limitado:q.rows.length>lim});
   }
   else if(action==='regSave'){
@@ -262,7 +314,7 @@ export default async function handler(req,res){
    if(b.id!=null&&!regId(b.id))fail(400,'Dados inválidos.');
    let item;
    const client=await pool.connect();try{await client.query('BEGIN');await regTrava(client,A);
-    await regRefs(client,b.area,d);
+    await regRefs(client,b.area,d,b.id);
     if(!b.id){
      const n=(await client.query('SELECT COUNT(*)::int AS n,COALESCE(MAX(ordem),0)+1 AS o FROM cp_registros WHERE area=$1',[b.area])).rows[0];
      const lim=A.limite||REG_LIMITE;if(n.n>=lim)fail(400,`Esta área já tem o máximo de ${lim} registros.`);
