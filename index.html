@@ -570,15 +570,43 @@ button.plc.miss:hover{background:var(--card2)}
 .agleg span{display:inline-flex;align-items:center;gap:6px}
 @media (max-width:640px){.agd{min-height:48px;padding:4px;align-items:center}.agd .pts{display:none}.agd .qt{display:block;font-size:11px;color:var(--mu)}.agd .qt.er{color:var(--er)}.agi{grid-template-columns:minmax(0,1fr) auto}.agi .h{grid-column:1/-1}.agnav b{min-width:0;flex:1}}
 /* ===== jornada do cliente: etapas em linha com setas; detalhe da etapa escolhida embaixo ===== */
-.jrtrilho{display:flex;align-items:stretch;gap:8px;overflow-x:auto;padding:2px 2px 10px;margin-bottom:var(--gap)}
-.jrc{flex:0 0 210px;display:grid;gap:8px;align-content:start;text-align:left;background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:14px;color:var(--tx)}
+/* cores dos caminhos fora da ordem (escuro e claro) */
+:root{--jr-ret:#4F9DFF;--jr-rec:#FFB86B;--jr-des:#B98CFF}
+:root[data-theme="light"]{--jr-ret:#1F63C4;--jr-rec:#A85A06;--jr-des:#7446C2}
+/* larguras fixas (cartão 210px, seta 44px): o desenho das linhas usa as mesmas medidas (JR_W e JR_G) */
+.jrbox{margin-bottom:var(--gap)}
+.jrtrilho{overflow-x:auto;padding:2px 2px 10px}
+.jrcanvas{position:relative}
+.jrfila{display:flex;align-items:stretch}
+.jrarcos{position:relative}
+.jrarcos svg{position:absolute;inset:0;overflow:visible}
+.jrlab{position:absolute;transform:translate(-50%,-50%);max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:12px;line-height:1.3;padding:2px 10px;border-radius:99px;background:var(--card);border:1px solid var(--c);color:var(--tx)}
+button.jrlab{cursor:pointer}
+button.jrlab:hover{background:var(--card2)}
+.jrli{display:inline-block;width:22px;vertical-align:middle}
+.jrc{flex:0 0 210px;min-width:0;max-width:210px;display:grid;gap:8px;align-content:start;text-align:left;background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:14px;color:var(--tx)}
+.jrc.ed{padding:0;display:flex;flex-direction:column;gap:0}
+.jrc.ed:hover{border-color:var(--pri)}
+.jrcb{flex:1;display:grid;gap:8px;align-content:start;text-align:left;background:none;border:0;border-radius:12px 12px 0 0;padding:14px 14px 6px;color:inherit}
+.jrmv{display:flex;justify-content:space-between;padding:2px 6px 6px}
+.jrmv .ico[aria-disabled="true"]{opacity:.3;cursor:default}
+.jrnova{display:flex;align-items:center;justify-content:center;gap:8px;border-style:dashed;color:var(--mu);min-height:120px;font-weight:500}
+.jrnova:hover{color:var(--tx)}
+.jrtags{display:flex;flex-wrap:wrap;gap:6px}
+.jrtags:empty{display:none}
+.jrrm{display:grid;place-items:center;width:18px;height:18px;margin-right:-4px;border:0;border-radius:99px;background:none;color:var(--mu);padding:0}
+.jrrm:hover{color:var(--tx);background:var(--bd)}
+.jrrm svg{width:12px;height:12px}
 .jrc:hover{border-color:var(--bd2)}
 .jrc.on{border-color:var(--pri);background:var(--card2)}
 .jrc .k{font-size:12px;color:var(--mu)}
 .jrc b{font-size:16px;font-weight:600;line-height:1.3;overflow-wrap:anywhere}
 .jrc small{font-size:12px;color:var(--mu)}
-.jrst{display:flex;flex-wrap:wrap;gap:4px}
-.jrseta{align-self:center;color:var(--mu);font-size:18px;flex:none}
+.jrst{display:flex;flex-wrap:wrap;gap:4px;min-width:0}
+/* setor de nome longo quebra a linha em vez de alargar o cartão (o desenho das linhas depende da largura fixa) */
+.jrst .chip{white-space:normal;overflow-wrap:anywhere;max-width:100%}
+.jrcb{min-width:0}
+.jrseta{flex:0 0 44px;align-self:center;text-align:center;color:var(--mu);font-size:18px}
 .jrdet{display:grid;gap:18px}
 .jrdet h2{font-size:20px}
 .jrdet h3{font-size:14px;font-weight:600;margin-bottom:6px}
@@ -587,20 +615,7 @@ button.plc.miss:hover{background:var(--card2)}
 .jrgrid p{margin:0}
 .jrfl{margin:0;padding:0;list-style:none;display:grid;gap:8px}
 .jrfl li{display:flex;flex-wrap:wrap;align-items:center;gap:6px;overflow-wrap:anywhere}
-.jrl{display:flex;align-items:center;gap:12px;border:1px solid var(--bd);border-radius:12px;padding:8px 8px 8px 14px;background:var(--bg)}
-.jrn{width:26px;height:26px;border-radius:99px;background:var(--card2);display:grid;place-items:center;font-size:13px;font-weight:600;flex:none}
-.jrt{flex:1;min-width:0;display:grid}
-.jrt b{font-weight:500;overflow-wrap:anywhere}
-.jrt small{font-size:12px;color:var(--mu);overflow-wrap:anywhere}
-.jra{display:flex;gap:2px;flex:none}
-.jra .ico[aria-disabled="true"]{opacity:.35;cursor:default}
-.jrset{border:0;margin:0;padding:0}
-.jrset legend{font-size:12px;color:var(--mu);padding:0;margin-bottom:6px}
-.jrset>div{display:flex;flex-wrap:wrap;gap:6px}
-.jrchk{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--bd);border-radius:99px;padding:5px 12px;font-size:13px;cursor:pointer;background:var(--bg)}
-.jrchk:has(input:checked){border-color:var(--pri);background:var(--card2)}
-.jrchk input{margin:0;accent-color:var(--pri)}
-@media (max-width:720px){.jrgrid{grid-template-columns:1fr}.jrc{flex-basis:170px}}
+@media (max-width:720px){.jrgrid{grid-template-columns:1fr}}
 /* ===== tema claro (o escuro continua sendo o padrão) ===== */
 :root[data-theme="light"]{
 --bg:#F3F6F4;--card:#FFFFFF;--card2:#EAF0EC;--bd:#D6DED9;--bd2:#B7C4BC;
@@ -1200,13 +1215,17 @@ let JR=jrVazio(null);
 const jrEtapa=id=>(JR.etapas||[]).find(x=>x.id===id);
 const jrNome=id=>{const e=jrEtapa(id);return e?e.data.nome:'Etapa excluída'};
 const jrTipo=k=>(JR_TIPOS[k]||[k])[0];
-/* setores removidos do cadastro não aparecem, mas continuam guardados na etapa */
-const jrSetores=x=>x.data.setores.map(id=>SET().find(s=>s.id===id)).filter(Boolean).map(s=>s.nome);
+/* setores da jornada são escritos à mão em cada etapa (não usam o cadastro de Setores do sistema) */
+const jrSetores=x=>x.data.setores.filter(s=>typeof s==='string'&&s.trim());
+/* nomes já usados em outras etapas, sem repetir maiúsculas/minúsculas: viram sugestões ao digitar */
+const jrSugestoes=()=>{const m=new Map();(JR.etapas||[]).forEach(e=>jrSetores(e).forEach(s=>{const k=s.trim().toLowerCase();if(!m.has(k))m.set(k,s.trim())}));return [...m.values()].sort((a,b)=>a.localeCompare(b))};
 /* só os caminhos cujas duas pontas ainda existem */
 const jrFluxos=()=>JR.fluxos.filter(f=>jrEtapa(f.data.de)&&jrEtapa(f.data.para));
 const jrLigados=id=>jrFluxos().filter(f=>f.data.de===id||f.data.para===id);
 /* a aba de Configurações só é refeita quando os dados da jornada mudam (como a de Setores), para não tirar o foco a cada atualização */
-const jrRedesenhar=()=>{if(page==='an-jornada'||(page==='config'&&cfgView==='jornada')){render.cfgShown=null;render()}};
+const jrRedesenhar=()=>{if(page==='an-jornada'||(page==='config'&&cfgView==='jornada')){
+ /* mantém a rolagem lateral da linha do tempo de Configurações ao redesenhar */
+ const t=document.querySelector('#p-config .jrtrilho'),x=t?t.scrollLeft:0;render.cfgShown=null;render();const n=document.querySelector('#p-config .jrtrilho');if(n)n.scrollLeft=x}};
 /* uma leitura por vez; se outra for pedida no meio, roda de novo no fim. Resposta de outra conta é descartada */
 async function jrCarregar(){
  if(!isAdmin())return;
@@ -1226,15 +1245,42 @@ function jrDetalhe(id){const x=jrEtapa(id),i=JR.etapas.indexOf(x),C=jrLigados(id
  return `<div class="panel jrdet"><div><p class="kick">Etapa ${i+1} de ${JR.etapas.length}</p><h2>${esc(x.data.nome)}</h2>${x.data.descricao?`<p class="jrtx">${esc(x.data.descricao)}</p>`:''}</div>
  <div class="jrgrid">${bloco('Setores envolvidos',jrSetores(x).join(', '))}${bloco('Processos que acontecem',x.data.processos)}${bloco('Motivos de contato e reclamações',x.data.motivos)}${bloco('Problemas que podem surgir',x.data.riscos)}</div>
  <div><h3>Caminhos fora da ordem</h3>${C.length?`<ul class="jrfl">${C.map(jrFluxoLi).join('')}</ul>`:'<p class="muted">Nenhum caminho fora da ordem passa por esta etapa.</p>'}</div></div>`}
+/* linha do tempo: cartões de largura fixa, para as linhas dos caminhos saírem do meio de cada cartão.
+   A mesma linha aparece na página (só para ver) e em Configurações (para editar) */
+const JR_W=210,JR_G=44,JR_COR={retorno:'var(--jr-ret)',recorrencia:'var(--jr-rec)',desvio:'var(--jr-des)'},JR_TRACO={retorno:'',recorrencia:'6 4',desvio:'2 5'};
+const jrCorta=s=>{const c=Array.from(s);return c.length>26?c.slice(0,25).join('')+'…':s};
+function jrLinha(edit){
+ const E=JR.etapas,F=jrFluxos(),pos={},tr=JR.ocupado?' aria-disabled="true"':'',v=edit?'e':'v';E.forEach((x,i)=>pos[x.id]=i);
+ const n=E.length+(edit?1:0),W=n*JR_W+(n-1)*JR_G,cx=i=>i*(JR_W+JR_G)+JR_W/2;
+ const conteudo=(x,i)=>{const k=jrLigados(x.id).length,st=jrSetores(x);return `<span class="k">Etapa ${i+1}</span><b>${esc(x.data.nome)}</b>${st.length?`<span class="jrst">${st.map(s=>`<span class="chip ln">${esc(s)}</span>`).join('')}</span>`:''}${k?`<small>${k} ${k===1?'caminho fora da ordem':'caminhos fora da ordem'}</small>`:''}`};
+ const card=(x,i)=>{const nm=esc(x.data.nome);
+  if(!edit){const on=x.id===JR.sel;return `<button class="jrc${on?' on':''}" data-jrsel="${esc(x.id)}" aria-pressed="${on}">${conteudo(x,i)}</button>`}
+  return `<div class="jrc ed"><button class="jrcb" data-jretapa="${esc(x.id)}" aria-label="Editar etapa ${i+1}, ${nm}">${conteudo(x,i)}</button><span class="jrmv"><button class="ico" data-jrmover="${esc(x.id)}" data-jrdir="-1" aria-label="Mover ${nm} para a esquerda"${i===0?' aria-disabled="true"':tr}>${ICO.l}</button><button class="ico" data-jrmover="${esc(x.id)}" data-jrdir="1" aria-label="Mover ${nm} para a direita"${i===E.length-1?' aria-disabled="true"':tr}>${ICO.r}</button></span></div>`};
+ const seta=i=>`<span class="jrseta" aria-hidden="true">${i<E.length?'→':''}</span>`;
+ const fila=E.map((x,i)=>`${i?seta(i):''}${card(x,i)}`).join('')+(edit?`${E.length?seta(E.length):''}<button class="jrc jrnova" data-jretapa="">${ICO.plus}Nova etapa</button>`:'');
+ /* caminhos: os mais curtos por dentro; cada um fica no nível mais alto livre entre os que passam pelas mesmas etapas,
+    assim caminhos que não se cruzam dividem a mesma altura e as etiquetas não ficam uma sobre a outra */
+ let arcos='',etq='',H=0;const niveis=[];
+ F.map(f=>({f,a:pos[f.data.de],b:pos[f.data.para]})).sort((p,q)=>Math.abs(p.a-p.b)-Math.abs(q.a-q.b)).forEach(({f,a,b})=>{
+  const lo=Math.min(a,b),hi=Math.max(a,b);let n=0;while((niveis[n]||[]).some(([x,y])=>lo<=y&&x<=hi))n++;(niveis[n]=niveis[n]||[]).push([lo,hi]);
+  const t=Object.hasOwn(JR_COR,f.data.tipo)?f.data.tipo:'retorno',cor=JR_COR[t],d=40+n*30,c=cx(a);let p,lx;
+  /* recorrência (mesma etapa): laço embaixo do cartão; o ponto mais baixo de cada linha fica na altura do nível, onde vai a etiqueta */
+  if(a===b){p=`M${c-30} 0 C${c-72} ${d*4/3},${c+72} ${d*4/3},${c+30} 0`;lx=c}
+  else{const x0=c+(a<b?14:-14),x1=cx(b)+(a<b?-14:14);p=`M${x0} 0 Q${(x0+x1)/2} ${2*d} ${x1} 0`;lx=(x0+x1)/2}
+  const ly=d;H=Math.max(H,ly+20);
+  arcos+=`<path d="${p}" style="fill:none;stroke:${cor};stroke-width:2${JR_TRACO[t]?`;stroke-dasharray:${JR_TRACO[t]}`:''}" marker-end="url(#jrm-${v}-${t})"/>`;
+  const rot=`${jrTipo(t)}: ${jrNome(f.data.de)} → ${jrNome(f.data.para)}${f.data.descricao?' · '+f.data.descricao:''}`,txt=esc(jrCorta(f.data.descricao||jrTipo(t)));
+  etq+=edit?`<button class="jrlab" style="left:${lx}px;top:${ly}px;--c:${cor}" data-jrfluxo="${esc(f.id)}" title="${esc(rot)}" aria-label="Editar caminho. ${esc(rot)}">${txt}</button>`:`<span class="jrlab" style="left:${lx}px;top:${ly}px;--c:${cor}" title="${esc(rot)}">${txt}</span>`});
+ const marcas=Object.entries(JR_COR).map(([t,c])=>`<marker id="jrm-${v}-${t}" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" style="fill:${c}"/></marker>`).join('');
+ const leg=F.length?`<div class="agleg">${Object.entries(JR_TIPOS).map(([t,[l,d]])=>`<span><i class="jrli" style="border-top:2px ${({retorno:'solid',recorrencia:'dashed',desvio:'dotted'})[t]} ${JR_COR[t]}"></i>${l}: ${d.toLowerCase()}</span>`).join('')}</div>`:'';
+ return `<div class="jrtrilho" role="group" aria-label="Etapas da jornada"><div class="jrcanvas" style="width:${W}px"><div class="jrfila">${fila}</div>${H?`<div class="jrarcos" style="height:${H}px"><svg width="${W}" height="${H}" aria-hidden="true" focusable="false"><defs>${marcas}</defs>${arcos}</svg>${etq}</div>`:''}</div></div>${leg}`;
+}
 function rJornada(){
  if(JR.dono!==meId)jrCarregar();
  const E=JR.etapas;let h;
  if(!E)h=jrEstado();
  else if(!E.length)h=`<div class="panel embreve"><p class="muted">Nenhuma etapa cadastrada ainda. As etapas são cadastradas em Configurações › Jornada do Cliente.</p><button class="btn pri" data-jrcfg>${ICO.plus}Cadastrar etapas</button></div>`;
- else{if(!jrEtapa(JR.sel))JR.sel=E[0].id;
-  const card=(x,i)=>{const n=jrLigados(x.id).length,st=jrSetores(x),on=x.id===JR.sel;
-   return `${i?'<span class="jrseta" aria-hidden="true">→</span>':''}<button class="jrc${on?' on':''}" data-jrsel="${esc(x.id)}" aria-pressed="${on}"><span class="k">Etapa ${i+1}</span><b>${esc(x.data.nome)}</b>${st.length?`<span class="jrst">${st.map(s=>`<span class="chip ln">${esc(s)}</span>`).join('')}</span>`:''}${n?`<small>${n} ${n===1?'caminho fora da ordem':'caminhos fora da ordem'}</small>`:''}</button>`};
-  h=`<div class="jrtrilho" role="group" aria-label="Etapas da jornada">${E.map(card).join('')}</div>${jrDetalhe(JR.sel)}`}
+ else{if(!jrEtapa(JR.sel))JR.sel=E[0].id;h=`<div class="jrbox">${jrLinha(false)}</div>${jrDetalhe(JR.sel)}`}
  const html=`<header class="phead"><div><p class="kick">Análises</p><h1>Jornada do Cliente</h1><p class="sub">As etapas pelas quais o cliente passa, com os setores envolvidos, os motivos de contato e os caminhos fora da ordem.</p></div><div class="tools"><button class="btn" data-jrcfg>${ICO.edit}Editar etapas</button></div></header>${h}`;
  /* só redesenha quando algo mudou, mantendo a rolagem lateral das etapas e o foco de quem usa o teclado */
  if(html===JR.html)return;
@@ -1245,13 +1291,10 @@ function rJornada(){
 function rCfgJornada(){
  if(JR.dono!==meId)jrCarregar();
  const E=JR.etapas;if(!E)return jrEstado();
- const F=jrFluxos(),tr=JR.ocupado?' aria-disabled="true"':'',nome=x=>esc(x.data.nome);
- const et=E.map((x,i)=>`<div class="jrl"><span class="jrn">${i+1}</span><span class="jrt"><b>${nome(x)}</b><small>${esc(jrSetores(x).join(', ')||'Sem setor definido')}</small></span><span class="jra"><button class="ico" data-jrmover="${esc(x.id)}" data-jrdir="-1" aria-label="Subir ${nome(x)}"${i===0?' aria-disabled="true"':tr}>${ICO.up}</button><button class="ico" data-jrmover="${esc(x.id)}" data-jrdir="1" aria-label="Descer ${nome(x)}"${i===E.length-1?' aria-disabled="true"':tr}>${ICO.down}</button><button class="ico" data-jretapa="${esc(x.id)}" aria-label="Editar ${nome(x)}">${ICO.edit}</button></span></div>`).join('');
- const fl=F.map(f=>`<div class="jrl"><span class="jrt"><b>${esc(jrNome(f.data.de))} → ${esc(jrNome(f.data.para))}</b><small>${esc(jrTipo(f.data.tipo))}${f.data.descricao?' · '+esc(f.data.descricao):''}</small></span><span class="jra"><button class="ico" data-jrfluxo="${esc(f.id)}" aria-label="Editar caminho de ${esc(jrNome(f.data.de))} para ${esc(jrNome(f.data.para))}">${ICO.edit}</button></span></div>`).join('');
- return `${JR.limitado?'<div class="banner"><span class="dot wa"></span><div>Há muitos registros: apenas os 1.000 primeiros estão sendo exibidos.</div></div>':''}<div class="panel cfgp"><h3>Etapas</h3><p class="muted">Na ordem em que o cliente passa por elas. Use as setas para mudar a ordem.</p>${E.length?`<div class="list">${et}</div>`:'<p class="muted">Nenhuma etapa cadastrada.</p>'}<div><button class="btn pri" data-jretapa="">${ICO.plus}Adicionar etapa</button></div></div>
- <div class="panel cfgp sec"><h3>Caminhos fora da ordem</h3><p class="muted">Quando o cliente volta para uma etapa anterior, repete a mesma etapa ou pula etapas.</p>${F.length?`<div class="list">${fl}</div>`:'<p class="muted">Nenhum caminho cadastrado.</p>'}<div><button class="btn" data-jrfluxo=""${E.length?'':' aria-disabled="true"'}>${ICO.plus}Adicionar caminho</button></div></div>`;
+ /* edição na própria linha do tempo, do jeito que fica na página */
+ return `${JR.limitado?'<div class="banner"><span class="dot wa"></span><div>Há muitos registros: apenas os 1.000 primeiros estão sendo exibidos.</div></div>':''}<div class="panel cfgp"><p class="muted">Clique numa etapa para editar. Use ← → para mudar a ordem e “Nova etapa” para incluir. Os caminhos fora da ordem aparecem como linhas embaixo das etapas: clique na etiqueta de um caminho para editá-lo.</p>${jrLinha(true)}<div><button class="btn" data-jrfluxo=""${E.length?'':' aria-disabled="true"'}>${ICO.plus}Adicionar caminho fora da ordem</button></div></div>`;
 }
-function openJrEtapa(id){const x=id?jrEtapa(id):{data:{nome:'',descricao:'',setores:[],processos:'',motivos:'',riscos:''}};if(!x)return;ED={kind:'jretapa',id,x:clone(x)};rEd();showEd()}
+function openJrEtapa(id){const x=id?jrEtapa(id):{data:{nome:'',descricao:'',setores:[],processos:'',motivos:'',riscos:''}};if(!x)return;ED={kind:'jretapa',id,x:clone(x),setores:jrSetores(x).slice()};rEd();showEd()}
 function openJrFluxo(id){if(!JR.etapas||!JR.etapas.length)return;const x=id?JR.fluxos.find(f=>f.id===id):{data:{de:'',para:'',tipo:'retorno',descricao:''}};if(!x)return;ED={kind:'jrfluxo',id,x:clone(x)};rEd();showEd();
  /* o foco começa em "De", e não na descrição (o painel padrão foca o primeiro campo de texto) */
  setTimeout(()=>{const s=$('jr_de');if(s&&ED&&ED.kind==='jrfluxo')s.focus()},340)}
@@ -1262,9 +1305,26 @@ function rEdJrEtapa(){const{id,x}=ED,d=x.data;if(ED.rendered)return;ED.rendered=
  $('ed').innerHTML=`${jrTopo(id,'Nova etapa',id?esc(d.nome):'Adicionar etapa')}
  <div class="edb"><div class="f"><label for="jr_nome">Nome da etapa</label><input id="jr_nome" maxlength="120" value="${esc(d.nome)}" autocomplete="off"><span class="msg"></span></div>
  ${ta('descricao','Descrição')}
- <fieldset class="jrset"><legend>Setores que participam</legend><div>${SET().map(s=>`<label class="jrchk"><input type="checkbox" value="${esc(s.id)}"${d.setores.includes(s.id)?' checked':''}>${esc(s.nome)}</label>`).join('')||'<span class="muted">Nenhum setor cadastrado.</span>'}</div></fieldset>
+ <div class="f"><label for="jr_setor">Setores que participam</label><div class="jrtags" id="jr_tags"></div><input id="jr_setor" list="jr_sug" maxlength="100" placeholder="Digite o setor e aperte Enter" autocomplete="off"><datalist id="jr_sug"></datalist><span class="msg" data-h="Ao digitar, aparecem os setores já usados em outras etapas.">Ao digitar, aparecem os setores já usados em outras etapas.</span></div>
  ${ta('processos','Processos que acontecem')}${ta('motivos','Motivos de contato e reclamações')}${ta('riscos','Problemas que podem surgir')}
- ${jrAcoes(id)}</div>`}
+ ${jrAcoes(id)}</div>`;jrTags()}
+/* etiquetas de setor: Enter ou vírgula adiciona; Backspace no campo vazio tira a última */
+function jrTags(){const L=ED.setores,k=new Set(L.map(s=>s.toLowerCase()));
+ $('jr_tags').innerHTML=L.map((s,i)=>`<span class="chip">${esc(s)}<button type="button" class="jrrm" data-jrsrm="${i}" aria-label="Remover ${esc(s)}">${ICO.x}</button></span>`).join('');
+ $('jr_sug').innerHTML=jrSugestoes().filter(s=>!k.has(s.toLowerCase())).map(s=>`<option value="${esc(s)}">`).join('')}
+/* texto com vírgulas (digitado ou colado) vira uma etiqueta por nome; o que não couber fica no campo com o aviso */
+function jrAddSetor(){const i=$('jr_setor'),L=i.value.split(',').map(s=>s.trim().replace(/\s+/g,' ')).filter(Boolean);
+ const box=i.closest('.f'),msg=(m,resto)=>{i.value=resto.join(', ');jrTags();box.classList.add('bad');box.querySelector('.msg').textContent=m;return false};
+ for(let k=0;k<L.length;k++){const v=L[k],igual=s=>s.toLowerCase()===v.toLowerCase();
+  if(v.length>100)return msg('Use até 100 caracteres.',L.slice(k));
+  if(!ED.setores.some(igual)){if(ED.setores.length>=50)return msg('Use no máximo 50 setores por etapa.',L.slice(k));ED.setores.push(jrSugestoes().find(igual)||v)}}
+ i.value='';jrTags();return true}
+/* roda antes do atalho geral do painel (Enter = salvar): Enter com texto no campo vira etiqueta */
+$('ed').addEventListener('keydown',e=>{if(e.target.id!=='jr_setor'||!ED||ED.kind!=='jretapa'||e.isComposing)return;
+ if((e.key==='Enter'&&e.target.value.trim())||e.key===','){e.preventDefault();e.stopPropagation();jrAddSetor()}
+ else if(e.key==='Backspace'&&!e.target.value&&!e.repeat&&ED.setores.length){ED.setores.pop();jrTags()}},true);
+/* vírgula que chega sem tecla identificada (teclado do celular) ou texto colado com vírgulas */
+$('ed').addEventListener('input',e=>{if(e.target.id==='jr_setor'&&ED&&ED.kind==='jretapa'&&!e.isComposing&&e.target.value.includes(','))setTimeout(jrAddSetor)});
 function rEdJrFluxo(){const{id,x}=ED,d=x.data;if(ED.rendered)return;ED.rendered=true;
  const op=v=>`<option value="">Escolha a etapa</option>${JR.etapas.map((e,i)=>`<option value="${esc(e.id)}"${e.id===v?' selected':''}>${i+1}. ${esc(e.data.nome)}</option>`).join('')}`;
  $('ed').innerHTML=`${jrTopo(id,'Novo caminho',id?'Caminho fora da ordem':'Adicionar caminho')}
@@ -1278,8 +1338,9 @@ async function saveJr(btn){const ed=ED,{kind,id,x}=ed,etapa=kind==='jretapa',are
  const erro=(k,m)=>{const b=$('jr_'+k).closest('.f');b.classList.add('bad');b.querySelector('.msg').textContent=m;$('jr_'+k).focus()};
  let data;
  if(etapa){const v=k=>$('jr_'+k).value,nome=v('nome').trim();if(!nome)return erro('nome','Digite o nome da etapa.');
-  const marc=[...$('ed').querySelectorAll('.jrset input:checked')].map(i=>i.value),fora=x.data.setores.filter(s=>!SET().some(z=>z.id===s));
-  data={nome,descricao:v('descricao'),setores:[...marc,...fora],processos:v('processos'),motivos:v('motivos'),riscos:v('riscos')}}
+  /* setor digitado e ainda não confirmado com Enter também entra */
+  if(!jrAddSetor())return $('jr_setor').focus();
+  data={nome,descricao:v('descricao'),setores:ED.setores.slice(),processos:v('processos'),motivos:v('motivos'),riscos:v('riscos')}}
  else{data={de:$('jr_de').value,para:$('jr_para').value,tipo:$('jr_tipo').value,descricao:$('jr_descricao').value.trim()};
   if(!data.de)return erro('de','Escolha a etapa de origem.');if(!data.para)return erro('para','Escolha a etapa de destino.')}
  const lbl=btn.innerHTML;btn.textContent='Salvando…';btn.setAttribute('aria-disabled','true');
@@ -1319,6 +1380,7 @@ document.addEventListener('click',e=>{const t=e.target.closest&&e.target.closest
  else if(d.jrmover)moverJr(d.jrmover,+d.jrdir);
  else if('jrsalvar' in d)saveJr(t);
  else if('jrexcluir' in d)delJr(t);
+ else if(d.jrsrm!==undefined&&ED&&ED.kind==='jretapa'){ED.setores.splice(+d.jrsrm,1);jrTags();$('jr_setor').focus()}
 });
 
 /* ---------- seletor de ano, mês e semana ---------- */
