@@ -417,7 +417,7 @@ button.pli:hover{background:var(--card2)}
 .stag{position:absolute;right:96px;bottom:84px;z-index:3;font:600 20px/1 var(--fb);letter-spacing:.18em;opacity:.85}
 .sfx{background:rgba(10,49,37,.6);border:1px solid rgba(232,244,234,.2);border-radius:28px;display:grid;grid-template-columns:1fr 1fr}
 .sfx>div{padding:40px 44px;border-right:1px solid rgba(232,244,234,.2);border-bottom:1px solid rgba(232,244,234,.2)}
-.sfx>div:nth-child(2n){border-right:0}.sfx>div:nth-child(n+3){border-bottom:0}
+.sfx>div:nth-child(2n){border-right:0}.sfx.um>div{border-bottom:0}.sfx>div:nth-child(n+3){border-bottom:0}
 .sfx .l{font-size:24px;color:rgba(232,244,234,.84)}
 .sfx .v{font:700 96px/1 var(--fd);letter-spacing:-.04em;margin:14px 0 12px;font-variant-numeric:tabular-nums}
 .sfx .v.bad{color:#ffb3ab}.sfx .v.mid{color:#ffd99a}
@@ -2419,7 +2419,7 @@ function rCfgExport(){if(!EX)EX=exNovo();if(!S.weeks[EX.cFrom]||!S.weeks[EX.cTo]
   <p class="muted">${L.length?`${L.length} ${L.length===1?'semana':'semanas'}: ${dfmt(L[0].inicio)} a ${dfmt(L.at(-1).fim)}`:'Nenhuma semana cadastrada.'}</p></div>`:''}
  ${E.ag?`<div class="panel cfgp"><h3>Agenda e Demandas</h3><p class="muted">De toda a equipe: compromissos e demandas com data ou prazo no período, e demandas concluídas no período.</p>${datas('a','Período')}
   <div class="exchks">${chk('ex_semPrazo','Incluir também as demandas em aberto sem prazo (elas não têm data)',E.semPrazo)}</div></div>`:''}
- ${E.an?`<div class="panel cfgp"><h3>Análises</h3><p class="muted">Diagnósticos registrados no período, pela data de registro. A Jornada do Cliente (etapas e caminhos) não tem datas e sai completa.</p>${datas('d','Diagnósticos registrados')}</div>`:''}
+ ${E.an?`<div class="panel cfgp"><h3>Análises</h3><p class="muted">Diagnósticos registrados no período, pela data de registro, e o Por setor com os números do período. A Jornada do Cliente (etapas e caminhos) e as Perguntas-chave mostram a situação de hoje.</p>${datas('d','Diagnósticos registrados')}</div>`:''}
  ${E.pm?`<div class="panel cfgp"><h3>Projetos e Melhorias</h3><p class="muted">Projetos criados, com prazo ou concluídos no período, e o histórico registrado no período. O Planejamento Futuro faz parte dos projetos (ideias, planejados e pausados).</p>${datas('p','Período')}
   <div class="exchks">${chk('ex_pAbertos','Incluir também todos os projetos em aberto, mesmo sem data no período',E.pAbertos)}</div></div>`:''}
  <div class="exa"><button class="btn pri" data-exgo${E.ocupado?' aria-disabled="true"':''}><svg class="i" viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>${E.ocupado?'Gerando…':'Exportar Excel'}</button><span class="muted" role="status" id="ex_msg"></span></div></div>`}
@@ -2477,6 +2477,12 @@ async function exportXlsx(){if(!isAdmin()||!EX||EX.ocupado)return;const X=EX,E={
     ...(rd.itens||[]).filter(x=>{const d=dt(x);return d>=E.dDe&&d<=E.dAte}).sort((a,b)=>dt(a).localeCompare(dt(b))||a.criado-b.criado).map(x=>{const d=x.data;
      return [dfmt(dt(x)),dgMesNome(dt(x).slice(0,7)),d.titulo||'',txt(DG_SIT,d.situacao),txt(DG_GRAV,d.gravidade),txt(DG_FREQ,d.frequencia),[...new Set((d.etapas||[]).map(nome))].join(', '),lista(d.setores),d.tema||'',d.descricao||'',d.impacto||'',txt(DG_CAUSA,d.causaTipo),d.causa||'',d.evidencias||'',d.proxima||'',dia(x.criado),dia(x.atualizado)]})]);
   }
+  if(E.an){if(!await anGarantir())throw new Error('Não foi possível carregar os dados das Análises. Tente de novo.');if(JR.limitado||DG.limitado||PJ.limitado)limitado=true;
+   add('Perguntas-chave',[['Nº','Pergunta','Resposta','Item','Detalhe'],...pqPerguntas().flatMap((q,i)=>{const I=pqItensTexto(q.itens),r=pqPlano(q.r);return I.length?I.map(x=>[i+1,q.t,r,x.t,x.d]):[[i+1,q.t,r,'','']]})]);
+   const P=porPeriodoDatas(E.dDe,E.dAte);
+   add('Por setor',[['Setor','Na Calibragem','Qualidade média (%)','Monitorias','Zeradas','Tickets tratados','Backlog (última semana)','Tempo médio','Problemas ativos','Críticos ativos','Projetos em aberto','Atrasados','Concluídos no período','Etapas da jornada'],
+    ...porSetores().map(s=>{const r=porNumeros(s,P),v=x=>isN(x)?x:'';return [s.nome,s.cfg?'Sim':'Não (só etiqueta)',r.q&&isN(r.q.qualidade)?+r.q.qualidade.toFixed(2):'',r.q?v(r.q.monitorias):'',r.q?v(r.q.zeradas):'',r.o?v(r.o.tratados):'',r.o?v(r.o.backlog):'',r.o&&isN(r.o.tempo)?dur(r.o.tempo):'',r.prob.length,r.crit,r.abertos.length,r.atr,r.concl.length,r.etapas.map(({e,i})=>`${i+1}. ${e.data.nome}`).join(', ')]})]);
+  }
   if(E.pm){const[rp,rh,re,rd]=await Promise.all([DB.regList('projeto'),DB.regList('projeto_hist'),DB.regList('jornada_etapa'),DB.regList('diagnostico')]);if(rp.limitado||rh.limitado||re.limitado||rd.limitado)limitado=true;
    const P=rp.itens||[],noP=d=>!!d&&d>=E.pDe&&d<=E.pAte,aberto=x=>x.data.status!=='concluido'&&x.data.status!=='cancelado';
    const nomeE=id=>{const e=(re.itens||[]).find(y=>y.id===id);return e?e.data.nome:'Etapa excluída'},nomeD=id=>{const x=(rd.itens||[]).find(y=>y.id===id);return x?x.data.titulo:'Problema excluído'};
@@ -2530,7 +2536,7 @@ const presModoDaPagina=()=>PRES_MODO[areaDe(page)]||null;
 let presModo='cal',pAg=null;
 function openPres(){const m=presModoDaPagina();if(!m||!isAdmin()||((m==='geral'||m==='cal')&&!Wk()))return;closeMenu();presModo=m;
  $('pcfgT').textContent={geral:'Apresentar a Visão Geral',cal:'Apresentar a Calibragem Semanal',ag:'Apresentar a Agenda e Demandas',an:'Apresentar as Análises',pm:'Apresentar os Projetos'}[m];
- $('pcfgSub').textContent=m==='ag'?'Escolha o período. As demandas em aberto aparecem como estão hoje.':m==='pm'?'Escolha o período dos concluídos. Os projetos em aberto aparecem como estão hoje.':m==='an'?'A apresentação mostra a situação de hoje.':'Escolha o período. Ele sempre é formado por semanas inteiras.';
+ $('pcfgSub').textContent=m==='ag'?'Escolha o período. As demandas em aberto aparecem como estão hoje.':m==='pm'?'Escolha o período dos concluídos. Os projetos em aberto aparecem como estão hoje.':m==='an'?'A apresentação mostra a situação de hoje: diagnósticos, Jornada, Perguntas-chave e Por setor (Calibragem das últimas semanas encerradas).':'Escolha o período. Ele sempre é formado por semanas inteiras.';
  if(m==='ag'||m==='pm'){const[de,ate]=exRange('mes');pAg={de,ate,short:'mes'};rPcfgAg()}else if(m==='an')rPcfgAn();else{pFrom=pTo=sel;pShort=null;rPcfg()}
  $('pcfgMb').classList.add('show');setTimeout(()=>$('pcfgGo').focus(),30)}
 const pAgResumo=()=>{const{de,ate}=pAg,d=de&&ate?Math.round((Date.parse(ate)-Date.parse(de))/864e5)+1:0;
@@ -2648,7 +2654,29 @@ function buildSlidesAn(E,Dg){PWL=[];const hoje=today(),rod=`Situação em ${dfmt
     return `<div${g?` style="--q:${PRES_CALOR[g]}"`:''}><span class="k">Etapa ${i+1}</span><b>${esc(presCorta(e.data.nome,60))}</b><small>${Q.length?`${Q.length} ${Q.length===1?'problema ativo':'problemas ativos'} · mais grave: ${esc(DG_GRAV[g][0])}`:'Nenhum problema ativo'}</small></div>`}).join('')}</div></div>`})})}
  presLista(s,'Diagnósticos','Problemas ativos','Do mais grave para o menos grave.',rod,A,6,'<th>Problema</th><th>Gravidade</th><th>Situação</th><th>Etapas</th><th>Próxima ação</th>',x=>{const d=x.data,g=dgM(DG_GRAV,d.gravidade),st=dgM(DG_SIT,d.situacao);
   return `<tr><td><span class="nm">${esc(presCorta(d.titulo,50))}</span>${d.tema?`<span class="sub2">Tema: ${esc(presCorta(d.tema,40))}</span>`:''}</td><td>${g?`<span class="chip ${PRES_GCHIP[d.gravidade]}">${esc(g[0])}</span>`:'—'}</td><td>${st?`<span class="chip ${PRES_SCHIP[d.situacao]}">${esc(st[0])}</span>`:'—'}</td><td>${esc(presCorta([...new Set((d.etapas||[]).map(nome))].join(', ')||'—',50))}</td><td>${esc(presCorta(d.proxima||'—',60))}</td></tr>`},'Nenhum problema ativo.');
+ if(pqPronto()){
+  pqPerguntas().forEach((q,i)=>presLista(s,'Perguntas-chave',`${String(i+1).padStart(2,'0')}. ${esc(q.t)}`,q.r,rod,pqItensTexto(q.itens),6,'<th>Item</th><th>Detalhe</th>',x=>`<tr><td><span class="nm">${esc(presCorta(x.t,60))}</span></td><td>${esc(presCorta(x.d,90))}</td></tr>`,'Nada a listar.'));
+  /* por setor nas últimas 4 semanas já encerradas */
+  const r4=shortRange('ult4'),seg=mondayOf(new Date()),L=r4?periodWeeks(r4[0],r4[1]).filter(w=>w.inicio<seg):[],P={de:L.length?L[0].inicio:hoje,ate:L.length?L.at(-1).fim:hoje,L,aq:L.length?aggQ(L):null,ao:L.length?aggO(L):null};
+  const SS=porSetores().map(x=>({s:x,r:porNumeros(x,P)})),rodS=L.length?`Calibragem de ${dfmt(P.de)} a ${dfmt(P.ate)}`:rod,vq=r=>r.q?porV(r.q.qualidade,'pct'):'—',vt=r=>r.o?porV(r.o.tratados):'—';
+  presLista(s,'Por setor','Comparação entre setores','Qualidade e tratados das últimas semanas encerradas; problemas e projetos como estão hoje.',rodS,SS,8,'<th>Setor</th><th class="n">Qualidade</th><th class="n">Tratados</th><th class="n">Problemas ativos</th><th class="n">Projetos em aberto</th>',
+   ({s:x,r})=>`<tr><td><span class="nm">${esc(presCorta(x.nome,40))}</span>${x.cfg?'':'<span class="sub2">Só etiqueta</span>'}</td><td class="n">${vq(r)}</td><td class="n">${vt(r)}</td><td class="n">${r.prob.length}${r.crit?` <span class="chip w">${r.crit} crít.</span>`:''}</td><td class="n">${r.abertos.length}${r.atr?` <span class="chip w">${r.atr} atras.</span>`:''}</td></tr>`,'Nenhum setor cadastrado.');
+  /* um slide por setor que tenha algo a mostrar */
+  SS.filter(({r})=>r.q||r.o||r.prob.length||r.abertos.length).forEach(({s:x,r})=>{const n=[],extra=[];
+   if(r.q){n.push(['Qualidade média',vq(r)]);extra.push(['Zeradas',porV(r.q.zeradas)])}if(r.o){n.push(['Tickets tratados',vt(r)]);extra.push(['Backlog',porV(r.o.backlog)])}
+   n.push(['Problemas ativos',String(r.prob.length)],['Projetos em aberto',String(r.abertos.length)]);while(n.length<4&&extra.length)n.push(extra.shift());
+   s.push({t:'Por setor · '+x.nome,h:presLado('Por setor',esc(x.nome),r.etapas.length?'Etapas onde atua: '+esc(r.etapas.map(({e,i})=>`${i+1}. ${e.data.nome}`).join(', ')):'',rodS)+`<div class="body"><div class="sfx${n.length<3?' um':''}">${n.slice(0,4).map(([l,v])=>`<div><div class="l">${l}</div><div class="v">${v}</div><div class="d"></div></div>`).join('')}</div>
+    ${r.prob.length?`<div class="smiss"><b>Problemas mais graves:</b> ${r.prob.slice(0,3).map(p=>esc(presCorta(p.data.titulo,50))).join(' · ')}</div>`:''}</div>`})})}
  presMontar(s)}
+/* perguntas-chave em texto puro (para o Excel e os slides): resumo e, de cada item, o título e o detalhe */
+const pqPlano=html=>{const t=document.createElement('template');t.innerHTML=html;return t.content.textContent.trim()};
+const pqItensTexto=itens=>itens.map(hh=>{const t=document.createElement('template');t.innerHTML=hh;const c=t.content,a=c.querySelector('.pqt'),b=c.querySelector('small');return {t:(a||c).textContent.trim(),d:b?b.textContent.trim():''}});
+/* Jornada, Diagnósticos e Projetos carregados para a conta atual (as perguntas e o "Por setor" dependem dos três) */
+async function anGarantir(){const L=[];if(JR.dono!==meId||!JR.etapas)L.push(jrCarregar());if(DG.dono!==meId||!DG.itens)L.push(dgCarregar());if(PJ.dono!==meId||!PJ.itens)L.push(pjCarregar());await Promise.all(L);
+ for(let i=0;i<150&&(JR.carregando||DG.carregando||PJ.carregando);i++)await new Promise(r=>setTimeout(r,100));
+ return pqPronto()}
+/* período de datas → semanas da Calibragem que começam nele (até a semana atual), no formato usado pelo "Por setor" */
+const porPeriodoDatas=(de,ate)=>{const seg=mondayOf(new Date()),L=ids().filter(id=>id>=de&&id<=ate&&id<=seg).map(id=>S.weeks[id]);return {de,ate,L,aq:L.length?aggQ(L):null,ao:L.length?aggO(L):null}};
 /* projetos: números, em andamento, atrasados e parados, concluídos no período (com o resultado) e planejamento futuro */
 const PRES_PJCHIP={ideia:'s',planejado:'s',andamento:'g',standby:'a',aguardando:'a',concluido:'g',cancelado:'s'},PRES_VCHIP={comprovada:'g',parcial:'a',sem_efeito:'w',piorou:'w'};
 function buildSlidesPm(P,de,ate){PWL=[];const hoje=today(),rod=`${dfmt(de)} a ${dfmt(ate)}`,ab=x=>x.data.status!=='concluido'&&x.data.status!=='cancelado',atr=x=>ab(x)&&!!x.data.prazo&&x.data.prazo<hoje;
@@ -2678,9 +2706,10 @@ async function presIr(baixar){const m=presModo,tk=++presTok,pg=page;
    for(let d=de;d<=ate;d=exSoma(d,31)){const f=[exSoma(d,30),ate].sort()[0];lim(await DB.agendaList({pessoa:'*',encerradas:true,desde:new Date(d+'T00:00:00').getTime(),ate:new Date(f+'T23:59:59.999').getTime()})).forEach(x=>C.set(x.id,x))}
    buildSlidesAg({abertas:lim(ab),concl:[...C.values()],agenda:lim(agd).filter(x=>x.tipo==='agenda')},de,ate)}
   else if(m==='pm')buildSlidesPm(lim(await DB.regList('projeto')),de,ate);
-  else{const[re,rd]=await Promise.all([DB.regList('jornada_etapa'),DB.regList('diagnostico')]);buildSlidesAn(lim(re),lim(rd))}
+  else{const[re,rd]=await Promise.all([DB.regList('jornada_etapa'),DB.regList('diagnostico'),anGarantir()]);buildSlidesAn(lim(re),lim(rd))}
  }catch(e){if(tk===presTok)toast(e.message||'Não foi possível preparar a apresentação.',true);return}
  if(tk!==presTok||page!==pg||!meId||!isAdmin())return;
+ if(m==='an'){if(!pqPronto())toast('Perguntas-chave e Por setor ficaram de fora: os dados não terminaram de carregar.',true);else if(JR.limitado||DG.limitado||PJ.limitado)limitado=true}
  if(limitado)toast('Atenção: havia registros demais e parte deles ficou de fora da apresentação.',true);
  if(baixar)m==='ag'?presBaixar(`Agenda e Demandas · ${dfmt(de)} a ${dfmt(ate)}`,`apresentacao-agenda-${de}-a-${ate}.html`):m==='pm'?presBaixar(`Projetos · ${dfmt(de)} a ${dfmt(ate)}`,`apresentacao-projetos-${de}-a-${ate}.html`):presBaixar(`Análises · ${dfmt(today())}`,`apresentacao-analises-${today()}.html`);
  else presAbrir()}
