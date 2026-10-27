@@ -569,6 +569,38 @@ button.plc.miss:hover{background:var(--card2)}
 .agleg{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:12px;font-size:12px;color:var(--mu)}
 .agleg span{display:inline-flex;align-items:center;gap:6px}
 @media (max-width:640px){.agd{min-height:48px;padding:4px;align-items:center}.agd .pts{display:none}.agd .qt{display:block;font-size:11px;color:var(--mu)}.agd .qt.er{color:var(--er)}.agi{grid-template-columns:minmax(0,1fr) auto}.agi .h{grid-column:1/-1}.agnav b{min-width:0;flex:1}}
+/* ===== jornada do cliente: etapas em linha com setas; detalhe da etapa escolhida embaixo ===== */
+.jrtrilho{display:flex;align-items:stretch;gap:8px;overflow-x:auto;padding:2px 2px 10px;margin-bottom:var(--gap)}
+.jrc{flex:0 0 210px;display:grid;gap:8px;align-content:start;text-align:left;background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:14px;color:var(--tx)}
+.jrc:hover{border-color:var(--bd2)}
+.jrc.on{border-color:var(--pri);background:var(--card2)}
+.jrc .k{font-size:12px;color:var(--mu)}
+.jrc b{font-size:16px;font-weight:600;line-height:1.3;overflow-wrap:anywhere}
+.jrc small{font-size:12px;color:var(--mu)}
+.jrst{display:flex;flex-wrap:wrap;gap:4px}
+.jrseta{align-self:center;color:var(--mu);font-size:18px;flex:none}
+.jrdet{display:grid;gap:18px}
+.jrdet h2{font-size:20px}
+.jrdet h3{font-size:14px;font-weight:600;margin-bottom:6px}
+.jrtx{margin:6px 0 0;white-space:pre-wrap;overflow-wrap:anywhere}
+.jrgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+.jrgrid p{margin:0}
+.jrfl{margin:0;padding:0;list-style:none;display:grid;gap:8px}
+.jrfl li{display:flex;flex-wrap:wrap;align-items:center;gap:6px;overflow-wrap:anywhere}
+.jrl{display:flex;align-items:center;gap:12px;border:1px solid var(--bd);border-radius:12px;padding:8px 8px 8px 14px;background:var(--bg)}
+.jrn{width:26px;height:26px;border-radius:99px;background:var(--card2);display:grid;place-items:center;font-size:13px;font-weight:600;flex:none}
+.jrt{flex:1;min-width:0;display:grid}
+.jrt b{font-weight:500;overflow-wrap:anywhere}
+.jrt small{font-size:12px;color:var(--mu);overflow-wrap:anywhere}
+.jra{display:flex;gap:2px;flex:none}
+.jra .ico[aria-disabled="true"]{opacity:.35;cursor:default}
+.jrset{border:0;margin:0;padding:0}
+.jrset legend{font-size:12px;color:var(--mu);padding:0;margin-bottom:6px}
+.jrset>div{display:flex;flex-wrap:wrap;gap:6px}
+.jrchk{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--bd);border-radius:99px;padding:5px 12px;font-size:13px;cursor:pointer;background:var(--bg)}
+.jrchk:has(input:checked){border-color:var(--pri);background:var(--card2)}
+.jrchk input{margin:0;accent-color:var(--pri)}
+@media (max-width:720px){.jrgrid{grid-template-columns:1fr}.jrc{flex-basis:170px}}
 /* ===== tema claro (o escuro continua sendo o padrão) ===== */
 :root[data-theme="light"]{
 --bg:#F3F6F4;--card:#FFFFFF;--card2:#EAF0EC;--bd:#D6DED9;--bd2:#B7C4BC;
@@ -640,7 +672,7 @@ button.plc.miss:hover{background:var(--card2)}
       <button data-p="agenda"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Agenda e Demandas</button>
       <button class="cat so-adm" data-cat="an" aria-expanded="false" aria-controls="cat-an"><svg class="i" viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Análises<svg class="i chev" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>
       <div class="sub so-adm" id="cat-an" hidden>
-        <button data-p="an-jornada">Jornada do Cliente<span class="eb">Em breve</span></button>
+        <button data-p="an-jornada">Jornada do Cliente</button>
         <button data-p="an-diag">Diagnósticos<span class="eb">Em breve</span></button>
         <button data-p="an-perg">Perguntas-chave<span class="eb">Em breve</span></button>
         <button data-p="an-setor">Por setor<span class="eb">Em breve</span></button>
@@ -665,6 +697,7 @@ button.plc.miss:hover{background:var(--card2)}
     <section class="page" id="p-operacoes"></section>
     <section class="page" id="p-palavra"></section>
     <section class="page" id="p-agenda"></section>
+    <section class="page" id="p-an-jornada"></section>
     <section class="page" id="p-embreve"></section>
     <section class="page" id="p-config"></section>
   </main>
@@ -832,7 +865,12 @@ const NeonDB={
  async agendaList(p){return this.req('agendaList',p)},
  async agendaSave(p){return this.req('agendaSave',p)},
  async agendaDelete(id){return this.req('agendaDelete',{id})},
- async agendaPessoas(){return this.req('agendaPessoas')}
+ async agendaPessoas(){return this.req('agendaPessoas')},
+ /* áreas novas (Jornada…): só administradores; fora do snapshot, carregadas na própria tela */
+ async regList(area){return this.req('regList',{area})},
+ async regSave(p){return this.req('regSave',p)},
+ async regDelete(area,id){return this.req('regDelete',{area,id})},
+ async regOrdem(area,ids){return this.req('regOrdem',{area,ids})}
 };
 
 const DB=NeonDB;
@@ -901,10 +939,10 @@ function render(){
  $('app').classList.toggle('nao-adm',!isAdmin());
  document.querySelectorAll('#nav button[data-p]').forEach(b=>{const on=b.dataset.p===page;b.classList.toggle('on',on);on?b.setAttribute('aria-current','page'):b.removeAttribute('aria-current')});
  rMenuCat();
- $('pageTitle').textContent=({inicio:'Visão Geral',qualidade:'Qualidade',operacoes:'Operações',palavra:'Palavra da Semana',agenda:'Agenda e Demandas',config:'Configurações'})[page]||(EMB[page]||[])[0]||'';
+ $('pageTitle').textContent=({inicio:'Visão Geral',qualidade:'Qualidade',operacoes:'Operações',palavra:'Palavra da Semana',agenda:'Agenda e Demandas','an-jornada':'Jornada do Cliente',config:'Configurações'})[page]||(EMB[page]||[])[0]||'';
  document.querySelectorAll('.page').forEach(p=>p.classList.toggle('on',p.id==='p-'+(EMB[page]?'embreve':page)));
- document.querySelector('.wsel').hidden=page==='agenda'||!!EMB[page];
- if(EMB[page])rEmBreve();else if(page==='inicio')rInicio(w);else if(page==='palavra')rPalavra(w);else if(page==='agenda')rAgenda();else if(page==='config'){if(!(['setores'].includes(cfgView)&&render.cfgShown===cfgView&&!render.force))rConfig();render.cfgShown=cfgView}else rFrente(w,page==='qualidade'?'q':'o');
+ document.querySelector('.wsel').hidden=page==='agenda'||page==='an-jornada'||!!EMB[page];
+ if(EMB[page])rEmBreve();else if(page==='an-jornada')rJornada();else if(page==='inicio')rInicio(w);else if(page==='palavra')rPalavra(w);else if(page==='agenda')rAgenda();else if(page==='config'){if(!(['setores','jornada'].includes(cfgView)&&render.cfgShown===cfgView&&!render.force))rConfig();render.cfgShown=cfgView}else rFrente(w,page==='qualidade'?'q':'o');
  if(ED)rEd();
 }
 
@@ -912,7 +950,6 @@ function render(){
 const PAG_COLAB=['qualidade','operacoes','palavra','agenda'];
 /* áreas ainda não construídas: [título, categoria, o que a área vai fazer] */
 const EMB={
- 'an-jornada':['Jornada do Cliente','Análises','Etapas da jornada do cliente, com os setores envolvidos, os motivos de contato e os pontos onde a experiência quebra.'],
  'an-diag':['Diagnósticos','Análises','Registro dos problemas da experiência: o que acontece, onde acontece, impacto, gravidade, causa e evidências.'],
  'an-perg':['Perguntas-chave','Análises','Respostas calculadas a partir dos dados reais, como onde estão os pontos de ruptura e quais problemas ainda não têm plano de ação.'],
  'an-setor':['Análises por setor','Análises','Evolução de Qualidade e Operações por setor, comparação entre setores e problemas recorrentes, com filtro de período.'],
@@ -1115,7 +1152,7 @@ async function delAg(id,cancelar){const x=agAchar(id);if(!x)return;
 document.addEventListener('click',e=>{
  const t=e.target.closest('button');if(!t)return;
  /* ao sair, a agenda da conta anterior é apagada da memória e da tela */
- if(t.id==='logout'){AG=agVazio(null);$('p-agenda').innerHTML='';return}
+ if(t.id==='logout'){AG=agVazio(null);$('p-agenda').innerHTML='';JR=jrVazio(null);$('p-an-jornada').innerHTML='';return}
  if(t.getAttribute('aria-disabled')==='true')return;const d=t.dataset;let foco=null;
  if(d.agaba){AG.aba=d.agaba;foco=`[data-agaba="${d.agaba}"]`}
  else if('agenc' in d){AG.encerradas=!AG.encerradas;foco='[data-agenc]'}
@@ -1153,6 +1190,136 @@ document.addEventListener('input',e=>{if(e.target.id==='agbusca')AG.buscaTxt=e.t
 document.addEventListener('change',e=>{if(e.target.id!=='agver'||!isAdmin())return;AG.ver=e.target.value;agLimpar();rAgenda();const s=$('agver');s&&s.focus()});
 document.addEventListener('focusout',e=>{if(e.target.id==='agbusca'&&AG.adiado){AG.adiado=false;setTimeout(()=>page==='agenda'&&rAgenda())}});
 $('ed').addEventListener('keydown',e=>{if(e.key==='Enter'&&ED&&ED.kind==='agenda'&&e.target.matches('input')){const b=$('ed').querySelector('[data-agsalvar]');b&&b.click()}});
+
+/* ---------- jornada do cliente ----------
+   etapas em ordem e caminhos fora da ordem; só administradores. A página em Análises só mostra;
+   a edição fica em Configurações › Jornada do Cliente */
+const JR_TIPOS={retorno:['Retorno','O cliente volta para uma etapa anterior'],recorrencia:['Recorrência','O cliente repete a mesma etapa'],desvio:['Desvio','O cliente pula etapas ou segue por um atalho']};
+const jrVazio=dono=>({etapas:null,fluxos:[],limitado:false,dono,carregando:false,denovo:false,erro:false,sel:null,ocupado:false,html:null});
+let JR=jrVazio(null);
+const jrEtapa=id=>(JR.etapas||[]).find(x=>x.id===id);
+const jrNome=id=>{const e=jrEtapa(id);return e?e.data.nome:'Etapa excluída'};
+const jrTipo=k=>(JR_TIPOS[k]||[k])[0];
+/* setores removidos do cadastro não aparecem, mas continuam guardados na etapa */
+const jrSetores=x=>x.data.setores.map(id=>SET().find(s=>s.id===id)).filter(Boolean).map(s=>s.nome);
+/* só os caminhos cujas duas pontas ainda existem */
+const jrFluxos=()=>JR.fluxos.filter(f=>jrEtapa(f.data.de)&&jrEtapa(f.data.para));
+const jrLigados=id=>jrFluxos().filter(f=>f.data.de===id||f.data.para===id);
+/* a aba de Configurações só é refeita quando os dados da jornada mudam (como a de Setores), para não tirar o foco a cada atualização */
+const jrRedesenhar=()=>{if(page==='an-jornada'||(page==='config'&&cfgView==='jornada')){render.cfgShown=null;render()}};
+/* uma leitura por vez; se outra for pedida no meio, roda de novo no fim. Resposta de outra conta é descartada */
+async function jrCarregar(){
+ if(!isAdmin())return;
+ if(JR.dono!==meId)JR=jrVazio(meId);
+ const j=JR;if(j.carregando){j.denovo=true;return}j.carregando=true;
+ try{const[e,f]=await Promise.all([DB.regList('jornada_etapa'),DB.regList('jornada_fluxo')]);
+  if(j!==JR)return;
+  const novo={etapas:e.itens||[],fluxos:f.itens||[],limitado:!!(e.limitado||f.limitado)},mudou=JSON.stringify([j.etapas,j.fluxos])!==JSON.stringify([novo.etapas,novo.fluxos]);
+  Object.assign(j,novo,{erro:false});if(mudou)jrRedesenhar();
+ }catch(e){if(j===JR&&!j.etapas){j.erro=true;jrRedesenhar()}}
+ finally{j.carregando=false;if(j.denovo&&j===JR){j.denovo=false;jrCarregar()}}
+}
+const jrEstado=()=>JR.erro?`<div class="panel cfgp"><p class="muted">Não foi possível carregar a jornada.</p><div><button class="btn sm" data-jrrecarregar>Tentar de novo</button></div></div>`:'<div class="panel"><p class="muted" role="status">Carregando…</p></div>';
+const jrFluxoLi=f=>`<li><span class="chip ln">${esc(jrTipo(f.data.tipo))}</span><span>${esc(jrNome(f.data.de))} → ${esc(jrNome(f.data.para))}</span>${f.data.descricao?`<span class="muted">· ${esc(f.data.descricao)}</span>`:''}</li>`;
+function jrDetalhe(id){const x=jrEtapa(id),i=JR.etapas.indexOf(x),C=jrLigados(id);
+ const bloco=(t,v)=>`<div><h3>${t}</h3>${v&&v.trim()?`<p class="jrtx">${esc(v)}</p>`:'<p class="muted">Não registrado.</p>'}</div>`;
+ return `<div class="panel jrdet"><div><p class="kick">Etapa ${i+1} de ${JR.etapas.length}</p><h2>${esc(x.data.nome)}</h2>${x.data.descricao?`<p class="jrtx">${esc(x.data.descricao)}</p>`:''}</div>
+ <div class="jrgrid">${bloco('Setores envolvidos',jrSetores(x).join(', '))}${bloco('Processos que acontecem',x.data.processos)}${bloco('Motivos de contato e reclamações',x.data.motivos)}${bloco('Problemas que podem surgir',x.data.riscos)}</div>
+ <div><h3>Caminhos fora da ordem</h3>${C.length?`<ul class="jrfl">${C.map(jrFluxoLi).join('')}</ul>`:'<p class="muted">Nenhum caminho fora da ordem passa por esta etapa.</p>'}</div></div>`}
+function rJornada(){
+ if(JR.dono!==meId)jrCarregar();
+ const E=JR.etapas;let h;
+ if(!E)h=jrEstado();
+ else if(!E.length)h=`<div class="panel embreve"><p class="muted">Nenhuma etapa cadastrada ainda. As etapas são cadastradas em Configurações › Jornada do Cliente.</p><button class="btn pri" data-jrcfg>${ICO.plus}Cadastrar etapas</button></div>`;
+ else{if(!jrEtapa(JR.sel))JR.sel=E[0].id;
+  const card=(x,i)=>{const n=jrLigados(x.id).length,st=jrSetores(x),on=x.id===JR.sel;
+   return `${i?'<span class="jrseta" aria-hidden="true">→</span>':''}<button class="jrc${on?' on':''}" data-jrsel="${esc(x.id)}" aria-pressed="${on}"><span class="k">Etapa ${i+1}</span><b>${esc(x.data.nome)}</b>${st.length?`<span class="jrst">${st.map(s=>`<span class="chip ln">${esc(s)}</span>`).join('')}</span>`:''}${n?`<small>${n} ${n===1?'caminho fora da ordem':'caminhos fora da ordem'}</small>`:''}</button>`};
+  h=`<div class="jrtrilho" role="group" aria-label="Etapas da jornada">${E.map(card).join('')}</div>${jrDetalhe(JR.sel)}`}
+ const html=`<header class="phead"><div><p class="kick">Análises</p><h1>Jornada do Cliente</h1><p class="sub">As etapas pelas quais o cliente passa, com os setores envolvidos, os motivos de contato e os caminhos fora da ordem.</p></div><div class="tools"><button class="btn" data-jrcfg>${ICO.edit}Editar etapas</button></div></header>${h}`;
+ /* só redesenha quando algo mudou, mantendo a rolagem lateral das etapas e o foco de quem usa o teclado */
+ if(html===JR.html)return;
+ const t=document.querySelector('#p-an-jornada .jrtrilho'),x=t?t.scrollLeft:0;
+ JR.html=html;$('p-an-jornada').innerHTML=html;
+ const n=document.querySelector('#p-an-jornada .jrtrilho');if(n)n.scrollLeft=x;
+}
+function rCfgJornada(){
+ if(JR.dono!==meId)jrCarregar();
+ const E=JR.etapas;if(!E)return jrEstado();
+ const F=jrFluxos(),tr=JR.ocupado?' aria-disabled="true"':'',nome=x=>esc(x.data.nome);
+ const et=E.map((x,i)=>`<div class="jrl"><span class="jrn">${i+1}</span><span class="jrt"><b>${nome(x)}</b><small>${esc(jrSetores(x).join(', ')||'Sem setor definido')}</small></span><span class="jra"><button class="ico" data-jrmover="${esc(x.id)}" data-jrdir="-1" aria-label="Subir ${nome(x)}"${i===0?' aria-disabled="true"':tr}>${ICO.up}</button><button class="ico" data-jrmover="${esc(x.id)}" data-jrdir="1" aria-label="Descer ${nome(x)}"${i===E.length-1?' aria-disabled="true"':tr}>${ICO.down}</button><button class="ico" data-jretapa="${esc(x.id)}" aria-label="Editar ${nome(x)}">${ICO.edit}</button></span></div>`).join('');
+ const fl=F.map(f=>`<div class="jrl"><span class="jrt"><b>${esc(jrNome(f.data.de))} → ${esc(jrNome(f.data.para))}</b><small>${esc(jrTipo(f.data.tipo))}${f.data.descricao?' · '+esc(f.data.descricao):''}</small></span><span class="jra"><button class="ico" data-jrfluxo="${esc(f.id)}" aria-label="Editar caminho de ${esc(jrNome(f.data.de))} para ${esc(jrNome(f.data.para))}">${ICO.edit}</button></span></div>`).join('');
+ return `${JR.limitado?'<div class="banner"><span class="dot wa"></span><div>Há muitos registros: apenas os 1.000 primeiros estão sendo exibidos.</div></div>':''}<div class="panel cfgp"><h3>Etapas</h3><p class="muted">Na ordem em que o cliente passa por elas. Use as setas para mudar a ordem.</p>${E.length?`<div class="list">${et}</div>`:'<p class="muted">Nenhuma etapa cadastrada.</p>'}<div><button class="btn pri" data-jretapa="">${ICO.plus}Adicionar etapa</button></div></div>
+ <div class="panel cfgp sec"><h3>Caminhos fora da ordem</h3><p class="muted">Quando o cliente volta para uma etapa anterior, repete a mesma etapa ou pula etapas.</p>${F.length?`<div class="list">${fl}</div>`:'<p class="muted">Nenhum caminho cadastrado.</p>'}<div><button class="btn" data-jrfluxo=""${E.length?'':' aria-disabled="true"'}>${ICO.plus}Adicionar caminho</button></div></div>`;
+}
+function openJrEtapa(id){const x=id?jrEtapa(id):{data:{nome:'',descricao:'',setores:[],processos:'',motivos:'',riscos:''}};if(!x)return;ED={kind:'jretapa',id,x:clone(x)};rEd();showEd()}
+function openJrFluxo(id){if(!JR.etapas||!JR.etapas.length)return;const x=id?JR.fluxos.find(f=>f.id===id):{data:{de:'',para:'',tipo:'retorno',descricao:''}};if(!x)return;ED={kind:'jrfluxo',id,x:clone(x)};rEd();showEd();
+ /* o foco começa em "De", e não na descrição (o painel padrão foca o primeiro campo de texto) */
+ setTimeout(()=>{const s=$('jr_de');if(s&&ED&&ED.kind==='jrfluxo')s.focus()},340)}
+const jrTopo=(id,novo,titulo)=>`<div class="edh"><div class="row"><span>Configurações · Jornada do Cliente</span><button class="ico" data-edclose aria-label="Fechar">${ICO.x}</button></div><div><div class="k">${id?'Editar':novo}</div><h3>${titulo}</h3></div></div>`;
+const jrAcoes=id=>`<div class="eda"><button class="btn pri" data-jrsalvar>${id?'Salvar':'Adicionar'}</button><button class="btn" data-edclose>Cancelar</button>${id?`<button class="btn dan" data-jrexcluir>${ICO.del}Excluir</button>`:''}</div>`;
+function rEdJrEtapa(){const{id,x}=ED,d=x.data;if(ED.rendered)return;ED.rendered=true;
+ const ta=(k,l)=>`<div class="f"><label for="jr_${k}">${l}</label><textarea id="jr_${k}" maxlength="2000">${esc(d[k]||'')}</textarea></div>`;
+ $('ed').innerHTML=`${jrTopo(id,'Nova etapa',id?esc(d.nome):'Adicionar etapa')}
+ <div class="edb"><div class="f"><label for="jr_nome">Nome da etapa</label><input id="jr_nome" maxlength="120" value="${esc(d.nome)}" autocomplete="off"><span class="msg"></span></div>
+ ${ta('descricao','Descrição')}
+ <fieldset class="jrset"><legend>Setores que participam</legend><div>${SET().map(s=>`<label class="jrchk"><input type="checkbox" value="${esc(s.id)}"${d.setores.includes(s.id)?' checked':''}>${esc(s.nome)}</label>`).join('')||'<span class="muted">Nenhum setor cadastrado.</span>'}</div></fieldset>
+ ${ta('processos','Processos que acontecem')}${ta('motivos','Motivos de contato e reclamações')}${ta('riscos','Problemas que podem surgir')}
+ ${jrAcoes(id)}</div>`}
+function rEdJrFluxo(){const{id,x}=ED,d=x.data;if(ED.rendered)return;ED.rendered=true;
+ const op=v=>`<option value="">Escolha a etapa</option>${JR.etapas.map((e,i)=>`<option value="${esc(e.id)}"${e.id===v?' selected':''}>${i+1}. ${esc(e.data.nome)}</option>`).join('')}`;
+ $('ed').innerHTML=`${jrTopo(id,'Novo caminho',id?'Caminho fora da ordem':'Adicionar caminho')}
+ <div class="edb"><div class="f"><label for="jr_de">De (etapa de origem)</label><select id="jr_de">${op(d.de)}</select><span class="msg"></span></div>
+ <div class="f"><label for="jr_para">Para (etapa de destino)</label><select id="jr_para">${op(d.para)}</select><span class="msg"></span></div>
+ <div class="f"><label for="jr_tipo">Tipo</label><select id="jr_tipo">${Object.entries(JR_TIPOS).map(([k,[l,t]])=>`<option value="${k}"${d.tipo===k?' selected':''}>${l}: ${t.toLowerCase()}</option>`).join('')}</select></div>
+ <div class="f"><label for="jr_descricao">Descrição curta (opcional)</label><input id="jr_descricao" maxlength="120" value="${esc(d.descricao||'')}" placeholder="Ex.: volta ao suporte depois da cobrança" autocomplete="off"></div>
+ ${jrAcoes(id)}</div>`}
+/* conflito (409) ou registro apagado (404) fecham o painel; a lista é sempre lida de novo depois de gravar */
+async function saveJr(btn){const ed=ED,{kind,id,x}=ed,etapa=kind==='jretapa',area=etapa?'jornada_etapa':'jornada_fluxo';
+ const erro=(k,m)=>{const b=$('jr_'+k).closest('.f');b.classList.add('bad');b.querySelector('.msg').textContent=m;$('jr_'+k).focus()};
+ let data;
+ if(etapa){const v=k=>$('jr_'+k).value,nome=v('nome').trim();if(!nome)return erro('nome','Digite o nome da etapa.');
+  const marc=[...$('ed').querySelectorAll('.jrset input:checked')].map(i=>i.value),fora=x.data.setores.filter(s=>!SET().some(z=>z.id===s));
+  data={nome,descricao:v('descricao'),setores:[...marc,...fora],processos:v('processos'),motivos:v('motivos'),riscos:v('riscos')}}
+ else{data={de:$('jr_de').value,para:$('jr_para').value,tipo:$('jr_tipo').value,descricao:$('jr_descricao').value.trim()};
+  if(!data.de)return erro('de','Escolha a etapa de origem.');if(!data.para)return erro('para','Escolha a etapa de destino.')}
+ const lbl=btn.innerHTML;btn.textContent='Salvando…';btn.setAttribute('aria-disabled','true');
+ try{await DB.regSave(id?{area,id,versao:x.atualizado,data}:{area,data});
+  if(ED===ed)closeEd();toast(etapa?(id?'Etapa salva':'Etapa adicionada'):(id?'Caminho salvo':'Caminho adicionado'));
+ }catch(e){btn.innerHTML=lbl;btn.removeAttribute('aria-disabled');
+  /* etapa do caminho excluída em outra aba: o servidor responde "não encontrada" */
+  const c=agConflito(e)||(/não encontrada/.test(e.message)?'Uma das etapas não existe mais. A tela foi atualizada.':null);toast(c||e.message,true);if(c&&ED===ed)closeEd()}
+ jrCarregar();
+}
+async function delJr(btn){const ed=ED,{kind,id,x}=ed,etapa=kind==='jretapa',n=etapa?jrLigados(id).length:0;
+ if(!await confirmBox(etapa?'Excluir etapa?':'Excluir caminho?',etapa?`A etapa "${x.data.nome}" será excluída${n?` junto com ${n} ${n===1?'caminho fora da ordem ligado':'caminhos fora da ordem ligados'} a ela`:''}. Isso não pode ser desfeito.`:'Este caminho fora da ordem será excluído.',etapa?'Excluir etapa':'Excluir caminho',true))return;
+ /* botão travado durante a exclusão: evita o aviso de "não existe mais" num segundo clique */
+ btn.setAttribute('aria-disabled','true');
+ try{await DB.regDelete(etapa?'jornada_etapa':'jornada_fluxo',id);if(ED===ed)closeEd();toast(etapa?'Etapa excluída':'Caminho excluído')}
+ catch(e){btn.removeAttribute('aria-disabled');const c=agConflito(e);toast(c||e.message,true);if(c&&ED===ed)closeEd()}
+ jrCarregar();
+}
+/* sobe ou desce uma etapa; um movimento por vez, com a lista inteira na nova ordem */
+async function moverJr(id,dir){const j=JR,E=j.etapas;if(j.ocupado||!E)return;
+ const i=E.findIndex(x=>x.id===id),k=i+dir;if(i<0||k<0||k>=E.length)return;
+ const ids=E.map(x=>x.id);[ids[i],ids[k]]=[ids[k],ids[i]];
+ j.ocupado=true;jrRedesenhar();
+ try{await DB.regOrdem('jornada_etapa',ids);if(j===JR&&j.etapas===E)j.etapas=ids.map(v=>E.find(x=>x.id===v));toast('Ordem atualizada')}
+ catch(e){toast(/mudou/.test(e.message)?'A lista mudou em outra aba ou por outra pessoa. A tela foi atualizada.':e.message,true)}
+ finally{j.ocupado=false}
+ jrRedesenhar();jrCarregar();
+ /* devolve o foco à seta usada, para quem usa o teclado */
+ const b=document.querySelector(`[data-jrmover="${CSS.escape(id)}"][data-jrdir="${dir}"]`);b&&b.focus();
+}
+document.addEventListener('click',e=>{const t=e.target.closest&&e.target.closest('button');if(!t||t.getAttribute('aria-disabled')==='true')return;const d=t.dataset;
+ if(d.jrsel){JR.sel=d.jrsel;rJornada();const b=document.querySelector(`[data-jrsel="${CSS.escape(d.jrsel)}"]`);b&&b.focus()}
+ else if('jrcfg' in d){page='config';cfgView='jornada';render.cfgShown=null;closeMenu();closeEd();render();scrollTo({top:0})}
+ else if('jrrecarregar' in d){JR=jrVazio(null);render.cfgShown=null;render()}
+ else if(d.jretapa!==undefined)openJrEtapa(d.jretapa||null);
+ else if(d.jrfluxo!==undefined)openJrFluxo(d.jrfluxo||null);
+ else if(d.jrmover)moverJr(d.jrmover,+d.jrdir);
+ else if('jrsalvar' in d)saveJr(t);
+ else if('jrexcluir' in d)delJr(t);
+});
 
 /* ---------- seletor de ano, mês e semana ---------- */
 function rWsel(){const w=Wk();$('wTxt').textContent=`${wkTxt(w)} ${w.inicio.slice(0,4)}`;const old=$('wBtn').querySelector('.lk');old&&old.remove();if(w.fechada){const s=document.createElement('span');s.className='lk';s.title='Semana fechada';$('wBtn').insertBefore(s,$('wBtn').querySelector('.ch'))}$('wNow').hidden=sel===curWeek();if(!$('wp').hidden)rWp()}
@@ -1219,7 +1386,7 @@ function rPalavra(w){const L=pessoasDaSemana(w);
  <div class="pwl">${L.map((x,i)=>`<button data-pwi="${i}" class="${i===pIdx?'on':''}"><span class="k">${i+1}</span>${esc(x.nome)}${x.palavra?'':' <span class="none" style="margin-left:auto;font-size:12px">sem palavra</span>'}</button>`).join('')}</div></div>`}
 
 /* ---------- configurações ---------- */
-const CFGT=[['usuarios','Usuários','users','Quem acessa o sistema e quem é administrador'],['setores','Setores','build','Equipes e setores do sistema'],['semanas','Semanas','cal','Criar, fechar, reabrir e excluir semanas'],['colaboradores','Colaboradores','person','Cadastro permanente para a Palavra da Semana'],['backup','Backup','save','Baixar ou restaurar uma cópia dos dados'],['exportacao','Exportação Geral','save','Em breve: exportar os dados do sistema em Excel e CSV']];
+const CFGT=[['usuarios','Usuários','users','Quem acessa o sistema e quem é administrador'],['setores','Setores','build','Equipes e setores do sistema'],['semanas','Semanas','cal','Criar, fechar, reabrir e excluir semanas'],['colaboradores','Colaboradores','person','Cadastro permanente para a Palavra da Semana'],['jornada','Jornada do Cliente','target','Etapas da jornada e caminhos fora da ordem'],['backup','Backup','save','Baixar ou restaurar uma cópia dos dados'],['exportacao','Exportação Geral','save','Em breve: exportar os dados do sistema em Excel e CSV']];
 function rConfig(){const el=$('p-config'),s=ST();
  if(!cfgView){el.innerHTML=`<header class="phead"><div><p class="kick">Área do administrador</p><h1>Configurações</h1><p class="sub">Escolha o que você quer alterar.</p></div></header><div class="tiles">${CFGT.map(([k,n,i,d])=>`<button class="tile" data-cfg="${k}"><span class="ti">${ICO[i]}</span><b>${n}</b><span>${d}</span></button>`).join('')}</div>`;return}
  const T=CFGT.find(t=>t[0]===cfgView)||CFGT[0];let h='',sub=T[3];
@@ -1238,6 +1405,7 @@ function rConfig(){const el=$('p-config'),s=ST();
   <p class="muted" style="margin-top:14px">Excluir apaga todos os dados da semana: números, planos de ação e palavras.</p>`}
  if(cfgView==='colaboradores'){const C=COLS_(),na=C.filter(c=>c.ativo!==false).length;sub=`Os colaboradores ativos aparecem automaticamente na Palavra da Semana de cada semana. ${na} ${na===1?'ativo':'ativos'}${C.length>na?` · ${C.length-na} ${C.length-na===1?'inativo':'inativos'}`:''}.`;
   h=`<div class="ucards">${C.slice().sort((a,b)=>((b.ativo!==false)-(a.ativo!==false))||String(a.nome).localeCompare(b.nome)).map(c=>`<button class="uc ${c.ativo===false?'off':''}" data-copen="${c.id}"><span class="av">${esc((c.nome||'?')[0])}</span><span><b>${esc(c.nome)}</b><small>${nPal(c.id)} ${nPal(c.id)===1?'palavra registrada':'palavras registradas'}</small></span><span class="chip ${c.ativo===false?'ln':'ok'}">${c.ativo===false?'Inativo':'Ativo'}</span></button>`).join('')}<button class="uc add" data-copen="">${ICO.plus} Adicionar colaborador</button></div>`}
+ if(cfgView==='jornada')h=rCfgJornada();
  if(cfgView==='backup')h=`<div class="panel cfgp"><h3>Baixar uma cópia</h3><p class="muted">Um arquivo com as configurações e todas as semanas. Os usuários e as senhas não entram no arquivo.</p><div><button class="btn pri" data-act="exportJson">${ICO.save}Baixar backup</button></div></div>
   <div class="panel cfgp sec"><h3>Restaurar</h3><p class="muted">As semanas e configurações do arquivo substituem as que existem com o mesmo período. Semanas que não estão no arquivo continuam como estão. Também aceita o backup do sistema anterior.</p><div><button class="btn" data-act="importJson">Escolher arquivo de backup</button><input type="file" id="impf" accept=".json,application/json" hidden></div></div>`;
  if(cfgView==='exportacao')h=`<div class="panel embreve"><span class="chip ln">Em breve</span><p class="muted">Aqui você vai poder exportar, de uma vez, os dados reais de todos os módulos (Calibragem Semanal, Agenda e Demandas e as próximas áreas) em Excel ou CSV, escolhendo módulos e período. Enquanto isso, o Excel da semana continua no botão do topo e o backup completo em Configurações › Backup.</p></div>`;
@@ -1275,7 +1443,7 @@ async function saveColab(){const{id}=ED,nome=$('c_nome').value.trim().replace(/\
  const k=x=>norm(x).normalize('NFD').replace(/[\u0300-\u036f]/g,'');if(COLS_().some(c=>c.id!==id&&k(c.nome)===k(nome))){box.classList.add('bad');box.querySelector('.msg').textContent='Já existe um colaborador com esse nome.';return}
  await saveSettings(s=>{s.colaboradores=(s.colaboradores||[]).slice();if(id){const c=s.colaboradores.find(x=>x.id===id);if(c){c.nome=nome;c.ativo=ativo}}else s.colaboradores.push({id:'c'+uid(),nome,ativo,criado:Date.now()})},id?'Colaborador salvo':'Colaborador adicionado');closeEd()}
 function openUser(id){const u=id?S.users.find(x=>x.id===id):{nome:'',usuario:'',admin:false};if(!u)return;ED={kind:'user',id,u:clone(u)};rEd();showEd()}
-function rEd(){if(!ED)return;if(ED.kind==='agenda')return rEdAg();if(ED.kind==='plan')return rEdPlan();if(ED.kind==='user')return rEdUser();if(ED.kind==='colab')return rEdColab();
+function rEd(){if(!ED)return;if(ED.kind==='agenda')return rEdAg();if(ED.kind==='jretapa')return rEdJrEtapa();if(ED.kind==='jrfluxo')return rEdJrFluxo();if(ED.kind==='plan')return rEdPlan();if(ED.kind==='user')return rEdUser();if(ED.kind==='colab')return rEdColab();
  const w=Wk(),{f}=ED,st=steps(f);if(ED.i>=st.length)ED.i=st.length-1;const i=ED.i,id=st[i],ro=!canEdit(w),isS=id==='sla';const r=isS?{}:((f==='q'?w.q:w.o)[id]||{});
  if(document.activeElement&&$('ed').contains(document.activeElement)&&ED.rendered===`${sel}|${f}|${i}`)return;ED.rendered=`${sel}|${f}|${i}`;
  const done=k=>k==='sla'?isN(w.sla):rowDone(f,(f==='q'?w.q:w.o)[k]||{});
@@ -1331,7 +1499,7 @@ async function saveUser(btn){const{id}=ED,q=k=>{const x=$('ed').querySelector(`[
   closeEd();if(id===meId&&!admin){page='inicio';cfgView=null;toast('Usuário salvo. Você não é mais administrador.')}else toast(id?'Usuário salvo':'Usuário adicionado');render()}
  catch(e){toast(e.message||errMsg(e),true);btn.textContent=id?'Salvar':'Adicionar';btn.removeAttribute('aria-disabled')}}
 $('ed').addEventListener('input',e=>{const b=e.target.closest('.f.bad');if(b){b.classList.remove('bad');const m=b.querySelector('.msg');m.textContent=m.dataset.h||''}});
-$('ed').addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.matches('input')){e.preventDefault();const b=$('ed').querySelector('[data-edsave="1"],[data-usave],[data-plsave],[data-csave]');b&&b.click()}});
+$('ed').addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.matches('input')){e.preventDefault();const b=$('ed').querySelector('[data-edsave="1"],[data-usave],[data-plsave],[data-csave],[data-jrsalvar]');b&&b.click()}});
 $('edScrim').onclick=closeEd;
 
 /* ---------- semanas: fechar, reabrir, excluir ---------- */
@@ -1554,6 +1722,7 @@ async function onData(d){
  if(isAdmin()&&!(S.settings&&S.settings.colabMigrado)&&!migrating){migrating=true;try{for(const[id,w]of Object.entries(S.weeks)){if(w.palavras&&Object.keys(w.palavras).length){await DB.update(id,{palavras:{}});w.palavras={}}}const st=ST();st.colaboradores=(S.settings&&S.settings.colaboradores)||[];st.colabMigrado=true;['pessoas','metaQualidade','regraQualidade','limiteDias','horasDia'].forEach(k=>delete st[k]);await DB.saveSettings(st);S.settings=st}catch(e){toast(e.message||errMsg(e),true)}migrating=false}
  if(!sel||!S.weeks[sel]){const p=prevOf(cur);sel=new Date().getDay()===1&&p?p.inicio:cur}
  if(page==='agenda')agCarregar(true);
+ if(page==='an-jornada'||(page==='config'&&cfgView==='jornada'))jrCarregar();
  render();
 }
 async function boot(){
