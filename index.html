@@ -272,6 +272,18 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 .colh{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
 .colh h2{font-size:22px}
 .cols .kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+.kpis.vgk{grid-template-columns:repeat(6,minmax(0,1fr));margin-bottom:22px}
+@media(max-width:1200px){.kpis.vgk{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:600px){.kpis.vgk{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.vgat{display:grid;gap:8px;margin-bottom:22px}
+.vgat .it{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:12px 16px}
+.vgat .it .tx{flex:1;min-width:200px}
+.vgat .it small{display:block;color:var(--mu);margin-top:2px}
+.vgev{margin-top:22px}
+.vgar{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;margin-top:12px}
+.vgar .panel{display:grid;gap:6px;align-content:start}
+.vgar .panel span{color:var(--mu);font-size:13px}
+.vgar .panel .tools{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
 .mini{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;color:var(--mu);font-size:13px;margin-top:12px}
 
 /* tabela (estilo 1) */
@@ -2804,11 +2816,75 @@ function closeWp(){$('wp').hidden=true;$('wBtn').setAttribute('aria-expanded','f
 function goWeek(id){sel=id;wordEdit=false;pIdx=0;closeEd();closeWp();render()}
 
 /* ---------- início ---------- */
-function rInicio(w){
+/* ---------- visão geral: números, o que precisa de atenção e cards das áreas ----------
+   reaproveita o que as outras áreas já carregam; as demandas da equipe toda e os compromissos de hoje são lidos aqui (VG) */
+const VG={dono:null,prom:null,lido:0,dem:null,hoje:null,erro:false,limitado:false};
+/* meses de monitoria lidos para o mês m: o próprio e o seguinte (registro atrasado tem data no mês seguinte e vaga no mês m), como na tela de Monitorias */
+const vgMeses=m=>{const s=moMesSoma(m,1);return s<=today().slice(0,7)?[m,s]:[m]};
+function vgCarregar(w){if(!meId||!isAdmin()||VG.prom)return;if(VG.dono!==meId)Object.assign(VG,{dono:meId,lido:0,dem:null,hoje:null,erro:false,limitado:false});
+ if(Date.now()-VG.lido<60000)return;const dono=VG.dono,mes=w.inicio.slice(0,7),hj=today(),volta=()=>{if(VG.dono===dono&&page==='inicio')render()};
+ /* as outras áreas carregam em paralelo e só pedem um novo desenho quando terminam */
+ Promise.allSettled([anGarantir(),MON.dono!==meId||!MON.agentes?monCarregar():null,...vgMeses(mes).map(maCarregarMes)]).then(volta);
+ VG.prom=(async()=>{try{const[d,c]=await Promise.all([DB.agendaList({pessoa:'*',demandas:'abertas'}),DB.agendaList({pessoa:'*',de:hj,ate:hj})]);
+  if(VG.dono!==dono)return;VG.dem=(d.itens||[]).filter(x=>x.status!=='cancelada');VG.hoje=(c.itens||[]).filter(x=>x.tipo==='agenda'&&x.dia===hj);VG.limitado=!!(d.limitado||c.limitado);VG.erro=false}
+  catch(e){if(VG.dono===dono)VG.erro=true}finally{VG.prom=null;if(VG.dono===dono)VG.lido=Date.now();volta()}})()}
+const vgN=(n,a,b)=>`${nf(n)} ${n===1?a:b}`;
+/* monitorias do mês da semana escolhida (mesma regra da tela de Monitorias: o mês da vaga) */
+const vgMon=w=>{const m=w.inicio.slice(0,7),E=vgMeses(m).map(x=>MA.dono===meId&&MA.meses[x]);return E.every(e=>e&&e.itens)?E.flatMap(e=>e.itens).filter(x=>moMesRef(x)===m):null};
+/* alguma área falhou ao carregar (a nova tentativa acontece sozinha) */
+const vgErro=w=>VG.erro||(DG.dono===meId&&DG.erro)||(PJ.dono===meId&&PJ.erro)||(JR.dono===meId&&JR.erro)||(MON.dono===meId&&MON.erro)||vgMeses(w.inicio.slice(0,7)).some(x=>MA.dono===meId&&MA.meses[x]&&MA.meses[x].erro&&!MA.meses[x].itens);
+/* lista "precisa de atenção": [texto, detalhe, botão] */
+function vgAtencao(w){const A=[],go=(pg,t)=>`<button class="btn sm" data-go="${pg}">${t||'Abrir'}</button>`,nomes=L=>L.slice(0,4).map(esc).join(', ')+(L.length>4?` e mais ${L.length-4}`:'');
+ const fq=calcQ(w).rows.filter(r=>!rowDone('q',r)).map(r=>r.nome),fo=calcO(w).rows.filter(r=>!rowDone('o',r)).map(r=>r.nome);
+ if(fq.length)A.push(['Qualidade da semana sem lançamento',nomes(fq),go('qualidade')]);
+ if(fo.length)A.push(['Operações da semana sem lançamento',nomes(fo),go('operacoes')]);
+ if(!isN(w.sla))A.push(['SLA de resolução da semana não lançado','',go('operacoes')]);
+ const mp=[...missingOf(w,'q').map(s=>s.nome+' (Qualidade)'),...missingOf(w,'o').map(s=>s.nome+' (Operações)')];
+ if(mp.length)A.push([`${mp.length} ${mp.length===1?'plano de ação faltando':'planos de ação faltando'}`,nomes(mp),go('qualidade')]);
+ const p=prevOf(w.inicio);if(p&&!p.fechada)A.push([`Semana anterior (${wkTxt(p)}) ainda aberta`,'',`<button class="btn sm" data-wopen="${p.inicio}">Ir para a semana</button>`]);
+ const L=vgMon(w);if(L&&MON.agentes){const mes=w.inicio.slice(0,7),hj=today(),atual=mes===hj.slice(0,7),passado=mes<hj.slice(0,7),sem=[],vagas=[];
+  monSetores().forEach(s=>{const Ag=monAgentesDe(s.id).filter(a=>a.data.ativo!==false),M=L.filter(x=>x.data.setor===s.id);
+   const n=Ag.filter(a=>!M.some(x=>x.data.agente===a.id)).length;if(n)sem.push(`${s.nome} ${n}`);
+   const V=monVagas(s.id);if(!passado&&!(atual&&V.modo==='semanas'))return;
+   const ate=passado?Infinity:Math.min(V.semanas,Math.ceil(+hj.slice(8)/7)-1),VL=monVagasLista(V).filter(v=>v.semana===null||v.semana<=ate),por=new Map();
+   Ag.forEach(a=>{const k=VL.filter(v=>!M.some(x=>x.data.agente===a.id&&monVagaIgual({...v,mes},x.data.vaga))).length;if(!k)return;const eq=monEquipeDoAg(a),nm=s.nome+(eq?' · '+eq.data.nome:'');por.set(nm,(por.get(nm)||0)+k)});
+   por.forEach((k,nm)=>vagas.push(`${nm}: ${k}`))});
+  if(sem.length)A.push([`Agentes sem monitoria em ${dgMesNome(mes).toLowerCase()}`,esc(sem.join(' · ')),go('monitorias')]);
+  if(vagas.length)A.push([passado?`Vagas de monitoria não preenchidas em ${dgMesNome(mes).toLowerCase()}`:'Vagas de monitoria vazias em semanas que já passaram',esc(vagas.join(' · ')),go('monitorias')]);
+  const z=L.filter(x=>x.data.zerada).length;if(z)A.push([`${z} ${z===1?'monitoria zerada':'monitorias zeradas'} em ${dgMesNome(mes).toLowerCase()}`,'',go('monitorias')])}
+ if(DG.dono===meId&&DG.itens){const g=DG.itens.filter(x=>dgAtivo(x)&&(x.data.gravidade==='critica'||x.data.gravidade==='alta'));
+  if(g.length)A.push([`${g.length} ${g.length===1?'problema crítico ou alto ativo':'problemas críticos ou altos ativos'}`,nomes(g.map(x=>x.data.titulo)),go('an-diag')])}
+ if(PJ.dono===meId&&PJ.itens){const at=PJ.itens.filter(pjAtrasado),hj=today(),rv=PJ.itens.filter(x=>PJ_FUT.includes(x.data.status)&&x.data.reavaliar&&x.data.reavaliar<=hj);
+  if(at.length)A.push([`${at.length} ${at.length===1?'projeto com prazo vencido':'projetos com prazo vencido'}`,nomes(at.map(x=>x.data.nome)),go('pm-proj')]);
+  if(rv.length)A.push([`${rv.length} ${rv.length===1?'reavaliação vencida':'reavaliações vencidas'} no Planejamento Futuro`,nomes(rv.map(x=>x.data.nome)),go('pm-fut')])}
+ if(VG.dem){const at=VG.dem.filter(agAtrasada);if(at.length)A.push([`${at.length} ${at.length===1?'demanda atrasada':'demandas atrasadas'}`,nomes(at.map(x=>`${x.titulo} (${agNomeDe(x)})`)),go('agenda')])}
+ if(VG.hoje&&VG.hoje.length)A.push([`${VG.hoje.length} ${VG.hoje.length===1?'compromisso hoje':'compromissos hoje'}`,nomes(VG.hoje.slice().sort((a,b)=>(a.hora_ini||'').localeCompare(b.hora_ini||'')).map(x=>`${x.hora_ini?x.hora_ini+' ':''}${x.titulo} (${agNomeDe(x)})`)),go('agenda')]);
+ return A}
+function rInicio(w){vgCarregar(w);
  const sq=status(w,'q'),so=status(w,'o'),pend=[['Qualidade',sq],['Operações',so]].map(([n,s])=>s.complete?`${n} preenchida`:`${n} com ${s.sub}`).join(' · ');
  const card=`<div class="wst"><span class="dot ${w.fechada?'wa':'ok'}"></span><div class="tx"><b>${w.fechada?'Semana fechada':'Semana aberta para lançamentos'}</b><small>${w.fechada?(isAdmin()?'Só administradores podem alterar os números desta semana.':'Os números desta semana não podem mais ser alterados.'):pend}</small></div>${isAdmin()?(w.fechada?`<button class="btn sm" data-wlock="${w.inicio}">${ICO.unlock}Reabrir semana</button>`:`<button class="btn sm lk" data-wlock="${w.inicio}">${ICO.lock}Fechar semana</button>`):''}</div>`;
  const col=f=>{const s=f==='q'?sq:so,pg=f==='q'?'qualidade':'operacoes';return `<div><div class="colh"><h2>${FR[f]}</h2><span class="chip ${s.cls}"><span class="dot ${s.cls}"></span>${s.label}${s.sub?' · '+s.sub:''}</span></div><div class="kpis">${f==='q'?kQ(w):kO(w)}</div><div class="mini"><span>${s.last?`Último lançamento: ${esc(s.by||'')} em ${tsTxt(s.last)}`:'Nenhum dado lançado nesta semana'}</span><span class="tools"><button class="btn sm ghost" data-go="${pg}">Abrir ${FR[f]}</button>${canEdit(w)?`<button class="btn sm" data-goedit="${f}">${ICO.edit}Ir para edição</button>`:''}</span></div></div>`};
- $('p-inicio').innerHTML=`<header class="phead"><div><p class="kick">Semana de ${periodo(w)}</p><h1>Visão Geral</h1></div><div class="tools"><button class="btn pri" data-present><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M8 5.5v13l11-6.5z"/></svg>Apresentar esta semana</button></div></header>${card}<div class="cols">${col('q')}${col('o')}</div>`}
+ const Q=calcQ(w),O=calcO(w),L=vgMon(w),dg=DG.dono===meId&&DG.itens,pj=PJ.dono===meId&&PJ.itens,jr=JR.dono===meId&&JR.etapas,car='<span class="none">…</span>',mesN=dgMesNome(w.inicio.slice(0,7)).toLowerCase();
+ const nDg=dg&&dg.filter(dgAtivo),nPj=pj&&pj.filter(x=>x.data.status==='andamento'),atPj=nPj&&nPj.filter(pjAtrasado),atDem=VG.dem&&VG.dem.filter(agAtrasada);
+ const faixa=`<div class="kpis vgk">${kpi('Qualidade da semana',pct(Q.q),qCls(Q.q),'')+kpi('Backlog atual',nf(O.back),isN(O.back)&&O.back>O.trat?'er':'','')
+  +kpi(`Monitorias de ${mesN}`,L?moPct(moMedia(L)):car,'',L?`<span>${nf(L.length)} ${L.length===1?'monitoria':'monitorias'}</span>`:'')
+  +kpi('Problemas ativos',nDg?nf(nDg.length):car,'',nDg?`<span>${vgN(nDg.filter(x=>x.data.gravidade==='critica').length,'crítico','críticos')}</span>`:'')
+  +kpi('Projetos em andamento',nPj?nf(nPj.length):car,'',atPj?`<span class="${atPj.length?'er':''}">${nf(atPj.length)} ${atPj.length===1?'atrasado':'atrasados'}</span>`:'')
+  +kpi('Demandas abertas',VG.dem?nf(VG.dem.length):car,'',atDem?`<span class="${atDem.length?'er':''}">${nf(atDem.length)} ${atDem.length===1?'atrasada':'atrasadas'}</span>`:'')}</div>`;
+ const A=vgAtencao(w),pronto=L&&MON.agentes&&dg&&pj&&VG.dem,falhou=vgErro(w);
+ const aten=`<div class="sech"><div><h2>Precisa de atenção</h2><p>Semana de ${periodo(w)} e situação atual das áreas.${falhou?' Parte dos dados não carregou; tentando de novo em instantes.':''}${VG.limitado?' Há muitas demandas: parte delas pode não estar sendo contada.':''}</p></div></div>
+ <div class="vgat">${A.map(([t,d,b])=>`<div class="it"><span class="dot wa"></span><div class="tx"><b>${t}</b>${d?`<small>${d}</small>`:''}</div>${b}</div>`).join('')}${A.length?'':pronto?'<div class="it"><span class="dot ok"></span><div class="tx"><b>Tudo em dia ✓</b></div></div>':`<div class="it"><div class="tx"><span class="muted" role="status">${falhou?'Aguardando os dados que não carregaram…':'Carregando…'}</span></div></div>`}</div>`;
+ const area=(t,linhas,bts)=>`<div class="panel"><b>${t}</b>${linhas.map(l=>`<span>${l}</span>`).join('')}<div class="tools">${bts}</div></div>`,ab=(pg,t)=>`<button class="btn sm ghost" data-go="${pg}">${t||'Abrir'}</button>`;
+ const Ativos=MON.agentes?MON.agentes.filter(a=>a.data.ativo!==false&&monSetores().some(s=>s.id===a.data.setor)):null,ativos=Ativos&&Ativos.length,ev=L&&Ativos?Ativos.filter(a=>L.some(x=>x.data.agente===a.id)).length:null;
+ const areas=`<div class="sech vgev"><div><h2>Áreas</h2></div></div><div class="vgar">
+  ${area('Calibragem Semanal',[`Qualidade: ${sq.label}${sq.sub?' · '+sq.sub:''}`,`Operações: ${so.label}${so.sub?' · '+so.sub:''}`,w.fechada?'Semana fechada':'Semana aberta'],ab('qualidade','Qualidade')+ab('operacoes','Operações'))}
+  ${area('Monitorias',L?[`Média de ${mesN}: ${moPct(moMedia(L))}`,`${vgN(L.length,'monitoria','monitorias')} · ${vgN(L.filter(x=>x.data.zerada).length,'zerada','zeradas')}`,isN(ev)&&isN(ativos)?`${nf(ev)} de ${vgN(ativos,'agente avaliado','agentes avaliados')}`:'']:['Carregando…'],ab('monitorias'))}
+  ${area('Agenda e Demandas',VG.dem?[`${vgN(VG.dem.length,'demanda aberta','demandas abertas')} · ${nf(VG.dem.filter(x=>x.status==='andamento').length)} em andamento`,vgN(atDem.length,'atrasada','atrasadas'),vgN((VG.hoje||[]).length,'compromisso hoje','compromissos hoje')]:['Carregando…'],ab('agenda'))}
+  ${area('Jornada do Cliente',jr&&dg?[`${nf(jr.length)} ${jr.length===1?'etapa':'etapas'}`,`${vgN(jr.filter(e=>(jrProblemas(e.id)||[]).length).length,'etapa com problemas ativos','etapas com problemas ativos')}`]:['Carregando…'],ab('an-jornada'))}
+  ${area('Diagnósticos',dg?[`${vgN(nDg.length,'problema ativo','problemas ativos')} (${nf(dg.filter(x=>x.data.situacao==='investigacao').length)} em investigação)`,`${vgN(dg.filter(x=>x.data.situacao==='resolvido').length,'resolvido','resolvidos')}`]:['Carregando…'],ab('an-diag'))}
+  ${area('Projetos e Melhorias',pj?[`${nf(nPj.length)} em andamento · ${vgN(atPj.length,'atrasado','atrasados')}`,`${nf(pj.filter(x=>PJ_FUT.includes(x.data.status)).length)} no Planejamento Futuro`,`${vgN(pj.filter(x=>x.data.status==='concluido').length,'concluído','concluídos')}`]:['Carregando…'],ab('pm-proj','Projetos')+ab('pm-fut','Futuro'))}
+  ${area('Análises',['Perguntas-chave e comparação por setor'],ab('an-perg','Perguntas-chave')+ab('an-setor','Por setor'))}</div>`;
+ $('p-inicio').innerHTML=`<header class="phead"><div><p class="kick">Semana de ${periodo(w)}</p><h1>Visão Geral</h1></div><div class="tools"><button class="btn pri" data-present><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M8 5.5v13l11-6.5z"/></svg>Apresentar esta semana</button></div></header>${faixa}${aten}<div class="sech"><div><h2>Semana</h2></div></div>${card}<div class="cols">${col('q')}${col('o')}</div><div class="cols vgev"><div>${rChart(w,'q').replace('Evolução</h2>','Evolução · Qualidade</h2>')}</div><div>${rChart(w,'o').replace('Evolução</h2>','Evolução · Operações</h2>')}</div></div>${areas}`}
 
 /* ---------- frentes ---------- */
 const COLS={q:[['monitorias','Monitorias','num'],['qualidade','Qualidade','pct'],['zeradas','Zeradas','num'],['agentes','Agentes','num'],['responsavel','Responsável pela monitoria','text']],o:[['tratados','Tickets tratados','num'],['backlog','Backlog atual','num'],['tempo','Tempo médio de backlog','dur']]};
