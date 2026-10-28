@@ -288,7 +288,7 @@ export default async function handler(req,res){
   if(!u)fail(401,'Sessão expirada. Entre novamente.');
   if(action==='snapshot'){
    const [weeks,settings,users]=await Promise.all([pool.query('SELECT * FROM cp_weeks'),pool.query('SELECT data FROM cp_settings WHERE id=1'),pool.query('SELECT id,nome,usuario,admin,criado FROM cp_users ORDER BY criado')]);
-   return res.json({weeks:Object.fromEntries(weeks.rows.map(w=>[w.id,w.data])),settings:settings.rows[0]?.data||null,users:users.rows.map(publicUser)});
+   return res.json({weeks:Object.fromEntries(weeks.rows.map(w=>[w.id,w.data])),settings:settings.rows[0]?.data||null,users:users.rows.map(x=>u.admin||x.id===u.id?publicUser(x):{id:x.id,nome:x.nome})});
   }
   if(action==='createWeek'){const d=semNova(b.id,u);await pool.query('INSERT INTO cp_weeks(id,data) VALUES($1,$2) ON CONFLICT DO NOTHING',[b.id,JSON.stringify(d)]);return res.json({ok:true})}
   if(action==='update'){
