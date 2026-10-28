@@ -1,6 +1,6 @@
 import pg from 'pg';
 import crypto from 'node:crypto';
-const pool=new pg.Pool({connectionString:process.env.POSTGRES_URL,ssl:{rejectUnauthorized:false},max:3});
+const pool=new pg.Pool({connectionString:process.env.POSTGRES_URL,ssl:true,max:3});
 const hash=(s,salt)=>crypto.scryptSync(s,salt,64).toString('hex');
 const pass=(s)=>{const salt=crypto.randomBytes(16).toString('hex');return `${salt}:${hash(s,salt)}`};
 const check=(s,p)=>{if(!p||!p.includes(':'))return false;const [salt,h]=p.split(':');const a=Buffer.from(hash(s,salt),'hex'),b=Buffer.from(h,'hex');return a.length===b.length&&crypto.timingSafeEqual(a,b)};
@@ -392,9 +392,29 @@ export default async function handler(req,res){
    await pool.query('INSERT INTO cp_users VALUES($1,$2,$3,$4,$5,$6)',[uid(),x.nome,norm(x.usuario),pass(x.senha),!!x.admin,Date.now()]);
   }
   else if(action==='updateUser'){
-   const x=b.data||{};await pool.query('UPDATE cp_users SET nome=COALESCE($2,nome),usuario=COALESCE($3,usuario),admin=COALESCE($4,admin) WHERE id=$1',[b.id,x.nome??null,x.usuario?norm(x.usuario):null,x.admin??null]);
+   const x=b.data||{};
+   if(x.admin===false){
+    const client=await pool.connect();
+    try{await client.query('BEGIN');await client.query("SELECT pg_advisory_xact_lock(hashtext('cp_users:admin'))");
+     const r=await client.query('SELECT admin FROM cp_users WHERE id=$1',[b.id]);
+     if(r.rows[0]?.admin){const c=await client.query('SELECT count(*)::int AS n FROM cp_users WHERE admin');if(c.rows[0].n<=1)fail(400,'Não é possível remover o último administrador.')}
+     await client.query('UPDATE cp_users SET nome=COALESCE($2,nome),usuario=COALESCE($3,usuario),admin=COALESCE($4,admin) WHERE id=$1',[b.id,x.nome??null,x.usuario?norm(x.usuario):null,x.admin??null]);
+     await client.query('COMMIT');
+    }catch(e){await client.query('ROLLBACK');throw e}finally{client.release()}
+   }else{
+    await pool.query('UPDATE cp_users SET nome=COALESCE($2,nome),usuario=COALESCE($3,usuario),admin=COALESCE($4,admin) WHERE id=$1',[b.id,x.nome??null,x.usuario?norm(x.usuario):null,x.admin??null]);
+   }
   }
-  else if(action==='deleteUser'){if(b.id===u.id)fail(400,'Não é possível excluir sua própria conta.');await pool.query('DELETE FROM cp_users WHERE id=$1',[b.id])}
+  else if(action==='deleteUser'){
+   if(b.id===u.id)fail(400,'Não é possível excluir sua própria conta.');
+   const client=await pool.connect();
+   try{await client.query('BEGIN');await client.query("SELECT pg_advisory_xact_lock(hashtext('cp_users:admin'))");
+    const r=await client.query('SELECT admin FROM cp_users WHERE id=$1',[b.id]);
+    if(r.rows[0]?.admin){const c=await client.query('SELECT count(*)::int AS n FROM cp_users WHERE admin');if(c.rows[0].n<=1)fail(400,'Não é possível excluir o último administrador.')}
+    await client.query('DELETE FROM cp_users WHERE id=$1',[b.id]);
+    await client.query('COMMIT');
+   }catch(e){await client.query('ROLLBACK');throw e}finally{client.release()}
+  }
   else if(action==='agendaPessoas'){
    const [ativos,excluidos]=await Promise.all([pool.query('SELECT id,nome,usuario FROM cp_users ORDER BY nome'),pool.query('SELECT DISTINCT ON (a.user_id) a.user_id AS id,a.resp_nome AS nome,a.resp_usuario AS usuario FROM cp_agenda a LEFT JOIN cp_users u ON u.id=a.user_id WHERE u.id IS NULL ORDER BY a.user_id,a.atualizado DESC')]);
    return res.json({pessoas:[...ativos.rows.map(p=>({...p,contaExcluida:false})),...excluidos.rows.map(p=>({...p,contaExcluida:true}))]});
