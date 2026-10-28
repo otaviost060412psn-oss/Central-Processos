@@ -140,7 +140,17 @@ const REG_AREAS={
     'setor' é o id do setor em Configurações */
  monit_agente:{grupo:'monit_cfg',ordenada:false,leitura:true,campos:x=>{
   if(!regId(x.setor))fail(400,'Escolha o setor do agente.');
-  return {nome:regTxt(x.nome,120,'O nome do agente',true),setor:x.setor,ativo:x.ativo!==false}}},
+  /* equipe (gestão) é opcional: vazio = sem equipe; precisa ser uma equipe do mesmo setor (conferido em regRefs) */
+  const equipe=x.equipe==null||x.equipe===''?'':x.equipe;if(equipe&&!regId(equipe))fail(400,'Equipe inválida.');
+  return {nome:regTxt(x.nome,120,'O nome do agente',true),setor:x.setor,equipe,ativo:x.ativo!==false}}},
+ /* equipe (gestão) de um setor das monitorias: os agentes apontam para ela pelo id */
+ monit_equipe:{grupo:'monit_cfg',ordenada:false,leitura:true,limite:500,campos:x=>{
+  if(!regId(x.setor))fail(400,'Setor inválido.');
+  return {setor:x.setor,nome:regTxt(x.nome,80,'O nome da equipe',true).trim(),ativo:x.ativo!==false}}},
+ /* gestor(a) de um setor das monitorias (um registro por setor), mostrado no relatório */
+ monit_gestor:{grupo:'monit_cfg',ordenada:false,leitura:true,limite:500,campos:x=>{
+  if(!regId(x.setor))fail(400,'Setor inválido.');
+  return {setor:x.setor,nome:regTxt(x.nome,120,'O nome do gestor').trim()}}},
  /* critérios de um setor: o total de pontos e cada critério com o peso (pontos perdidos quando marcado) e se zera a monitoria */
  monit_setor:{grupo:'monit_cfg',ordenada:false,leitura:true,campos:x=>{
   if(!regId(x.setor))fail(400,'Setor inválido.');
@@ -171,6 +181,13 @@ const REG_AREAS={
 const regRefs=async(client,area,d,id)=>{
  /* um registro de critérios por setor */
  if(area==='monit_geral'){if((await client.query("SELECT 1 FROM cp_registros WHERE area='monit_geral' AND id<>$1",[String(id||'')])).rows.length)fail(400,'A configuração geral já existe.');return}
+ if(area==='monit_gestor'){if((await client.query("SELECT 1 FROM cp_registros WHERE area='monit_gestor' AND data->>'setor'=$1 AND id<>$2",[d.setor,String(id||'')])).rows.length)fail(400,'Este setor já tem gestor cadastrado.');return}
+ /* equipe: o setor não muda depois de criada (os agentes dela são daquele setor); nome sem repetir no setor */
+ if(area==='monit_equipe'){
+  if(id){const a=(await client.query("SELECT data FROM cp_registros WHERE area='monit_equipe' AND id=$1",[String(id)])).rows[0];if(a&&a.data.setor!==d.setor)fail(400,'O setor da equipe não pode ser trocado.')}
+  if((await client.query("SELECT 1 FROM cp_registros WHERE area='monit_equipe' AND data->>'setor'=$1 AND lower(data->>'nome')=lower($2) AND id<>$3",[d.setor,d.nome,String(id||'')])).rows.length)fail(400,'Já existe uma equipe com este nome no setor.');
+  return}
+ if(area==='monit_agente'){if(d.equipe&&!(await client.query("SELECT 1 FROM cp_registros WHERE area='monit_equipe' AND id=$1 AND data->>'setor'=$2",[d.equipe,d.setor])).rows.length)fail(400,'Equipe não encontrada neste setor.');return}
  if(area==='monit_setor'){if((await client.query("SELECT 1 FROM cp_registros WHERE area='monit_setor' AND data->>'setor'=$1 AND id<>$2",[d.setor,String(id||'')])).rows.length)fail(400,'Este setor já tem critérios cadastrados.');return}
  if(area==='monitoria'){
   const ag=(await client.query("SELECT data FROM cp_registros WHERE area='monit_agente' AND id=$1",[d.agente])).rows[0];
@@ -349,6 +366,8 @@ export default async function handler(req,res){
     if(!r||r.area!==b.area)fail(404,'Registro não encontrado.');
     /* excluir uma etapa exclui junto os caminhos que saem dela ou chegam nela */
     if(r.area==='jornada_etapa')removidos=(await client.query("DELETE FROM cp_registros WHERE area='jornada_fluxo' AND (data->>'de'=$1 OR data->>'para'=$1)",[String(b.id)])).rowCount;
+    /* equipe com agentes não é excluída (os agentes ficariam apontando para uma equipe que não existe) */
+    if(r.area==='monit_equipe'&&(await client.query("SELECT 1 FROM cp_registros WHERE area='monit_agente' AND data->>'equipe'=$1 LIMIT 1",[String(b.id)])).rows.length)fail(400,'Esta equipe ainda tem agentes. Troque a equipe deles antes de excluir.');
     /* excluir um projeto exclui junto o histórico dele */
     if(r.area==='projeto')removidos=(await client.query("DELETE FROM cp_registros WHERE area='projeto_hist' AND data->>'projeto'=$1",[String(b.id)])).rowCount;
     await client.query('DELETE FROM cp_registros WHERE id=$1',[String(b.id)]);

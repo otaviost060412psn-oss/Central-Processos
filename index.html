@@ -633,6 +633,8 @@ a.btn{text-decoration:none;color:var(--tx)}
 .mcrow textarea{min-height:60px;height:auto}
 .mceda{grid-template-columns:repeat(auto-fit,minmax(200px,max-content));display:grid}
 .maacoes{margin-bottom:12px;gap:8px}
+.mgeq{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:6px}.mgeq .chip{cursor:pointer;border:0;font:inherit}.mgeq span.chip{cursor:default}
+.mgbtn{align-self:end}.maeq{min-width:150px;max-width:220px}
 @media (max-width:700px){.mcform .g3,.mclink{grid-template-columns:1fr}.mcl{grid-template-columns:auto 1fr}.mcl .mcp,.mcl .mcb{grid-column:2}}
 /* por setor: período, tabela de comparação e detalhe */
 .porbar{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;margin-bottom:12px}
@@ -2309,7 +2311,7 @@ const monVagasLista=V=>V.modo==='total'?Array.from({length:V.total},(_,i)=>({sem
 const monVagaRot=v=>v?(v.semana==null?`${v.numero}ª monitoria`:`Semana ${v.semana} · ${v.numero}ª monitoria`):'Sem vaga';
 const monVagaIgual=(a,b)=>!!a&&!!b&&a.mes===b.mes&&(a.semana??null)===(b.semana??null)&&a.numero===b.numero;
 const monModelo=setor=>{const m=MON_MODELOS[setor];return m?{_id:null,_v:null,total:m.total,modo:m.modo,zerarManual:m.zerarManual,vagas:clone(m.vagas),criterios:m.criterios.map(([nome,peso,descricao,zera])=>({id:'c'+uid(),nome,peso,descricao:descricao||'',zera:!!zera,ativo:true}))}:null};
-const monVazio=dono=>({setores:null,agentes:null,geral:null,limitado:false,dono,carregando:false,denovo:false,erro:false,setorCfg:null,setorAg:null,rasc:{},salvando:false});
+const monVazio=dono=>({setores:null,agentes:null,geral:null,equipes:null,gestores:null,limitado:false,dono,carregando:false,denovo:false,erro:false,setorCfg:null,setorAg:null,rasc:{},salvando:false});
 let MON=monVazio(null);
 const monSetores=()=>SETF('q');
 const monCfgDe=setor=>(MON.setores||[]).find(x=>x.data.setor===setor)||null;
@@ -2320,9 +2322,9 @@ async function monCarregar(){
  if(!meId)return;
  if(MON.dono!==meId)MON=monVazio(meId);
  const j=MON;if(j.carregando){j.denovo=true;return}j.carregando=true;
- try{const[s,a,g]=await Promise.all([DB.regList('monit_setor'),DB.regList('monit_agente'),DB.regList('monit_geral')]);if(j!==MON)return;
-  const novo={setores:s.itens||[],agentes:a.itens||[],geral:(g.itens||[])[0]||null},mudou=JSON.stringify([j.setores,j.agentes,j.geral])!==JSON.stringify([novo.setores,novo.agentes,novo.geral]);
-  Object.assign(j,novo,{limitado:!!(s.limitado||a.limitado),erro:false});if(mudou)monRedesenhar();
+ try{const[s,a,g,q,ge]=await Promise.all([DB.regList('monit_setor'),DB.regList('monit_agente'),DB.regList('monit_geral'),DB.regList('monit_equipe'),DB.regList('monit_gestor')]);if(j!==MON)return;
+  const novo={setores:s.itens||[],agentes:a.itens||[],geral:(g.itens||[])[0]||null,equipes:q.itens||[],gestores:ge.itens||[]},mudou=JSON.stringify([j.setores,j.agentes,j.geral,j.equipes,j.gestores])!==JSON.stringify([novo.setores,novo.agentes,novo.geral,novo.equipes,novo.gestores]);
+  Object.assign(j,novo,{limitado:!!(s.limitado||a.limitado||q.limitado||ge.limitado),erro:false});if(mudou)monRedesenhar();
  }catch(e){if(j===MON&&!j.setores){j.erro=true;monRedesenhar()}}
  finally{j.carregando=false;if(j.denovo&&j===MON){j.denovo=false;monCarregar()}}
 }
@@ -2368,7 +2370,7 @@ const monSomaTxt=R=>{const s=R.criterios.filter(c=>c.ativo&&!c.zera).reduce((t,c
 const monSomaAtualizar=()=>{const p=$('mc_soma'),R=monRasc(MON.setorCfg);if(!p||!R)return;const s=R.criterios.filter(c=>c.ativo&&!c.zera).reduce((t,c)=>t+(+c.peso||0),0);p.innerHTML=monSomaTxt(R);p.className=s===+R.total?'muted':'mcaviso'};
 const monRedesenharCfg=foco=>{if(!monNaTela())return;render.cfgShown=null;rConfig();render.cfgShown=cfgView;if(foco){const n=document.querySelector(foco);n&&n.focus()}};
 /* digitar no formulário só atualiza o rascunho (sem redesenhar), para não perder o cursor */
-document.addEventListener('input',e=>{if(e.target.id==='mc_planilha'){MON.linkRasc=e.target.value;const f=e.target.closest('.f');f.classList.remove('bad');f.querySelector('.msg').textContent='';return}});
+document.addEventListener('input',e=>{if(e.target.id==='mg_gestor'){MON.gestRasc={setor:MON.setorAg,nome:e.target.value};return}if(e.target.id==='mc_planilha'){MON.linkRasc=e.target.value;const f=e.target.closest('.f');f.classList.remove('bad');f.querySelector('.msg').textContent='';return}});
 document.addEventListener('input',e=>{const t=e.target;if(!t.closest||!t.closest('#p-config .mcform'))return;const setor=MON.setorCfg,R=MON.rasc[setor]||(MON.rasc[setor]=monRascBase(setor));if(!R)return;
  if(t.dataset.mcv&&t.dataset.mcv!=='modo'){R.vagas[t.dataset.mcv]=t.value===''?'':+t.value;return}
  if(t.dataset.mc){const[i,k]=t.dataset.mc.split('|'),c=R.criterios[+i];if(!c)return;if(t.type==='checkbox')return;c[k]=k==='peso'?(t.value===''?'':+t.value):t.value}
@@ -2402,19 +2404,64 @@ async function monSalvarLink(btn){const i=$('mc_planilha'),v=i.value.trim(),rec=
  btn.removeAttribute('aria-disabled');await monCarregar();monRedesenharCfg()}
 /* agentes monitorados: por setor, um por um ou vários de uma vez */
 const monAgentesDe=setor=>(MON.agentes||[]).filter(a=>a.data.setor===setor).sort((a,b)=>a.data.nome.localeCompare(b.data.nome));
-function rCfgMonAg(){if(MON.dono!==meId)monCarregar();if(!MON.agentes)return monEstado();
+/* equipes (gestões) de um setor: as ativas e, se pedido, a inativa que um agente ainda usa */
+const monEquipesDe=(setor,manter)=>(MON.equipes||[]).filter(e=>e.data.setor===setor&&(e.data.ativo!==false||e.id===manter)).sort((a,b)=>a.data.nome.localeCompare(b.data.nome));
+/* a equipe do agente só vale se existir e for do mesmo setor dele */
+const monEquipeDoAg=a=>{const id=a&&a.data.equipe;return id?(MON.equipes||[]).find(e=>e.id===id&&e.data.setor===a.data.setor)||null:null};
+const monEqOpts=(setor,sel)=>'<option value="">Sem equipe</option>'+monEquipesDe(setor,sel).map(e=>`<option value="${esc(e.id)}"${e.id===sel?' selected':''}>${esc(e.data.nome)}${e.data.ativo===false?' (inativa)':''}</option>`).join('');
+const monGestorDe=setor=>(MON.gestores||[]).find(g=>g.data.setor===setor)||null;
+function rCfgMonAg(){if(MON.dono!==meId)monCarregar();if(!MON.agentes||!MON.equipes)return monEstado();
  const S_=monSetores();if(!S_.some(s=>s.id===MON.setorAg))MON.setorAg=S_.length?S_[0].id:null;if(!S_.length)return '<div class="panel"><p class="muted">Nenhum setor de Qualidade em Configurações › Setores.</p></div>';
- const setor=MON.setorAg,L=monAgentesDe(setor);
+ const setor=MON.setorAg,L=monAgentesDe(setor),G=monGestorDe(setor),E=(MON.equipes||[]).filter(e=>e.data.setor===setor).sort((a,b)=>(a.data.ativo===false)-(b.data.ativo===false)||a.data.nome.localeCompare(b.data.nome));
+ const nEq=id=>L.filter(a=>(monEquipeDoAg(a)||{}).id===id).length,semEq=L.filter(a=>!monEquipeDoAg(a)).length;
  return `<div class="mcsec">${monAbas(setor,'data-masetor',s=>monAgentesDe(s).length)}</div>
+ <div class="panel cfgp"><h3>Gestão do setor</h3>
+  <div class="frow"><div class="f"><label for="mg_gestor">Gestor(a) do setor</label><input id="mg_gestor" maxlength="120" value="${esc(MON.gestRasc&&MON.gestRasc.setor===setor?MON.gestRasc.nome:G?G.data.nome:'')}" placeholder="Nome de quem é gestor(a) do setor" autocomplete="off"><span class="msg">Aparece na capa do relatório de qualidade.</span></div>
+  <div class="f mgbtn"><button class="btn" data-mggestor>Salvar gestor</button></div></div>
+  <div class="k">Equipes</div><div class="mgeq">${E.length?E.map(e=>`<button class="chip ${e.data.ativo===false?'ln':'ok'}" data-mgabrir="${esc(e.id)}" title="Editar equipe">${esc(e.data.nome)} · ${nEq(e.id)}${e.data.ativo===false?' · inativa':''}</button>`).join(''):'<span class="muted">Nenhuma equipe cadastrada.</span>'}${semEq?`<span class="chip ln">Sem equipe · ${semEq}</span>`:''}<button class="btn sm" data-mgnova>${ICO.plus}Nova equipe</button></div></div>
  <div class="row maacoes"><button class="btn pri" data-manovo>${ICO.plus}Novo agente</button><button class="btn" data-mavarios>${ICO.plus}Adicionar vários</button></div>
- ${L.length?`<div class="panel dgpan"><div class="tw"><table class="dgtab matab"><thead><tr><th>Agente</th><th>Situação</th><th></th></tr></thead><tbody>${L.map(a=>`<tr data-marow="${esc(a.id)}"><td><button class="dglink" data-maabrir="${esc(a.id)}"><span>${esc(a.data.nome)}</span></button></td><td>${a.data.ativo===false?'<span class="chip ln">Inativo</span>':'<span class="chip ok">Ativo</span>'}</td><td class="act">${ICO.edit}</td></tr>`).join('')}</tbody></table></div></div>`
+ ${L.length?`<div class="panel dgpan"><div class="tw"><table class="dgtab matab"><thead><tr><th>Agente</th><th>Equipe</th><th>Situação</th><th></th></tr></thead><tbody>${L.map(a=>`<tr data-marow="${esc(a.id)}"><td><button class="dglink" data-maabrir="${esc(a.id)}"><span>${esc(a.data.nome)}</span></button></td><td><select class="maeq" data-maeq="${esc(a.id)}" aria-label="Equipe de ${esc(a.data.nome)}">${monEqOpts(setor,(monEquipeDoAg(a)||{}).id||'')}</select></td><td>${a.data.ativo===false?'<span class="chip ln">Inativo</span>':'<span class="chip ok">Ativo</span>'}</td><td class="act">${ICO.edit}</td></tr>`).join('')}</tbody></table></div></div>`
   :'<div class="panel embreve"><p class="muted">Nenhum agente cadastrado neste setor. Use "Novo agente" para cadastrar um por um ou "Adicionar vários" para colar uma lista de nomes.</p></div>'}`}
-function openMonAg(id){const a=id?(MON.agentes||[]).find(x=>x.id===id):{data:{nome:'',setor:MON.setorAg,ativo:true}};if(!a)return;ED={kind:'monag',id,x:clone(a)};rEd();showEd()}
+/* equipe: criar, renomear, desativar ou excluir (excluir só sem agentes) */
+function openMonEq(id){const e=id?(MON.equipes||[]).find(x=>x.id===id):{data:{setor:MON.setorAg,nome:'',ativo:true}};if(!e)return;ED={kind:'moneq',id,x:clone(e)};rEd();showEd()}
+function rEdMonEq(){const{id,x}=ED,d=x.data;if(ED.rendered)return;ED.rendered=true;const s=SET().find(y=>y.id===d.setor);
+ $('ed').innerHTML=`<div class="edh"><div class="row"><span>Configurações · Agentes monitorados</span><button class="ico" data-edclose aria-label="Fechar">${ICO.x}</button></div><div><div class="k">${id?'Editar equipe':'Nova equipe'} · ${esc(s?s.nome:'')}</div><h3>${id?esc(d.nome):'Nova equipe'}</h3></div></div>
+ <div class="edb"><div class="f"><label for="me_nome">Nome da equipe</label><input id="me_nome" maxlength="80" value="${esc(d.nome)}" placeholder="Ex.: nome de quem lidera a equipe" autocomplete="off"><span class="msg"></span></div>
+ <label class="swl"><span>Ativa<small>Equipes inativas não aparecem para escolher; os agentes que já estão nelas continuam</small></span><span class="sw"><input type="checkbox" id="me_ativo"${d.ativo!==false?' checked':''}><i></i></span></label>
+ <div class="eda"><button class="btn pri" data-mesalvar>${id?'Salvar':'Cadastrar'}</button><button class="btn" data-edclose>Cancelar</button>${id?`<button class="btn dan" data-meexcluir>${ICO.del}Excluir</button>`:''}</div></div>`}
+async function monSalvarEq(btn){const ed=ED,{id,x}=ed,nome=$('me_nome').value.trim();
+ if(!nome){const f=$('me_nome').closest('.f');f.classList.add('bad');f.querySelector('.msg').textContent='Digite o nome da equipe.';return $('me_nome').focus()}
+ btn.setAttribute('aria-disabled','true');
+ try{const data={setor:x.data.setor,nome,ativo:$('me_ativo').checked};await DB.regSave(id?{area:'monit_equipe',id,versao:x.atualizado,data}:{area:'monit_equipe',data});if(ED===ed)closeEd();toast(id?'Equipe salva':'Equipe cadastrada')}
+ catch(e){btn.removeAttribute('aria-disabled');toast(agConflito(e)||e.message,true)}
+ await monCarregar()}
+async function monExcluirEq(btn){const ed=ED,{id,x}=ed;
+ if(!await confirmBox('Excluir equipe?',`"${x.data.nome}" sai da lista. Só dá para excluir uma equipe sem agentes; para só esconder, prefira desativar.`,'Excluir equipe',true))return;
+ btn.setAttribute('aria-disabled','true');
+ try{await DB.regDelete('monit_equipe',id);if(ED===ed)closeEd();toast('Equipe excluída')}catch(e){btn.removeAttribute('aria-disabled');toast(agConflito(e)||e.message,true)}
+ await monCarregar()}
+async function monSalvarGestor(btn){const setor=MON.setorAg,G=monGestorDe(setor),nome=$('mg_gestor').value.trim();
+ btn.setAttribute('aria-disabled','true');
+ try{await DB.regSave(G?{area:'monit_gestor',id:G.id,versao:G.atualizado,data:{setor,nome}}:{area:'monit_gestor',data:{setor,nome}});MON.gestRasc=null;toast('Gestor salvo')}
+ catch(e){toast(agConflito(e)||e.message,true)}
+ btn.removeAttribute('aria-disabled');await monCarregar();monRedesenharCfg()}
+/* troca de equipe direto na tabela: salva na hora; se der erro, a tela volta ao que está gravado */
+async function monTrocarEq(sel){const a=(MON.agentes||[]).find(x=>x.id===sel.dataset.maeq);if(!a)return;sel.disabled=true;
+ /* guarda na hora o que o servidor devolveu: se a recarga já estiver rodando, a tela não volta para a equipe antiga */
+ try{const r=await DB.regSave({area:'monit_agente',id:a.id,versao:a.atualizado,data:{...a.data,equipe:sel.value}});if(r&&r.item){a.data=r.item.data;a.atualizado=r.item.atualizado}toast('Equipe do agente salva')}
+ catch(e){toast(agConflito(e)||e.message,true)}
+ await monCarregar();monRedesenharCfg()}
+document.addEventListener('change',e=>{const s=e.target;if(s.matches&&s.matches('select[data-maeq]'))monTrocarEq(s);
+ /* no cadastro do agente e no "Adicionar vários", trocar o setor troca as equipes oferecidas */
+ else if(s.id==='ma_setor'&&$('ma_equipe'))$('ma_equipe').innerHTML=monEqOpts(s.value,'');
+ else if(s.id==='mv_setor'&&$('mv_equipe'))$('mv_equipe').innerHTML=monEqOpts(s.value,'')});
+function openMonAg(id){const a=id?(MON.agentes||[]).find(x=>x.id===id):{data:{nome:'',setor:MON.setorAg,equipe:'',ativo:true}};if(!a)return;ED={kind:'monag',id,x:clone(a)};rEd();showEd()}
 const monSetorOpts=sel=>{const L=monSetores().slice();if(sel&&!L.some(s=>s.id===sel))L.push(SET().find(s=>s.id===sel)||{id:sel,nome:'Setor removido'});return L.map(s=>`<option value="${esc(s.id)}"${s.id===sel?' selected':''}>${esc(s.nome)}</option>`).join('')};
 function rEdMonAg(){const{id,x}=ED,d=x.data;if(ED.rendered)return;ED.rendered=true;
  $('ed').innerHTML=`<div class="edh"><div class="row"><span>Configurações · Agentes monitorados</span><button class="ico" data-edclose aria-label="Fechar">${ICO.x}</button></div><div><div class="k">${id?'Editar agente':'Novo agente'}</div><h3>${id?esc(d.nome):'Novo agente'}</h3></div></div>
  <div class="edb"><div class="f"><label for="ma_nome">Nome</label><input id="ma_nome" maxlength="120" value="${esc(d.nome)}" autocomplete="off"><span class="msg"></span></div>
  <div class="f"><label for="ma_setor">Setor</label><select id="ma_setor">${monSetorOpts(d.setor)}</select></div>
+ <div class="f"><label for="ma_equipe">Equipe</label><select id="ma_equipe">${monEqOpts(d.setor,(monEquipeDoAg(x)||{}).id||'')}</select></div>
  <label class="swl"><span>Ativo<small>Agentes inativos não aparecem para novas monitorias; as monitorias já feitas continuam guardadas</small></span><span class="sw"><input type="checkbox" id="ma_ativo"${d.ativo!==false?' checked':''}><i></i></span></label>
  <div class="eda"><button class="btn pri" data-masalvar>${id?'Salvar':'Cadastrar'}</button><button class="btn" data-edclose>Cancelar</button>${id?`<button class="btn dan" data-maexcluir>${ICO.del}Excluir</button>`:''}</div></div>`}
 async function monSalvarAg(btn){const ed=ED,{id,x}=ed,nome=$('ma_nome').value.trim(),setor=$('ma_setor').value;
@@ -2422,7 +2469,7 @@ async function monSalvarAg(btn){const ed=ED,{id,x}=ed,nome=$('ma_nome').value.tr
  const rep=(MON.agentes||[]).find(a=>a.id!==id&&a.data.setor===setor&&a.data.nome.trim().toLowerCase()===nome.toLowerCase());
  if(rep&&!await confirmBox('Já existe um agente com esse nome neste setor','Cadastrar mesmo assim?','Cadastrar'))return;
  btn.setAttribute('aria-disabled','true');
- try{const data={nome,setor,ativo:$('ma_ativo').checked};await DB.regSave(id?{area:'monit_agente',id,versao:x.atualizado,data}:{area:'monit_agente',data});MON.setorAg=setor;if(ED===ed)closeEd();toast(id?'Agente salvo':'Agente cadastrado')}
+ try{const data={nome,setor,equipe:$('ma_equipe').value,ativo:$('ma_ativo').checked};await DB.regSave(id?{area:'monit_agente',id,versao:x.atualizado,data}:{area:'monit_agente',data});MON.setorAg=setor;if(ED===ed)closeEd();toast(id?'Agente salvo':'Agente cadastrado')}
  catch(e){btn.removeAttribute('aria-disabled');toast(agConflito(e)||e.message,true)}
  await monCarregar()}
 async function monExcluirAg(btn){const ed=ED,{id,x}=ed;
@@ -2434,19 +2481,20 @@ function openMonVarios(){ED={kind:'monvarios',setor:MON.setorAg};rEd();showEd()}
 function rEdMonVarios(){if(ED.rendered)return;ED.rendered=true;
  $('ed').innerHTML=`<div class="edh"><div class="row"><span>Configurações · Agentes monitorados</span><button class="ico" data-edclose aria-label="Fechar">${ICO.x}</button></div><div><div class="k">Adicionar vários</div><h3>Colar uma lista de nomes</h3></div></div>
  <div class="edb"><div class="f"><label for="mv_setor">Setor</label><select id="mv_setor">${monSetorOpts(ED.setor)}</select></div>
+ <div class="f"><label for="mv_equipe">Equipe</label><select id="mv_equipe">${monEqOpts(ED.setor,'')}</select></div>
  <div class="f"><label for="mv_nomes">Nomes (um por linha)</label><textarea id="mv_nomes" rows="14" maxlength="20000" placeholder="Um nome por linha"></textarea><span class="msg" data-h="Nomes repetidos ou que já existem no setor são ignorados. Números no começo da linha (1., 2.) são removidos.">Nomes repetidos ou que já existem no setor são ignorados. Números no começo da linha (1., 2.) são removidos.</span></div>
  <div class="eda"><button class="btn pri" data-mvsalvar>Adicionar</button><button class="btn" data-edclose>Cancelar</button></div></div>`}
-async function monSalvarVarios(btn){const ed=ED,setor=$('mv_setor').value;
+async function monSalvarVarios(btn){const ed=ED,setor=$('mv_setor').value,equipe=$('mv_equipe').value;
  const ja=new Set(monAgentesDe(setor).map(a=>a.data.nome.trim().toLowerCase())),vistos=new Set();
  const nomes=$('mv_nomes').value.split('\n').map(s=>s.replace(/^\s*\d+[.)\-–]?\s*/,'').replace(/\s+/g,' ').trim().slice(0,120)).filter(s=>{const k=s.toLowerCase();if(!s||ja.has(k)||vistos.has(k))return false;vistos.add(k);return true});
  if(!nomes.length)return toast('Nenhum nome novo para adicionar.',true);
  btn.setAttribute('aria-disabled','true');let n=0;
- try{for(const nome of nomes){await DB.regSave({area:'monit_agente',data:{nome,setor,ativo:true}});n++;btn.textContent=`Adicionando… ${n} de ${nomes.length}`}
+ try{for(const nome of nomes){await DB.regSave({area:'monit_agente',data:{nome,setor,equipe,ativo:true}});n++;btn.textContent=`Adicionando… ${n} de ${nomes.length}`}
   MON.setorAg=setor;if(ED===ed)closeEd();toast(`${n} ${n===1?'agente adicionado':'agentes adicionados'}`)}
  catch(e){btn.removeAttribute('aria-disabled');btn.textContent='Adicionar';toast(`${n} adicionados antes do erro: ${e.message}`,true)}
  await monCarregar()}
 document.addEventListener('click',e=>{
- const tr=e.target.closest&&e.target.closest('tr[data-marow]');if(tr&&!e.target.closest('button')){openMonAg(tr.dataset.marow);return}
+ const tr=e.target.closest&&e.target.closest('tr[data-marow]');if(tr&&!e.target.closest('button,select')){openMonAg(tr.dataset.marow);return}
  const t=e.target.closest&&e.target.closest('button');if(!t||t.getAttribute('aria-disabled')==='true')return;const d=t.dataset;
  if(d.mcsetor){if(MON.setorCfg!==d.mcsetor){MON.setorCfg=d.mcsetor;monRedesenharCfg(`[data-mcsetor="${CSS.escape(d.mcsetor)}"]`)}}
  else if('mcmodelo' in d){MON.rasc[MON.setorCfg]=monModelo(MON.setorCfg);monRedesenharCfg('[data-mcsalvar]')}
@@ -2464,6 +2512,11 @@ document.addEventListener('click',e=>{
  else if('masalvar' in d)monSalvarAg(t);
  else if('maexcluir' in d)monExcluirAg(t);
  else if('mvsalvar' in d)monSalvarVarios(t);
+ else if('mggestor' in d)monSalvarGestor(t);
+ else if('mgnova' in d)openMonEq(null);
+ else if(d.mgabrir)openMonEq(d.mgabrir);
+ else if('mesalvar' in d)monSalvarEq(t);
+ else if('meexcluir' in d)monExcluirEq(t);
  else if('monrecarregar' in d){MON=monVazio(null);render.cfgShown=null;render()}});
 
 /* ---------- monitorias: tela de todos os usuários ----------
@@ -2845,7 +2898,7 @@ async function saveColab(){const{id}=ED,nome=$('c_nome').value.trim().replace(/\
  const k=x=>norm(x).normalize('NFD').replace(/[\u0300-\u036f]/g,'');if(COLS_().some(c=>c.id!==id&&k(c.nome)===k(nome))){box.classList.add('bad');box.querySelector('.msg').textContent='Já existe um colaborador com esse nome.';return}
  await saveSettings(s=>{s.colaboradores=(s.colaboradores||[]).slice();if(id){const c=s.colaboradores.find(x=>x.id===id);if(c){c.nome=nome;c.ativo=ativo}}else s.colaboradores.push({id:'c'+uid(),nome,ativo,criado:Date.now()})},id?'Colaborador salvo':'Colaborador adicionado');closeEd()}
 function openUser(id){const u=id?S.users.find(x=>x.id===id):{nome:'',usuario:'',admin:false};if(!u)return;ED={kind:'user',id,u:clone(u)};rEd();showEd()}
-function rEd(){if(!ED)return;if(ED.kind==='agenda')return rEdAg();if(ED.kind==='jretapa')return rEdJrEtapa();if(ED.kind==='jrfluxo')return rEdJrFluxo();if(ED.kind==='diag')return rEdDiag();if(ED.kind==='proj')return rEdProj();if(ED.kind==='monag')return rEdMonAg();if(ED.kind==='monvarios')return rEdMonVarios();if(ED.kind==='mon')return rEdMo();if(ED.kind==='plan')return rEdPlan();if(ED.kind==='user')return rEdUser();if(ED.kind==='colab')return rEdColab();
+function rEd(){if(!ED)return;if(ED.kind==='agenda')return rEdAg();if(ED.kind==='jretapa')return rEdJrEtapa();if(ED.kind==='jrfluxo')return rEdJrFluxo();if(ED.kind==='diag')return rEdDiag();if(ED.kind==='proj')return rEdProj();if(ED.kind==='monag')return rEdMonAg();if(ED.kind==='monvarios')return rEdMonVarios();if(ED.kind==='moneq')return rEdMonEq();if(ED.kind==='mon')return rEdMo();if(ED.kind==='plan')return rEdPlan();if(ED.kind==='user')return rEdUser();if(ED.kind==='colab')return rEdColab();
  const w=Wk(),{f}=ED,st=steps(f);if(ED.i>=st.length)ED.i=st.length-1;const i=ED.i,id=st[i],ro=!canEdit(w),isS=id==='sla';const r=isS?{}:((f==='q'?w.q:w.o)[id]||{});
  if(document.activeElement&&$('ed').contains(document.activeElement)&&ED.rendered===`${sel}|${f}|${i}`)return;ED.rendered=`${sel}|${f}|${i}`;
  const done=k=>k==='sla'?isN(w.sla):rowDone(f,f==='q'?qEf(w,k):(w.o[k]||{}));
@@ -3326,36 +3379,77 @@ function buildSlidesMon(A,M,mes){PWL=[];const rod=`Mês de referência: ${dgMesN
  presMontar(s)}
 /* metades do período do relatório: a 1ª fica com o dia a mais quando o total é ímpar */
 const relMeio=(de,ate)=>{const n=Math.round((Date.parse(ate)-Date.parse(de))/864e5)+1,m=exSoma(de,Math.ceil(n/2)-1);return [m,exSoma(m,1)]};
-/* relatório de qualidade de um setor no período: A agentes, C critérios do setor (ou null), M monitorias do setor por data */
-function buildSlidesRel(setor,A,C,M,de,ate){PWL=[];const rod=`${esc(setor.nome)} · ${dfmt(de)} a ${dfmt(ate)}`,[m1,m2]=relMeio(de,ate),total=M.length?M[0].data.total:(C?C.data.total:0);
+/* relatório de qualidade de um setor no período, por equipe (gestão).
+   A agentes, EQ equipes, gestor (ou null), C critérios do setor (ou null), M monitorias do setor por data */
+function buildSlidesRel(setor,A,EQ,gestor,C,M,de,ate){PWL=[];const rod=`${esc(setor.nome)} · ${dfmt(de)} a ${dfmt(ate)}`,[m1,m2]=relMeio(de,ate),total=M.length?M[0].data.total:(C?C.data.total:0);
  const media=moMedia,mPerd=L=>L.length?L.reduce((t,x)=>t+(+x.data.perdidos||0),0)/L.length:null,avg=V=>{const v=V.filter(isN);return v.length?v.reduce((a,b)=>a+b,0)/v.length:null};
  const pp=v=>isN(v)?`${nf(v,2)} / ${nf(total)}`:'—',dl=v=>!isN(v)?'—':Math.abs(v)<0.005?'0,00 p.p.':`<span class="${v>0?'good':'badc'}">${v>0?'+':''}${nf(v,2)} p.p.</span>`;
- /* atendentes: quem teve monitoria no período (o nome vem do cadastro ou, se excluído, da própria monitoria) */
- const G=[...new Set(M.map(x=>x.data.agente))].map(id=>{const a=A.find(y=>y.id===id),X=M.filter(x=>x.data.agente===id),X1=X.filter(x=>x.data.data<=m1),X2=X.filter(x=>x.data.data>=m2),q1=media(X1),q2=media(X2);
-  return {nome:String(a?a.data.nome:(X[0].data.agenteNome||'Agente excluído')),X,q:media(X),p:mPerd(X),q1,q2,ev:isN(q1)&&isN(q2)?q2-q1:null}}).sort((a,b)=>a.nome.localeCompare(b.nome));
- /* médias do setor a partir das qualidades individuais; nas metades, só quem teve monitoria nas duas */
- const Q=avg(G.map(g=>g.q)),P=avg(G.map(g=>g.p)),Gc=G.filter(g=>isN(g.ev)),Q1=avg(Gc.map(g=>g.q1)),Q2=avg(Gc.map(g=>g.q2)),EV=isN(Q1)&&isN(Q2)?Q2-Q1:null;
- const evo=Gc.filter(g=>g.ev>=0.005).length,est=Gc.filter(g=>Math.abs(g.ev)<0.005).length,caiu=Gc.filter(g=>g.ev<=-0.005).length,cem=M.filter(x=>!x.data.zerada&&x.data.nota>=100).length,zer=M.filter(x=>x.data.zerada).length;
- const s=[presCapa('Alinhamento<br>de Qualidade','QUALIDADE • MONITORIAS',esc(setor.nome),`${dfmt(de)} a ${dfmt(ate)}`)];
+ const plural=(n,a,b)=>`${nf(n)} ${n===1?a:b}`;
+ /* atendentes: os ativos do setor e quem teve monitoria nele no período; a equipe só vale se for do mesmo setor do agente */
+ const ids=new Set([...A.filter(a=>a.data.setor===setor.id&&a.data.ativo!==false).map(a=>a.id),...M.map(x=>x.data.agente)]);
+ const eqDe=a=>{const id=a&&a.data.setor===setor.id&&a.data.equipe;return id?EQ.find(e=>e.id===id&&e.data.setor===setor.id)||null:null};
+ const G=[...ids].map(id=>{const a=A.find(y=>y.id===id),X=M.filter(x=>x.data.agente===id),X1=X.filter(x=>x.data.data<=m1),X2=X.filter(x=>x.data.data>=m2),q1=media(X1),q2=media(X2),eq=eqDe(a);
+  return {id,nome:String(a?a.data.nome:((X[0]||{data:{}}).data.agenteNome||'Agente excluído')),eq:eq?eq.id:'',X,X1,X2,q:media(X),p:mPerd(X),q1,q2,ev:isN(q1)&&isN(q2)?q2-q1:null}}).sort((a,b)=>a.nome.localeCompare(b.nome));
+ /* números de um grupo de atendentes: médias a partir das qualidades individuais; metades só com quem teve monitoria nas duas */
+ const resumo=L=>{const Av=L.filter(g=>g.X.length),Mx=L.flatMap(g=>g.X),Gc=Av.filter(g=>isN(g.ev)),Q1=avg(Gc.map(g=>g.q1)),Q2=avg(Gc.map(g=>g.q2));
+  return {L,Av,M:Mx,Gc,Q:avg(Av.map(g=>g.q)),P:avg(Av.map(g=>g.p)),Q1,Q2,EV:isN(Q1)&&isN(Q2)?Q2-Q1:null,evo:Gc.filter(g=>g.ev>=0.005).length,est:Gc.filter(g=>Math.abs(g.ev)<0.005).length,caiu:Gc.filter(g=>g.ev<=-0.005).length,
+   cem:Mx.filter(x=>!x.data.zerada&&x.data.nota>=100).length,zer:Mx.filter(x=>x.data.zerada).length,n1:Mx.filter(x=>x.data.data<=m1).length,n2:Mx.filter(x=>x.data.data>=m2).length,
+   P1:mPerd(Mx.filter(x=>x.data.data<=m1)),P2:mPerd(Mx.filter(x=>x.data.data>=m2))}};
+ /* grupos: as equipes do setor com pelo menos um atendente, na ordem do nome, e "Sem equipe" no fim */
+ const grupos=EQ.filter(e=>e.data.setor===setor.id).sort((a,b)=>a.data.nome.localeCompare(b.data.nome)).map(e=>({nome:String(e.data.nome),sem:false,...resumo(G.filter(g=>g.eq===e.id))})).filter(g=>g.L.length);
+ const sem=G.filter(g=>!g.eq);if(sem.length)grupos.push({nome:'Sem equipe',sem:true,...resumo(sem)});
+ const T=resumo(G),gn=g=>g.sem?'Sem equipe':`Equipe ${esc(g.nome)}`;
+ const listaEq=grupos.filter(g=>!g.sem).map(gn),txtEq=listaEq.length>1?listaEq.slice(0,-1).join(', ')+' e '+listaEq.at(-1):(listaEq[0]||'');
+ const s=[presCapa(`${esc(setor.nome)}<br>Consolidado geral`,'ALINHAMENTO DE QUALIDADE','Período de referência',`${dfmt(de)} a ${dfmt(ate)}${gestor?` · Gestão: ${esc(gestor)}`:''}`)];
  if(!M.length){s.push({t:'Sem monitorias',h:presLado('Relatório de qualidade','Sem monitorias','',rod)+'<div class="body"><div class="smiss">Nenhuma monitoria registrada neste setor no período escolhido.</div></div>'});presMontar(s);return}
- const tile=(l,v,d,c)=>`<div><div class="l">${l}</div><div class="v${c?' '+c:''}" style="font-size:${String(v).length>8?64:96}px">${v}</div><div class="d">${d}</div></div>`;
- s.push({t:'Visão geral',h:presLado('Visão geral',esc(setor.nome),`Resultado das monitorias de ${dfmt(de)} a ${dfmt(ate)}.`,rod)+`<div class="body"><div class="sfx">${tile('Atendentes avaliados',nf(G.length),'Com pelo menos uma monitoria')}${tile('Monitorias realizadas',nf(M.length),`${nf(cem)} com 100% · ${nf(zer)} ${zer===1?'zerada':'zeradas'}`)}${tile('Média de pontos perdidos',pp(P),'Média dos atendentes')}${tile('Qualidade média',pct(Q),`1ª → 2ª metade: ${dl(EV)}`)}</div></div>`});
- /* tabela em páginas de 7 linhas; a linha do setor fica no rodapé da última página */
- const tabela=(k,t,d,cab,linha,pe)=>presPag(G,7).forEach((Pg,i,T)=>{const tt=t+(T.length>1?` (${i+1}/${T.length})`:'');
-  s.push({t:`${k} · ${tt}`,h:presLado(k,tt,d,rod)+`<div class="body"><table class="stbl"><thead><tr>${cab}</tr></thead><tbody>${Pg.map(linha).join('')}</tbody>${i===T.length-1?`<tfoot><tr>${pe}</tr></tfoot>`:''}</table></div>`})});
- tabela('Resultados de qualidade','Pontuação por atendente','Qualidade de cada monitoria = pontos que restaram ÷ total; média só com as monitorias realizadas.','<th>Atendente</th><th class="n">Monitorias</th><th class="n">Pontos perdidos</th><th class="n">Qualidade</th>',
-  g=>`<tr><td><span class="nm">${esc(presCorta(g.nome,40))}</span></td><td class="n">${nf(g.X.length)}</td><td class="n">${pp(g.p)}</td><td class="n">${pct(g.q)}</td></tr>`,`<td>Média do setor</td><td class="n">${nf(M.length)}</td><td class="n">${pp(P)}</td><td class="n">${pct(Q)}</td>`);
- tabela('Comparativo','1ª x 2ª metade',`1ª metade: ${dfmt(de)} a ${dfmt(m1)} · 2ª metade: ${dfmt(m2)} a ${dfmt(ate)}. — : sem monitoria nas duas metades (fica fora da comparação).`,'<th>Atendente</th><th class="n">1ª metade</th><th class="n">2ª metade</th><th class="n">Evolução</th>',
-  g=>`<tr><td><span class="nm">${esc(presCorta(g.nome,40))}</span></td><td class="n">${pct(g.q1)}</td><td class="n">${pct(g.q2)}</td><td class="n">${dl(g.ev)}</td></tr>`,`<td>Setor (média)</td><td class="n">${pct(Q1)}</td><td class="n">${pct(Q2)}</td><td class="n">${dl(EV)}</td>`);
- s.push({t:'Leitura do período',h:presLado('Leitura do período','Evolução individual',`${nf(Gc.length)} de ${nf(G.length)} atendentes tiveram monitoria nas duas metades.`,rod)+`<div class="body"><div class="sfx">${tile('Com evolução',nf(evo),'Atendentes que melhoraram')}${tile('Estáveis',nf(est),'Mesma qualidade')}${tile('Com queda',nf(caiu),'Atendentes que pioraram',caiu>0?'bad':'')}${tile('Monitorias com 100%',nf(cem),`${nf(zer)} ${zer===1?'zerada':'zeradas'} por erro crítico`,'')}</div></div>`});
- /* critérios errados: em quantas monitorias cada um apareceu; o número é a posição do critério no cadastro do setor */
- const ord=new Map(((C&&C.data.criterios)||[]).map((c,i)=>[c.id,i+1])),E=new Map();M.forEach(x=>(x.data.erros||[]).forEach(c=>{const k=c.id||c.nome,o=E.get(k)||{nome:String(c.nome??''),zera:!!c.zera,n:ord.get(c.id),q:0};o.q++;E.set(k,o)}));
- const T5=[...E.values()].filter(c=>!c.zera).sort((a,b)=>b.q-a.q||a.nome.localeCompare(b.nome)).slice(0,5),Z=[...E.values()].filter(c=>c.zera).sort((a,b)=>b.q-a.q),zm=M.filter(x=>x.data.zeradaManual).length;
- s.push({t:'Pontos de atenção',h:presLado('Pontos de atenção','Onde mais se perdeu ponto','Os 5 critérios que mais apareceram como erro nas monitorias do período.',rod)+`<div class="body">${T5.length?`<table class="stbl"><thead><tr><th>Critério</th><th class="n">Perda em</th></tr></thead><tbody>${T5.map(c=>`<tr><td><span class="nm">${esc(presCorta(c.nome,70))}</span>${c.n?`<span class="sub2">Critério ${c.n}</span>`:''}</td><td class="n">${nf(c.q)} de ${nf(M.length)}</td></tr>`).join('')}</tbody></table>`:'<div class="smiss">Nenhum critério errado no período.</div>'}${Z.length||zm?`<div class="smiss" style="margin-top:22px"><b>Erros críticos que zeraram a monitoria:</b> ${[...Z.map(c=>`${esc(presCorta(c.nome,60))} (${nf(c.q)})`),...(zm?[`zerada manualmente (${nf(zm)})`]:[])].join(' · ')}</div>`:''}</div>`});
- /* destaques: observações das monitorias com 100%, das mais recentes para as mais antigas */
- const D=M.filter(x=>!x.data.zerada&&x.data.nota>=100&&String(x.data.observacao||'').trim()).sort((a,b)=>b.data.data.localeCompare(a.data.data)||b.criado-a.criado).slice(0,6);
- s.push({t:'Destaques',h:presLado('Destaques','O que deu certo','Observações registradas nas monitorias com 100% do período.',rod)+`<div class="body">${D.length?`<table class="stbl"><tbody>${D.map(x=>{const g=G.find(y=>y.X.includes(x));return `<tr><td><span class="nm">${esc(presCorta(g?g.nome:'',40))}</span><span class="sub2">${esc(presCorta(x.data.observacao,150))}</span></td><td class="n">${dshort(x.data.data)}</td></tr>`}).join('')}</tbody></table>`:'<div class="smiss">Nenhuma monitoria com 100% e observação no período.</div>'}</div>`});
- s.push(presCapa('Obrigado','QUALIDADE • MONITORIAS',esc(setor.nome),`${dfmt(de)} a ${dfmt(ate)}`));s.at(-1).t='Encerramento';
+ const tile=(l,v,d,c)=>`<div><div class="l">${l}</div><div class="v${c?' '+c:''}" style="font-size:${String(v).replace(/<[^>]*>/g,'').length>8?64:96}px">${v}</div><div class="d">${d}</div></div>`;
+ const card=(h,p)=>`<div style="background:rgba(232,244,234,.06);border:1px solid rgba(232,244,234,.17);border-radius:20px;padding:28px 30px"><h4 style="font:600 27px/1.25 var(--fd);margin-bottom:10px">${h}</h4><p style="font-size:21px;line-height:1.45;color:rgba(232,244,234,.72)">${p}</p></div>`;
+ /* 1. objetivo */
+ s.push({t:'Objetivo',h:presLado('Introdução','Objetivo deste alinhamento',`Resultado das monitorias de ${esc(setor.nome)}${txtEq?`, consolidando ${txtEq}`:''}, com a 1ª e a 2ª metade do período.`,rod)+`<div class="body"><div style="display:grid;grid-template-columns:1fr 1fr;gap:22px">${card('Resultados de qualidade','Pontuação e média de cada atendente no período.')}${card('Evolução entre períodos','Comparativo de desempenho: 1ª x 2ª metade.')}${card('Pontos de atenção','Critérios que mais aparecem como erro nas monitorias.')}${card('Consolidação da operação','Leitura geral do período e de cada equipe.')}</div></div>`});
+ /* 2. visão geral e equipes */
+ s.push({t:'Visão geral',h:presLado('Visão geral',esc(setor.nome),`Resultado das monitorias de ${dfmt(de)} a ${dfmt(ate)}.`,rod)+`<div class="body"><div class="sfx">${tile('Atendentes avaliados',nf(T.Av.length),'Com pelo menos uma monitoria')}${tile('Monitorias realizadas',nf(M.length),`${nf(T.cem)} com 100% · ${plural(T.zer,'zerada','zeradas')}`)}${tile('Média de pontos perdidos',pp(T.P),'Média dos atendentes')}${tile('Qualidade média',pct(T.Q),`1ª → 2ª metade: ${dl(T.EV)}`)}</div></div>`});
+ const tabEq=(k,t,d,cab,linha,pe)=>presPag(grupos,6).forEach((P,i,TT)=>{const tt=t+(TT.length>1?` (${i+1}/${TT.length})`:'');
+  s.push({t:`${k} · ${tt}`,h:presLado(k,tt,d,rod)+`<div class="body"><table class="stbl"><thead><tr>${cab}</tr></thead><tbody>${P.map(linha).join('')}</tbody>${i===TT.length-1?`<tfoot><tr>${pe}</tr></tfoot>`:''}</table></div>`})});
+ tabEq('Visão geral','Cenário por equipe','Atendentes avaliados, monitorias e qualidade média de cada equipe.','<th>Equipe</th><th class="n">Atendentes</th><th class="n">Monitorias</th><th class="n">Qualidade</th>',
+  g=>`<tr><td><span class="nm">${gn(g)}</span></td><td class="n">${nf(g.Av.length)}</td><td class="n">${nf(g.M.length)}</td><td class="n">${pct(g.Q)}</td></tr>`,`<td>${esc(setor.nome)}</td><td class="n">${nf(T.Av.length)}</td><td class="n">${nf(M.length)}</td><td class="n">${pct(T.Q)}</td>`);
+ /* tabela de atendentes de um grupo em páginas de 7 linhas; a linha da equipe fica no rodapé da última página */
+ const tabAt=(k,t,d,L,cab,linha,pe)=>presPag(L,7).forEach((P,i,TT)=>{const tt=t+(TT.length>1?` (${i+1}/${TT.length})`:'');
+  s.push({t:`${k} · ${tt}`,h:presLado(k,tt,d,rod)+`<div class="body"><table class="stbl"><thead><tr>${cab}</tr></thead><tbody>${P.map(linha).join('')}</tbody>${i===TT.length-1?`<tfoot><tr>${pe}</tr></tfoot>`:''}</table></div>`})});
+ const semMon='<td colspan="3" class="n"><span class="chip s">Sem monitoria no período</span></td>';
+ /* 3. pontuação por atendente, uma tabela por equipe */
+ grupos.forEach(g=>tabAt('Pontuação por atendente',gn(g),'Qualidade de cada monitoria = pontos que restaram ÷ total; média só com as monitorias realizadas. Atendentes ativos sem monitoria não entram na média.',g.L,
+  '<th>Atendente</th><th class="n">Monitorias</th><th class="n">Pontos perdidos</th><th class="n">Qualidade</th>',
+  a=>`<tr><td><span class="nm">${esc(presCorta(a.nome,40))}</span></td>${a.X.length?`<td class="n">${nf(a.X.length)}</td><td class="n">${pp(a.p)}</td><td class="n">${pct(a.q)}</td>`:semMon}</tr>`,
+  `<td>Média da equipe</td><td class="n">${nf(g.M.length)}</td><td class="n">${pp(g.P)}</td><td class="n">${pct(g.Q)}</td>`));
+ /* 4. comparativo das equipes, evolução individual e resumo por metade */
+ const met=`1ª metade: ${dfmt(de)} a ${dfmt(m1)} · 2ª metade: ${dfmt(m2)} a ${dfmt(ate)}.`;
+ tabEq('Comparativo de qualidade','1ª x 2ª metade',`${met} Só entram os atendentes com monitoria nas duas metades.`,'<th>Equipe</th><th class="n">1ª metade</th><th class="n">2ª metade</th><th class="n">Evolução</th>',
+  g=>`<tr><td><span class="nm">${gn(g)}</span></td><td class="n">${pct(g.Q1)}</td><td class="n">${pct(g.Q2)}</td><td class="n">${dl(g.EV)}</td></tr>`,`<td>${esc(setor.nome)} (média)</td><td class="n">${pct(T.Q1)}</td><td class="n">${pct(T.Q2)}</td><td class="n">${dl(T.EV)}</td>`);
+ s.push({t:'Comparativo · Evolução individual',h:presLado('Comparativo de qualidade','Evolução individual',`Atendentes com monitoria nas duas metades: ${nf(T.Gc.length)} de ${nf(T.Av.length)}.`,rod)+`<div class="body"><div class="sfx">${tile('Com evolução',nf(T.evo),'Atendentes que melhoraram')}${tile('Estáveis',nf(T.est),'Mesma qualidade')}${tile('Com queda',nf(T.caiu),'Atendentes que pioraram',T.caiu>0?'bad':'')}${tile('Evolução do setor',dl(T.EV),`${pct(T.Q1)} → ${pct(T.Q2)}`)}</div></div>`});
+ s.push({t:'Comparativo · Resumo por metade',h:presLado('Comparativo de qualidade','Resumo por metade',met,rod)+`<div class="body"><div class="sfx">${tile('Monitorias na 1ª metade',nf(T.n1),`${dfmt(de)} a ${dfmt(m1)}`)}${tile('Monitorias na 2ª metade',nf(T.n2),`${dfmt(m2)} a ${dfmt(ate)}`)}${tile('Pontos perdidos · 1ª metade',pp(T.P1),'Média das monitorias')}${tile('Pontos perdidos · 2ª metade',pp(T.P2),'Média das monitorias')}</div></div>`});
+ /* 5. cada equipe: comparativo dos atendentes, leitura e destaques das monitorias com 100% */
+ grupos.forEach(g=>{if(!g.M.length)return;
+  tabAt(gn(g),'Qualidade por atendente: 1ª x 2ª metade',`${met} — : sem monitoria nas duas metades (fica fora da comparação).`,g.L,'<th>Atendente</th><th class="n">1ª metade</th><th class="n">2ª metade</th><th class="n">Evolução</th>',
+   a=>`<tr><td><span class="nm">${esc(presCorta(a.nome,40))}</span></td><td class="n">${pct(a.q1)}</td><td class="n">${pct(a.q2)}</td><td class="n">${dl(a.ev)}</td></tr>`,`<td>Equipe (média)</td><td class="n">${pct(g.Q1)}</td><td class="n">${pct(g.Q2)}</td><td class="n">${dl(g.EV)}</td>`);
+  const leitura=`Das ${plural(g.M.length,'monitoria','monitorias')}, ${nf(g.cem)} ${g.cem===1?'atingiu':'atingiram'} 100% e ${nf(g.zer)} ${g.zer===1?'foi zerada':'foram zeradas'} por erro crítico. No comparativo, ${nf(g.evo)} ${g.evo===1?'atendente evoluiu':'atendentes evoluíram'}, ${nf(g.est)} ${g.est===1?'manteve':'mantiveram'} a qualidade e ${nf(g.caiu)} ${g.caiu===1?'apresentou':'apresentaram'} queda.`;
+  s.push({t:`${gn(g)} · Leitura`,h:presLado(gn(g),'Leitura geral da equipe',leitura,rod)+`<div class="body"><div class="sfx">${tile('Monitorias realizadas',nf(g.M.length),`${plural(g.Av.length,'atendente avaliado','atendentes avaliados')}`)}${tile('Média de pontos perdidos',pp(g.P),'Média dos atendentes')}${tile('Qualidade média',pct(g.Q),'Média dos atendentes')}${tile('Evolução 1ª → 2ª metade',dl(g.EV),`${pct(g.Q1)} → ${pct(g.Q2)}`)}</div></div>`});
+  const D=g.M.filter(x=>!x.data.zerada&&x.data.nota>=100&&String(x.data.observacao||'').trim()).sort((a,b)=>b.data.data.localeCompare(a.data.data)||b.criado-a.criado).slice(0,5);
+  if(D.length)s.push({t:`${gn(g)} · Destaques`,h:presLado(gn(g),'Destaques da equipe','Observações registradas nas monitorias com 100% do período.',rod)+`<div class="body"><table class="stbl"><tbody>${D.map(x=>{const a=G.find(y=>y.X.includes(x));return `<tr><td><span class="nm">${esc(presCorta(a?a.nome:'',40))}</span><span class="sub2">${esc(presCorta(x.data.observacao,150))}</span></td><td class="n">${dshort(x.data.data)}</td></tr>`}).join('')}</tbody></table></div>`})});
+ /* 6. pontos de atenção: os 5 critérios mais errados de cada equipe e as zeradas; o número é a posição do critério no cadastro do setor */
+ const ord=new Map(((C&&C.data.criterios)||[]).map((c,i)=>[c.id,i+1]));
+ const atencao=g=>{const E=new Map();g.M.forEach(x=>(x.data.erros||[]).forEach(c=>{const k=c.id||c.nome,o=E.get(k)||{nome:String(c.nome??''),zera:!!c.zera,n:ord.get(c.id),q:0};o.q++;E.set(k,o)}));
+  const T5=[...E.values()].filter(c=>!c.zera).sort((a,b)=>b.q-a.q||a.nome.localeCompare(b.nome)).slice(0,5),Z=[...E.values()].filter(c=>c.zera).sort((a,b)=>b.q-a.q),zm=g.M.filter(x=>x.data.zeradaManual).length;
+  const it=(i,txt,sub)=>`<li style="display:grid;grid-template-columns:34px 1fr;gap:10px;margin-top:14px"><b style="display:grid;place-items:center;width:30px;height:30px;border-radius:50%;background:#1C6B3F;font-size:16px">${i}</b><span style="font-size:18px;line-height:1.3">${txt}<br><span style="color:var(--g);font-size:15px">${sub}</span></span></li>`;
+  return `<div style="background:rgba(232,244,234,.06);border:1px solid rgba(232,244,234,.17);border-radius:20px;padding:24px 22px"><h4 style="font:600 24px/1.2 var(--fd)">${gn(g)}</h4><ol style="list-style:none;padding:0;margin:0">${T5.length?T5.map((c,i)=>it(i+1,esc(presCorta(c.nome,80)),`${c.n?`Critério ${c.n} · `:''}perda em ${nf(c.q)} de ${nf(g.M.length)}`)).join(''):'<li style="margin-top:14px;font-size:18px;color:rgba(232,244,234,.7)">Nenhum critério errado no período.</li>'}${Z.length||zm?it('!',`Erros críticos que zeraram: ${[...Z.map(c=>esc(presCorta(c.nome,50))),...(zm?['zerada manualmente']:[])].join(', ')}`,plural(g.zer,'monitoria zerada','monitorias zeradas')):''}</ol></div>`};
+ presPag(grupos.filter(g=>g.M.length),3).forEach((P,i,TT)=>{const tt='Onde mais se perdeu ponto'+(TT.length>1?` (${i+1}/${TT.length})`:'');
+  s.push({t:`Pontos de atenção · ${tt}`,h:presLado('Pontos de atenção',tt,'Os 5 critérios que mais apareceram como erro em cada equipe.',rod)+`<div class="body" style="justify-content:flex-start;padding-top:90px"><div style="display:grid;grid-template-columns:repeat(${P.length},1fr);gap:20px">${P.map(atencao).join('')}</div></div>`})});
+ /* 7. consolidado: uma coluna por equipe e o setor no fim */
+ const linhas=[['Atendentes avaliados',g=>nf(g.Av.length)],['Monitorias realizadas',g=>nf(g.M.length)],['Média de pontos perdidos',g=>pp(g.P)],['Qualidade média',g=>pct(g.Q)],['1ª metade',g=>pct(g.Q1)],['2ª metade',g=>pct(g.Q2)],['Evolução',g=>dl(g.EV)]];
+ presPag(grupos,4).forEach((P,i,TT)=>{const C_=[...P,{...T,nome:'__setor'}],tt='Leitura geral do período'+(TT.length>1?` (${i+1}/${TT.length})`:'');
+  s.push({t:`Consolidado · ${tt}`,h:presLado('Consolidado geral',tt,'Médias calculadas a partir das qualidades individuais dos atendentes.',rod)+`<div class="body"><table class="stbl" style="font-size:22px"><thead><tr><th></th>${C_.map(g=>`<th class="n">${g.nome==='__setor'?esc(setor.nome):gn(g)}</th>`).join('')}</tr></thead><tbody>${linhas.map(([l,f])=>`<tr><td>${l}</td>${C_.map(g=>`<td class="n"${g.nome==='__setor'?' style="font-weight:700"':''}>${f(g)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`})});
+ s.push(presCapa('Obrigado','ALINHAMENTO DE QUALIDADE',esc(setor.nome),`${dfmt(de)} a ${dfmt(ate)}`));s.at(-1).t='Encerramento';
+ /* os títulos dos slides são lidos como texto: volta o nome da equipe sem o escape do HTML */
+ const un={'&amp;':'&','&lt;':'<','&gt;':'>','&quot;':'"','&#39;':"'"};s.forEach(x=>x.t=x.t.replace(/&(amp|lt|gt|quot|#39);/g,m=>un[m]));
  presMontar(s)}
 /* busca os dados da área (Agenda, Análises, Projetos e Monitorias), monta os slides e apresenta ou baixa */
 let presTok=0;
@@ -3376,8 +3470,9 @@ async function presIr(baixar){const m=presModo,tk=++presTok,pg=page;
    buildSlidesAg({abertas:lim(ab),concl:[...C.values()],agenda:lim(agd).filter(x=>x.tipo==='agenda')},de,ate)}
   else if(m==='pm')buildSlidesPm(lim(await DB.regList('projeto')),de,ate);
   else if(m==='rel'){if(!stRel)throw new Error('Escolha o setor.');const st=stRel;
-   const[ra,rs,rm]=await Promise.all([DB.regList('monit_agente'),DB.regList('monit_setor'),DB.regList('monitoria',{de,ate})]);
-   buildSlidesRel(st,lim(ra),lim(rs).find(x=>x.data.setor===st.id)||null,lim(rm).filter(x=>x.data.setor===st.id&&x.data.data>=de&&x.data.data<=ate),de,ate)}
+   const[ra,rq,rg,rs,rm]=await Promise.all([DB.regList('monit_agente'),DB.regList('monit_equipe'),DB.regList('monit_gestor'),DB.regList('monit_setor'),DB.regList('monitoria',{de,ate})]);
+   const ge=lim(rg).find(x=>x.data.setor===st.id);
+   buildSlidesRel(st,lim(ra),lim(rq),ge&&ge.data.nome?ge.data.nome:null,lim(rs).find(x=>x.data.setor===st.id)||null,lim(rm).filter(x=>x.data.setor===st.id&&x.data.data>=de&&x.data.data<=ate),de,ate)}
   else if(m==='mon'){const[ra,rm]=await Promise.all([DB.regList('monit_agente'),DB.regList('monitoria',{de:moDatas(mes)[0],ate:moDatas(moMesSoma(mes,1))[1]})]);
    buildSlidesMon(lim(ra),lim(rm).filter(x=>moMesRef(x)===mes),mes)}
   else{const[re,rd]=await Promise.all([DB.regList('jornada_etapa'),DB.regList('diagnostico'),anGarantir()]);buildSlidesAn(lim(re),lim(rd))}
