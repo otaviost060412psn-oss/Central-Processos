@@ -2554,27 +2554,48 @@ async function moExcluir(btn){const ed=ED,{id,x}=ed;
  btn.setAttribute('aria-disabled','true');
  try{await DB.regDelete('monitoria',id);maLimpar();if(ED===ed)closeEd();toast('Monitoria excluída')}catch(e){btn.removeAttribute('aria-disabled');moErro(e,ed)}
  moCarregar()}
+/* ---------- planilhas do Excel com o visual da Central (ExcelJS) ---------- */
+async function xlNova(){if(!window.ExcelJS)try{await loadScript('https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js')}catch(e){throw new Error('Não foi possível gerar o Excel sem internet.')}
+ const wb=new ExcelJS.Workbook();wb.creator='Central de Processos';wb.created=new Date();return wb}
+const XL={verde:'FF176B45',escuro:'FF0A3125',marinho:'FF1F3864',gelo:'FFE8F4EA',zebra:'FFF4F8F5',borda:'FFD0D7D3',total:'FFFFF2CC',erro:'FFFCE4E4',apagado:'FF8C8C8C',branco:'FFFFFFFF'};
+/* uma aba: faixa verde de título, subtítulo, bloco de informações (opcional), cabeçalho azul com filtro e linhas zebradas; cor(linha) devolve 'total', 'erro' ou 'apagado' */
+function xlAba(wb,nome,{titulo,sub,info=[],cab,linhas,cor}){
+ const ws=wb.addWorksheet(nome,{properties:{tabColor:{argb:XL.verde}}}),n=Math.max(cab.length,2),fill=c=>({type:'pattern',pattern:'solid',fgColor:{argb:c}}),b={style:'thin',color:{argb:XL.borda}},bordas={top:b,left:b,bottom:b,right:b};
+ const faixa=(txt,f,fonte,alt)=>{const r=ws.addRow([txt]);ws.mergeCells(r.number,1,r.number,n);r.height=alt;const c=r.getCell(1);c.fill=fill(f);c.font=fonte;c.alignment={vertical:'middle',horizontal:'left',indent:1}};
+ faixa(titulo,XL.verde,{bold:true,size:14,color:{argb:XL.branco}},28);
+ faixa(sub||'',XL.gelo,{italic:true,size:10,color:{argb:XL.escuro}},18);
+ ws.addRow([]);
+ info.forEach(([k,v])=>{const r=ws.addRow([k,v]),c=r.getCell(1);c.font={bold:true,color:{argb:XL.escuro}};c.fill=fill(XL.gelo);r.getCell(1).border=r.getCell(2).border=bordas;r.getCell(2).alignment={horizontal:'left'}});
+ if(info.length)ws.addRow([]);
+ const h=ws.addRow(cab);h.height=30;h.eachCell(c=>{c.fill=fill(XL.marinho);c.font={bold:true,color:{argb:XL.branco}};c.alignment={vertical:'middle',horizontal:'center',wrapText:true};c.border=bordas});
+ linhas.forEach((l,i)=>{const r=ws.addRow(l),t=cor&&cor(l);for(let j=1;j<=cab.length;j++){const c=r.getCell(j);c.border=bordas;c.alignment={vertical:'top',wrapText:true,horizontal:typeof l[j-1]==='number'?'center':'left'};
+  c.fill=fill(t==='total'?XL.total:t==='erro'?XL.erro:i%2?XL.zebra:XL.branco);if(t==='total')c.font={bold:true};else if(t==='apagado')c.font={italic:true,color:{argb:XL.apagado}}}});
+ /* largura de cada coluna pelo conteúdo, entre 10 e 50 caracteres (o texto maior quebra linha) */
+ cab.forEach((t,j)=>{const m=[...linhas,...(j<2?info:[])].reduce((a,l)=>Math.max(a,String(l[j]??'').length),String(t).length);ws.getColumn(j+1).width=Math.min(50,Math.max(10,m+2))});
+ ws.views=[{state:'frozen',ySplit:h.number,showGridLines:false}];
+ ws.autoFilter={from:{row:h.number,column:1},to:{row:h.number,column:cab.length}};
+ return ws}
+async function xlSalvar(wb,arq){const bl=new Blob([await wb.xlsx.writeBuffer()],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}),l=document.createElement('a');l.href=URL.createObjectURL(bl);l.download=arq;document.body.appendChild(l);l.click();l.remove();setTimeout(()=>URL.revokeObjectURL(l.href),4000)}
 /* planilha do setor no mês da tela: aba Resumo e uma aba por agente com as monitorias, na ordem das vagas */
 async function moExportar(){const s=monSetores().find(x=>x.id===MO.setor),L=moDoMes();if(!s||!L||MO.exportando)return;
  const mes=MO.mes,lim=MO.limitado,M=L.filter(x=>x.data.setor===s.id),A=moAgentesSetor(s.id,M),VL=monVagasLista(monVagas(s.id));
  MO.exportando=true;rMon();
  try{
-  if(!window.XLSX)try{await loadScript('https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js')}catch(e){throw new Error('Não foi possível gerar o Excel sem internet.')}
-  const wb=XLSX.utils.book_new(),add=(n,rows)=>XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows),n),num=v=>isN(v)?+v.toFixed(2):'';
+  const wb=await xlNova(),num=v=>isN(v)?+v.toFixed(2):'',sub=`${dgMesNome(mes)} · exportado em ${dfmt(today())}`;
   /* nome de aba: até 31 caracteres, sem : \ / ? * [ ], sem apóstrofo nas pontas, sem repetir e sem o nome reservado History */
   const usadas=new Set(['resumo','critérios','history']),aba=nome=>{const b=String(nome).replace(/[:\\\/?*\[\]]/g,' ').trim().slice(0,31).replace(/^'+|'+$/g,'').trim()||'Agente';let n=b,i=2;while(usadas.has(n.toLowerCase())){const suf=` (${i++})`;n=b.slice(0,31-suf.length)+suf}usadas.add(n.toLowerCase());return n};
   const ordem=x=>{const i=VL.findIndex(v=>monVagaIgual({...v,mes},x.data.vaga));return i<0?VL.length:i};
   const Ma=a=>M.filter(x=>x.data.agente===a.id).sort((x,y)=>ordem(x)-ordem(y)||x.data.data.localeCompare(y.data.data)||x.criado-y.criado);
   const sit=a=>a.fora?(a.excluido?'Agente excluído':'Não está mais neste setor'):a.data.ativo===false?'Inativo':'';
-  add('Resumo',[['Setor',s.nome],['Mês',dgMesNome(mes)],['Média da equipe (%)',num(moMedia(M))],['Monitorias',M.length],[],['Agente','Monitorias','Média (%)','Zeradas','Situação'],
-   ...A.map(a=>{const X=Ma(a);return [a.data.nome,X.length,num(moMedia(X)),X.filter(x=>x.data.zerada).length,sit(a)]})]);
+  xlAba(wb,'Resumo',{titulo:`MONITORIAS | ${s.nome}`,sub,info:[['Setor',s.nome],['Mês',dgMesNome(mes)],['Média da equipe (%)',num(moMedia(M))],['Monitorias',M.length]],cab:['Agente','Monitorias','Média (%)','Zeradas','Situação'],
+   linhas:A.map(a=>{const X=Ma(a);return [a.data.nome,X.length,num(moMedia(X)),X.filter(x=>x.data.zerada).length,sit(a)]}),cor:l=>l[4]?'apagado':null});
   /* critérios ativos do setor: no modo acertos o peso é o que o critério vale; nos demais, o que se perde ao errar */
   const cfg=monCfgDe(s.id),cd=cfg?cfg.data:{criterios:[]};
-  add('Critérios',[['Critério','Descrição',cd.modo==='acertos'?'Pontos que vale':'Pontos perdidos'],...cd.criterios.filter(c=>c.ativo!==false).map(c=>[c.nome,c.descricao||'',c.zera?'Zera a nota':+c.peso||0])]);
-  A.forEach(a=>add(aba(a.data.nome),[['Vaga','Data','Protocolo','Nota (%)','Zerada','Pontos perdidos','Critérios com erro','Observação','Avaliado por','Alterado por'],
-   ...Ma(a).map(x=>{const d=x.data;return [monVagaRot(d.vaga),dfmt(d.data),d.protocolo||'',num(d.nota),d.zerada?(d.zeradaManual?'Sim (manual)':'Sim'):'Não',d.perdidos||0,d.erros.map(c=>c.nome+(c.zera?' (zera)':'')).join('; '),d.observacao||'',moAvaliador(x.criado_por),x.atualizado!==x.criado?moAvaliador(x.atualizado_por):'']})]));
+  xlAba(wb,'Critérios',{titulo:`CRITÉRIOS DE AVALIAÇÃO | ${s.nome}`,sub,cab:['Critério','Descrição',cd.modo==='acertos'?'Pontos que vale':'Pontos perdidos'],linhas:cd.criterios.filter(c=>c.ativo!==false).map(c=>[c.nome,c.descricao||'',c.zera?'Zera a nota':+c.peso||0]),cor:l=>l[2]==='Zera a nota'?'erro':null});
+  A.forEach(a=>xlAba(wb,aba(a.data.nome),{titulo:`MONITORIAS | ${a.data.nome}`,sub:`${s.nome} · ${sub}`,cab:['Vaga','Data','Protocolo','Nota (%)','Zerada','Pontos perdidos','Critérios com erro','Observação','Avaliado por','Alterado por'],
+   linhas:Ma(a).map(x=>{const d=x.data;return [monVagaRot(d.vaga),dfmt(d.data),d.protocolo||'',num(d.nota),d.zerada?(d.zeradaManual?'Sim (manual)':'Sim'):'Não',d.perdidos||0,d.erros.map(c=>c.nome+(c.zera?' (zera)':'')).join('; '),d.observacao||'',moAvaliador(x.criado_por),x.atualizado!==x.criado?moAvaliador(x.atualizado_por):'']}),cor:l=>l[4]!=='Não'?'erro':null}));
   const arq=String(s.nome).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'setor';
-  XLSX.writeFile(wb,`monitorias-${arq}-${mes}.xlsx`);
+  await xlSalvar(wb,`monitorias-${arq}-${mes}.xlsx`);
   toast(lim?'Planilha gerada, mas há muitos registros: parte deles pode ter ficado de fora.':'Planilha gerada',lim);
  }catch(e){toast(e.message||'Não foi possível exportar.',true)}
  finally{MO.exportando=false;if(page==='monitorias')rMon()}}
@@ -2956,14 +2977,14 @@ async function exportXlsx(){if(!isAdmin()||!EX||EX.ocupado)return;const X=EX,E={
  if(E.ag&&(Date.parse(E.aAte)-Date.parse(E.aDe))/864e5>3*366)return msg('Na Agenda e Demandas, exporte no máximo 3 anos por vez.');
  X.ocupado=true;exRedesenhar();msg('Gerando o arquivo…');let limitado=false;
  try{
-  if(!window.XLSX)try{await loadScript('https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js')}catch(e){throw new Error('Não foi possível gerar o Excel sem internet.')}
-  const wb=XLSX.utils.book_new(),add=(n,rows)=>XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows),n),dia=t=>t?dfmt(ymd(new Date(t))):'';
+  /* add(aba, [cabeçalho, ...linhas], período mostrado no subtítulo, cor da linha) */
+  const wb=await xlNova(),add=(n,[cab,...linhas],per,cor)=>xlAba(wb,n,{titulo:`CENTRAL DE PROCESSOS | ${n.toUpperCase()}`,sub:(per?per+' · ':'')+`exportado em ${dfmt(today())}`,cab,linhas,cor}),entre=(de,ate)=>`De ${dfmt(de)} a ${dfmt(ate)}`,dia=t=>t?dfmt(ymd(new Date(t))):'';
   if(E.cal&&!await maGarantir(periodWeeks(E.cFrom,E.cTo)))msg('Atenção: não foi possível ler as monitorias; os números automáticos podem estar incompletos.');
-  if(E.cal){const L=periodWeeks(E.cFrom,E.cTo),sem=w=>`${dfmt(w.inicio)} a ${dfmt(w.fim)}`;
-   add('Qualidade',[['Semana','Equipe','Monitorias','Qualidade (%)','Zeradas','Agentes','Responsável','Preenchido por'],...L.flatMap(w=>{const Q=calcQ(w);return [...Q.rows.map(r=>[sem(w),r.nome,r.monitorias??'',r.qualidade??'',r.zeradas??'',r.agentes??'',r.responsavel||'',r.by||'']),[sem(w),'Total',Q.mon??'',Q.q!==null?+Q.q.toFixed(2):'',Q.zer??'',Q.ag??'','','']]})]);
-   add('Operações',[['Semana','Setor','Tickets tratados','Backlog atual','Tempo médio de backlog','Dias úteis','Preenchido por'],...L.flatMap(w=>{const O=calcO(w);return [...O.rows.map(r=>[sem(w),r.nome,r.tratados??'',r.backlog??'',isN(r.tempo)?dur(r.tempo):'',diasTxt(r.tempo),r.by||'']),[sem(w),'Total',O.trat??'',O.back??'',isN(O.tempo)?dur(O.tempo):'','',''],[sem(w),'SLA de resolução','','',isN(O.sla)?dur(O.sla):'','',w.slaBy||'']]})]);
-   add('Planos de ação',[['Semana','Frente','Setor','Erro identificado','Ação proposta','Objetivo','Prazo'],...L.flatMap(w=>[...plansOf(w,'q'),...plansOf(w,'o')].map(p=>[sem(w),FR[p.frente],setorNome(p.setor),p.erro||'',p.acao||'',p.objetivo||'',dfmt(p.prazo)]))]);
-   add('Palavra da Semana',[['Semana','Colaborador','Palavra'],...L.flatMap(w=>pessoasDaSemana(w).filter(p=>p.palavra).map(p=>[sem(w),p.nome,p.palavra]))]);
+  if(E.cal){const L=periodWeeks(E.cFrom,E.cTo),sem=w=>`${dfmt(w.inicio)} a ${dfmt(w.fim)}`,per=L.length?`Semanas de ${dfmt(L[0].inicio)} a ${dfmt(L[L.length-1].fim)}`:'';
+   add('Qualidade',[['Semana','Equipe','Monitorias','Qualidade (%)','Zeradas','Agentes','Responsável','Preenchido por'],...L.flatMap(w=>{const Q=calcQ(w);return [...Q.rows.map(r=>[sem(w),r.nome,r.monitorias??'',r.qualidade??'',r.zeradas??'',r.agentes??'',r.responsavel||'',r.by||'']),[sem(w),'Total',Q.mon??'',Q.q!==null?+Q.q.toFixed(2):'',Q.zer??'',Q.ag??'','','']]})],per,l=>l[1]==='Total'?'total':null);
+   add('Operações',[['Semana','Setor','Tickets tratados','Backlog atual','Tempo médio de backlog','Dias úteis','Preenchido por'],...L.flatMap(w=>{const O=calcO(w);return [...O.rows.map(r=>[sem(w),r.nome,r.tratados??'',r.backlog??'',isN(r.tempo)?dur(r.tempo):'',diasTxt(r.tempo),r.by||'']),[sem(w),'Total',O.trat??'',O.back??'',isN(O.tempo)?dur(O.tempo):'','',''],[sem(w),'SLA de resolução','','',isN(O.sla)?dur(O.sla):'','',w.slaBy||'']]})],per,l=>l[1]==='Total'||l[1]==='SLA de resolução'?'total':null);
+   add('Planos de ação',[['Semana','Frente','Setor','Erro identificado','Ação proposta','Objetivo','Prazo'],...L.flatMap(w=>[...plansOf(w,'q'),...plansOf(w,'o')].map(p=>[sem(w),FR[p.frente],setorNome(p.setor),p.erro||'',p.acao||'',p.objetivo||'',dfmt(p.prazo)]))],per);
+   add('Palavra da Semana',[['Semana','Colaborador','Palavra'],...L.flatMap(w=>pessoasDaSemana(w).filter(p=>p.palavra).map(p=>[sem(w),p.nome,p.palavra]))],per);
   }
   if(E.ag){const M=new Map(),junta=r=>{if(r.limitado)limitado=true;(r.itens||[]).forEach(x=>M.set(x.id,x))};
    /* com data ou prazo no período (o servidor aceita até 400 dias por consulta) */
@@ -2972,7 +2993,7 @@ async function exportXlsx(){if(!isAdmin()||!EX||EX.ocupado)return;const X=EX,E={
    for(let de=E.aDe;de<=E.aAte;de=exSoma(de,31)){const ate=[exSoma(de,30),E.aAte].sort()[0];junta(await DB.agendaList({pessoa:'*',encerradas:true,desde:new Date(de+'T00:00:00').getTime(),ate:new Date(ate+'T23:59:59.999').getTime()}))}
    if(E.semPrazo){const r=await DB.agendaList({pessoa:'*',demandas:'abertas'});if(r.limitado)limitado=true;(r.itens||[]).filter(x=>!x.dia).forEach(x=>M.set(x.id,x))}
    const ord=x=>x.dia||(x.encerrado?ymd(new Date(x.encerrado)):'9999');
-   add('Agenda e Demandas',[['Tipo','Título','Descrição','Responsável','Data ou prazo','Início','Fim','Status','Concluída em','Criada em'],...[...M.values()].sort((a,b)=>ord(a).localeCompare(ord(b))||a.criado-b.criado).map(x=>[x.tipo==='demanda'?'Demanda':'Agenda',x.titulo||'',x.descricao||'',(x.resp_nome||'')+(x.conta_excluida?' (conta excluída)':''),dfmt(x.dia||''),x.hora_ini||'',x.hora_fim||'',x.tipo==='demanda'?(AG_ST[x.status]||[x.status||''])[0]:'',dia(x.encerrado),dia(x.criado)])]);
+   add('Agenda e Demandas',[['Tipo','Título','Descrição','Responsável','Data ou prazo','Início','Fim','Status','Concluída em','Criada em'],...[...M.values()].sort((a,b)=>ord(a).localeCompare(ord(b))||a.criado-b.criado).map(x=>[x.tipo==='demanda'?'Demanda':'Agenda',x.titulo||'',x.descricao||'',(x.resp_nome||'')+(x.conta_excluida?' (conta excluída)':''),dfmt(x.dia||''),x.hora_ini||'',x.hora_fim||'',x.tipo==='demanda'?(AG_ST[x.status]||[x.status||''])[0]:'',dia(x.encerrado),dia(x.criado)])],entre(E.aDe,E.aAte));
   }
   if(E.an){const[re,rf,rd]=await Promise.all([DB.regList('jornada_etapa'),DB.regList('jornada_fluxo'),DB.regList('diagnostico')]);if(re.limitado||rf.limitado||rd.limitado)limitado=true;
    const ET=re.itens||[],nome=id=>{const e=ET.find(y=>y.id===id);return e?e.data.nome:'Etapa excluída'},lista=a=>(Array.isArray(a)?a:[]).filter(s=>typeof s==='string'&&s.trim()).join(', ');
@@ -2981,25 +3002,25 @@ async function exportXlsx(){if(!isAdmin()||!EX||EX.ocupado)return;const X=EX,E={
    const dt=x=>/^\d{4}-\d{2}-\d{2}$/.test(x.data.data||'')?x.data.data:ymd(new Date(x.criado)),txt=(M,k)=>{const v=dgM(M,k);return v?(Array.isArray(v)?v[0]:v):''};
    add('Diagnósticos',[['Data de registro','Mês','Problema','Situação','Gravidade','Frequência','Etapas','Setores','Tema','O que está acontecendo','Impacto para o cliente','A causa é','Causa ou hipótese','Evidências','Próxima ação','Registrado em','Alterado em'],
     ...(rd.itens||[]).filter(x=>{const d=dt(x);return d>=E.dDe&&d<=E.dAte}).sort((a,b)=>dt(a).localeCompare(dt(b))||a.criado-b.criado).map(x=>{const d=x.data;
-     return [dfmt(dt(x)),dgMesNome(dt(x).slice(0,7)),d.titulo||'',txt(DG_SIT,d.situacao),txt(DG_GRAV,d.gravidade),txt(DG_FREQ,d.frequencia),[...new Set((d.etapas||[]).map(nome))].join(', '),lista(d.setores),d.tema||'',d.descricao||'',d.impacto||'',txt(DG_CAUSA,d.causaTipo),d.causa||'',d.evidencias||'',d.proxima||'',dia(x.criado),dia(x.atualizado)]})]);
+     return [dfmt(dt(x)),dgMesNome(dt(x).slice(0,7)),d.titulo||'',txt(DG_SIT,d.situacao),txt(DG_GRAV,d.gravidade),txt(DG_FREQ,d.frequencia),[...new Set((d.etapas||[]).map(nome))].join(', '),lista(d.setores),d.tema||'',d.descricao||'',d.impacto||'',txt(DG_CAUSA,d.causaTipo),d.causa||'',d.evidencias||'',d.proxima||'',dia(x.criado),dia(x.atualizado)]})],entre(E.dDe,E.dAte));
   }
   if(E.an){if(!await anGarantir())throw new Error('Não foi possível carregar os dados das Análises. Tente de novo.');if(JR.limitado||DG.limitado||PJ.limitado)limitado=true;
    add('Perguntas-chave',[['Nº','Pergunta','Resposta','Item','Detalhe'],...pqPerguntas().flatMap((q,i)=>{const I=pqItensTexto(q.itens),r=pqPlano(q.r);return I.length?I.map(x=>[i+1,q.t,r,x.t,x.d]):[[i+1,q.t,r,'','']]})]);
    await maGarantir(ids().filter(id=>id>=E.dDe&&id<=E.dAte).map(id=>S.weeks[id]));
    const P=porPeriodoDatas(E.dDe,E.dAte);
    add('Por setor',[['Setor','Na Calibragem','Qualidade média (%)','Monitorias','Zeradas','Tickets tratados','Backlog (última semana)','Tempo médio','Problemas ativos','Críticos ativos','Projetos em aberto','Atrasados','Concluídos no período','Etapas da jornada'],
-    ...porSetores().map(s=>{const r=porNumeros(s,P),v=x=>isN(x)?x:'';return [s.nome,s.cfg?'Sim':'Não (só etiqueta)',r.q&&isN(r.q.qualidade)?+r.q.qualidade.toFixed(2):'',r.q?v(r.q.monitorias):'',r.q?v(r.q.zeradas):'',r.o?v(r.o.tratados):'',r.o?v(r.o.backlog):'',r.o&&isN(r.o.tempo)?dur(r.o.tempo):'',r.prob.length,r.crit,r.abertos.length,r.atr,r.concl.length,r.etapas.map(({e,i})=>`${i+1}. ${e.data.nome}`).join(', ')]})]);
+    ...porSetores().map(s=>{const r=porNumeros(s,P),v=x=>isN(x)?x:'';return [s.nome,s.cfg?'Sim':'Não (só etiqueta)',r.q&&isN(r.q.qualidade)?+r.q.qualidade.toFixed(2):'',r.q?v(r.q.monitorias):'',r.q?v(r.q.zeradas):'',r.o?v(r.o.tratados):'',r.o?v(r.o.backlog):'',r.o&&isN(r.o.tempo)?dur(r.o.tempo):'',r.prob.length,r.crit,r.abertos.length,r.atr,r.concl.length,r.etapas.map(({e,i})=>`${i+1}. ${e.data.nome}`).join(', ')]})],entre(E.dDe,E.dAte));
   }
   if(E.pm){const[rp,rh,re,rd]=await Promise.all([DB.regList('projeto'),DB.regList('projeto_hist'),DB.regList('jornada_etapa'),DB.regList('diagnostico')]);if(rp.limitado||rh.limitado||re.limitado||rd.limitado)limitado=true;
    const P=rp.itens||[],noP=d=>!!d&&d>=E.pDe&&d<=E.pAte,aberto=x=>x.data.status!=='concluido'&&x.data.status!=='cancelado';
    const nomeE=id=>{const e=(re.itens||[]).find(y=>y.id===id);return e?e.data.nome:'Etapa excluída'},nomeD=id=>{const x=(rd.itens||[]).find(y=>y.id===id);return x?x.data.titulo:'Problema excluído'};
    const L=P.filter(x=>noP(ymd(new Date(x.criado)))||noP(x.data.prazo)||noP(x.data.concluidoEm)||(E.pAbertos&&aberto(x))).sort((a,b)=>a.criado-b.criado);
    add('Projetos',[['Projeto','Status','Prioridade','Responsável','Setores','Etapas da jornada','Problemas ligados','Objetivo','Ação proposta','Próxima ação','Início previsto','Prazo','Atrasado','Concluído em','Depende de','Impedimentos','Indicador de sucesso','Valor de antes','Meta','Valor atual','Resultado alcançado','Validação do resultado','Previsão de atuação','Reavaliar em','Por que aguardar','Condição para reavaliar','Criado em','Alterado em'],
-    ...L.map(x=>{const d=x.data;return [d.nome,(PJ_ST[d.status]||[d.status])[0],(dgM(DG_GRAV,d.prioridade)||[''])[0],d.responsavel,d.setores.join(', '),[...new Set(d.etapas.map(nomeE))].join(', '),d.problemas.map(nomeD).join(', '),d.objetivo,d.acao,d.proxima,dfmt(d.inicio),dfmt(d.prazo),aberto(x)&&d.prazo&&d.prazo<today()?'Sim':'Não',dfmt(d.concluidoEm),d.dependeDe,d.impedimentos,d.indicador,d.linhaBase,d.meta,d.atual,d.resultado,PJ_VAL[d.validacao]||'',d.previsao?dgMesNome(d.previsao):'',dfmt(d.reavaliar),d.motivoAguardar,d.condicao,dia(x.criado),dia(x.atualizado)]})]);
+    ...L.map(x=>{const d=x.data;return [d.nome,(PJ_ST[d.status]||[d.status])[0],(dgM(DG_GRAV,d.prioridade)||[''])[0],d.responsavel,d.setores.join(', '),[...new Set(d.etapas.map(nomeE))].join(', '),d.problemas.map(nomeD).join(', '),d.objetivo,d.acao,d.proxima,dfmt(d.inicio),dfmt(d.prazo),aberto(x)&&d.prazo&&d.prazo<today()?'Sim':'Não',dfmt(d.concluidoEm),d.dependeDe,d.impedimentos,d.indicador,d.linhaBase,d.meta,d.atual,d.resultado,PJ_VAL[d.validacao]||'',d.previsao?dgMesNome(d.previsao):'',dfmt(d.reavaliar),d.motivoAguardar,d.condicao,dia(x.criado),dia(x.atualizado)]})],entre(E.pDe,E.pAte),l=>l[12]==='Sim'?'erro':null);
    const nomeP=id=>{const x=P.find(y=>y.id===id);return x?x.data.nome:'Projeto excluído'};
-   add('Projetos - Histórico',[['Data','Projeto','Tipo','O que aconteceu'],...(rh.itens||[]).filter(x=>noP(x.data.dia)).sort((a,b)=>a.data.dia.localeCompare(b.data.dia)||a.criado-b.criado).map(x=>[dfmt(x.data.dia),nomeP(x.data.projeto),(PJ_HT[x.data.tipo]||[x.data.tipo])[0],x.data.texto])]);
+   add('Projetos - Histórico',[['Data','Projeto','Tipo','O que aconteceu'],...(rh.itens||[]).filter(x=>noP(x.data.dia)).sort((a,b)=>a.data.dia.localeCompare(b.data.dia)||a.criado-b.criado).map(x=>[dfmt(x.data.dia),nomeP(x.data.projeto),(PJ_HT[x.data.tipo]||[x.data.tipo])[0],x.data.texto])],entre(E.pDe,E.pAte));
   }
-  XLSX.writeFile(wb,`central-igreen-exportacao-${today()}.xlsx`);
+  await xlSalvar(wb,`central-igreen-exportacao-${today()}.xlsx`);
   toast(limitado?'Arquivo exportado. Atenção: havia registros demais e parte deles ficou de fora.':'Arquivo exportado',limitado);
  }catch(e){toast(e.message||'Não foi possível exportar.',true)}
  finally{X.ocupado=false;if(EX===X){exRedesenhar();msg('')}}
