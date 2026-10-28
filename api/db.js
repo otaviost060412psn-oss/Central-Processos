@@ -27,6 +27,48 @@ const fail=(s,m)=>{throw Object.assign(new Error(m),{status:s})};
 const requireAdmin=u=>{if(!u.admin)fail(403,'Apenas administradores podem realizar essa ação.')};
 const publicUser=u=>({id:u.id,nome:u.nome,usuario:u.usuario,admin:u.admin,criado:Number(u.criado)});
 const pathSet=(o,path,value)=>{const parts=path.split('.');if(parts.some(x=>!x||x==='__proto__'||x==='constructor'||x==='prototype'))fail(400,'Campo inválido');let t=o;for(const p of parts.slice(0,-1)){if(!t[p]||typeof t[p]!=='object'||Array.isArray(t[p]))t[p]={};t=t[p]}if(value===null)delete t[parts.at(-1)];else t[parts.at(-1)]=value};
+/* ---------- semanas: o que cada perfil pode gravar ----------
+   o navegador só altera os campos que a tela usa; "quem lançou" vem da sessão; datas da semana não mudam por aqui */
+const SEM_ID=/^[A-Za-z0-9_-]{1,60}$/,SEM_LIMITE=256*1024;
+const semNum=(v,max)=>v===null||(typeof v==='number'&&Number.isFinite(v)&&v>=0&&(max==null||v<=max));
+const semTxt=(v,n)=>v===null||(typeof v==='string'&&v.length<=n);
+const SEM_CAMPOS={q:{monitorias:v=>semNum(v),qualidade:v=>semNum(v,100),zeradas:v=>semNum(v),agentes:v=>semNum(v),responsavel:v=>semTxt(v,500)},o:{tratados:v=>semNum(v),backlog:v=>semNum(v),tempo:v=>semNum(v)}};
+const SEM_ROTULO={monitorias:'Monitorias',qualidade:'Qualidade',zeradas:'Zeradas',agentes:'Quantidade de agentes',responsavel:'Responsável',tratados:'Tickets tratados',backlog:'Backlog',tempo:'Tempo médio de backlog',erro:'Erro identificado',acao:'Ação proposta',objetivo:'Objetivo',palavra:'Palavra',nome:'Nome'};
+/* objeto simples: chaves curtas (nunca nomes nativos como toString) e valores texto, número, sim/não ou vazio; preserva campos antigos sem aceitar estruturas */
+const semObj=(v,max,qual)=>{if(!v||typeof v!=='object'||Array.isArray(v))fail(400,qual+' inválido.');const E=Object.entries(v);if(E.length>30)fail(400,qual+' inválido.');
+ for(const[k,x]of E){if(!/^[A-Za-z][A-Za-z0-9_]{0,29}$/.test(k)||k in Object.prototype)fail(400,qual+' inválido.');
+  if(typeof x==='string'){if(x.length>max)fail(400,`Texto muito longo em ${SEM_ROTULO[k]||k} (máximo de ${max.toLocaleString('pt-BR')} caracteres).`)}
+  else if(!(x===null||typeof x==='boolean'||(typeof x==='number'&&Number.isFinite(x))))fail(400,qual+' inválido.')}};
+const semPlano=(v,nome)=>{if(v===null)return null;semObj(v,2000,'Plano de ação');if(!['q','o'].includes(v.frente)||typeof v.setor!=='string'||!SEM_ID.test(v.setor))fail(400,'Plano de ação inválido.');
+ if(v.prazo!=null&&v.prazo!==''&&!isDia(v.prazo))fail(400,'Prazo do plano inválido.');return {...v,by:nome,at:Date.now()}};
+const semPalavra=(v,nome)=>{if(v===null)return null;semObj(v,200,'Palavra');if(typeof v.palavra!=='string'||!v.palavra.trim())fail(400,'Palavra inválida.');return {...v,by:nome,at:Date.now()}};
+const semFoto=v=>{if(v===null)return null;if(!v||typeof v!=='object'||Array.isArray(v)||Object.keys(v).length>50)fail(400,'Números congelados inválidos.');
+ for(const[k,x]of Object.entries(v))if(!SEM_ID.test(k)||!x||typeof x!=='object'||!['monitorias','qualidade','zeradas','agentes'].every(c=>semNum(x[c]??null,c==='qualidade'?100:null))||!semTxt(x.responsavel??null,2000))fail(400,'Números congelados inválidos.');
+ return Object.fromEntries(Object.entries(v).map(([k,x])=>[k,{monitorias:x.monitorias??null,qualidade:x.qualidade??null,zeradas:x.zeradas??null,agentes:x.agentes??null,responsavel:x.responsavel??null}]))};
+/* devolve [caminho, valor] já conferido; recusa o que não for da tela */
+function semCampo(k,v,u){const p=String(k).split('.'),nome=u.nome,agora=Date.now(),bad=()=>fail(400,'Campo inválido: '+String(k).slice(0,60));
+ if(v===undefined)v=null;
+ if(p.length===3&&(p[0]==='q'||p[0]==='o')&&SEM_ID.test(p[1])){const c=p[2];
+  if(c==='by')return [k,v===null?null:nome];if(c==='at')return [k,v===null?null:agora];
+  if(!Object.hasOwn(SEM_CAMPOS[p[0]],c))bad();if(!SEM_CAMPOS[p[0]][c](v))fail(400,`Valor inválido em ${SEM_ROTULO[c]}.`);return [k,v]}
+ if(p.length===1){
+  if(k==='sla'){if(!semNum(v))fail(400,'SLA inválido.');return [k,v]}
+  if(k==='slaBy')return [k,v===null?null:nome];if(k==='slaAt')return [k,v===null?null:agora];
+  if(u.admin&&k==='fechada'){if(typeof v!=='boolean')bad();return [k,v]}
+  if(u.admin&&k==='maCongelado')return [k,semFoto(v)];
+  if(u.admin&&k==='palavras'){if(!v||typeof v!=='object'||Array.isArray(v)||Object.keys(v).length)bad();return [k,{}]}
+  if(k==='fechada'||k==='maCongelado')fail(403,'Apenas administradores podem fechar ou reabrir a semana.');
+  bad()}
+ if(p.length===2&&p[0]==='planos'&&SEM_ID.test(p[1]))return [k,semPlano(v,nome)];
+ if(p.length===2&&p[0]==='palavras'&&SEM_ID.test(p[1]))return [k,semPalavra(v,nome)];
+ bad()}
+/* semana nova: montada aqui, nunca com o conteúdo enviado; segunda-feira válida */
+const semDiaSP=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'America/Sao_Paulo'}).format(new Date());
+const semSoma=(s,n)=>{const d=new Date(s+'T00:00:00Z');d.setUTCDate(d.getUTCDate()+n);return d.toISOString().slice(0,10)};
+const semSegunda=s=>{const d=new Date(s+'T00:00:00Z');return semSoma(s,-((d.getUTCDay()+6)%7))};
+function semNova(id,u){if(!isDia(id)||new Date(id+'T00:00:00Z').getUTCDay()!==1)fail(400,'A semana precisa começar numa segunda-feira válida.');
+ if(!u.admin){const s=semSegunda(semDiaSP());if(![semSoma(s,-7),s,semSoma(s,7)].includes(id))fail(403,'Apenas administradores podem criar semanas além da anterior, da atual e da próxima.')}
+ return {inicio:id,fim:semSoma(id,4),fechada:false,q:{},o:{},planos:{},palavras:{},criadaEm:Date.now()}}
 /* ---------- agenda ----------
    tipo 'agenda': item do calendário, data obrigatória, horário opcional, sem status;
    tipo 'demanda': o que a pessoa está fazendo, status obrigatório, prazo (dia) opcional, sem horário */
@@ -248,9 +290,11 @@ export default async function handler(req,res){
    const [weeks,settings,users]=await Promise.all([pool.query('SELECT * FROM cp_weeks'),pool.query('SELECT data FROM cp_settings WHERE id=1'),pool.query('SELECT id,nome,usuario,admin,criado FROM cp_users ORDER BY criado')]);
    return res.json({weeks:Object.fromEntries(weeks.rows.map(w=>[w.id,w.data])),settings:settings.rows[0]?.data||null,users:users.rows.map(publicUser)});
   }
-  if(action==='createWeek'){if(!/^\d{4}-\d{2}-\d{2}$/.test(b.id))fail(400,'Data inválida');await pool.query('INSERT INTO cp_weeks(id,data) VALUES($1,$2) ON CONFLICT DO NOTHING',[b.id,JSON.stringify(b.data)]);return res.json({ok:true})}
+  if(action==='createWeek'){const d=semNova(b.id,u);await pool.query('INSERT INTO cp_weeks(id,data) VALUES($1,$2) ON CONFLICT DO NOTHING',[b.id,JSON.stringify(d)]);return res.json({ok:true})}
   if(action==='update'){
-   const client=await pool.connect();try{await client.query('BEGIN');const q=await client.query('SELECT data FROM cp_weeks WHERE id=$1 FOR UPDATE',[b.id]);if(!q.rows.length)fail(404,'Semana não encontrada');const w=q.rows[0].data;if(w.fechada&&!u.admin)fail(403,'Esta semana está fechada.');for(const [k,v] of Object.entries(b.patch||{}))pathSet(w,k,v===undefined?null:v);await client.query('UPDATE cp_weeks SET data=$2 WHERE id=$1',[b.id,JSON.stringify(w)]);await client.query('COMMIT')}catch(e){await client.query('ROLLBACK');throw e}finally{client.release()}return res.json({ok:true});
+   const client=await pool.connect();try{await client.query('BEGIN');const q=await client.query('SELECT data FROM cp_weeks WHERE id=$1 FOR UPDATE',[b.id]);if(!q.rows.length)fail(404,'Semana não encontrada');const w=q.rows[0].data;if(w.fechada&&!u.admin)fail(403,'Esta semana está fechada.');const P=b.patch;if(!P||typeof P!=='object'||Array.isArray(P)||Object.keys(P).length>60)fail(400,'Alteração inválida.');const antes=Buffer.byteLength(JSON.stringify(w));for(const [k,v] of Object.entries(P).map(([k,v])=>semCampo(k,v,u)))pathSet(w,k,v);const j=JSON.stringify(w),depois=Buffer.byteLength(j);
+   /* acima do limite só aceita o que não aumenta a semana (dá para apagar e encurtar) */
+   if(depois>SEM_LIMITE&&depois>antes)fail(413,'A semana ficou grande demais. Encurte os textos.');await client.query('UPDATE cp_weeks SET data=$2 WHERE id=$1',[b.id,j]);await client.query('COMMIT')}catch(e){await client.query('ROLLBACK');throw e}finally{client.release()}return res.json({ok:true});
   }
   if(action==='setPassword'){
    if(b.id!==u.id)requireAdmin(u);else if(!check(String(b.atual||''),u.password_hash))fail(403,'Senha atual incorreta.');

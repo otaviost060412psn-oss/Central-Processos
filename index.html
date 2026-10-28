@@ -3023,7 +3023,7 @@ function edPatch(){const w=Wk(),{f,i}=ED,id=steps(f)[i];let ok=true;const vals={
  const r=((f==='q'?w.q:w.o)[id])||{},b=`${f}.${id}.`,patch={};let changed=false;
  for(const[k,v]of Object.entries(vals)){if((r[k]??null)!==v){changed=true;patch[b+k]=v}}
  if(changed){patch[b+'by']=who();patch[b+'at']=now}return patch}
-async function save(patch){const w=Wk();if(!Object.keys(patch).length)return true;for(const[k,v]of Object.entries(patch))setPath(w,k,v);try{await DB.update(sel,patch);return true}catch(e){toast(e.message||'Não foi possível salvar.',true);return false}}
+async function save(patch){const w=Wk();if(!Object.keys(patch).length)return true;for(const[k,v]of Object.entries(patch))setPath(w,k,v);try{await DB.update(sel,Object.fromEntries(Object.entries(patch).map(([k,v])=>[k,v===undefined?null:v])));return true}catch(e){toast(e.message||'Não foi possível salvar.',true);return false}}
 function rEdPlan(){const w=Wk(),{id,p}=ED,ro=!canEdit(w);
  if(ED.rendered)return;ED.rendered=true;
  const ta=(k,l)=>`<div class="f"><label for="pl_${k}">${l}</label><textarea id="pl_${k}" data-plk="${k}" ${ro?'readonly':''}>${esc(p[k]||'')}</textarea></div>`;
