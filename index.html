@@ -556,6 +556,41 @@ a.btn{text-decoration:none;color:var(--tx)}
 .moitem{display:grid;gap:8px}
 .moih{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px}
 .moih .btn{margin-left:auto}
+.moih .btn+.btn{margin-left:0}
+/* PDF da monitoria: montado fora da tela e convertido em PDF (A4, fundo branco) */
+.mpdfw{position:fixed;left:-10000px;top:0}
+.mpdf{width:794px;background:#fff;color:#171717;font:400 13px/1.5 var(--f);-webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums}
+.mpdf-h{display:flex;justify-content:space-between;align-items:flex-end;gap:24px;background:#171717;color:#EDEDED;padding:34px 44px 30px}
+.mpdf-brand{display:flex;align-items:center;gap:12px;margin-bottom:26px}
+.mpdf-brand img{display:block;height:26px}
+.mpdf-brand img:first-child{width:19px}
+.mpdf-brand img:last-child{width:92px}
+.mpdf-brand i{width:1px;height:21px;background:#5C6D65}
+.mpdf-k{margin:0 0 4px;color:#0FC589;font-weight:500;font-size:13px}
+.mpdf h1{margin:0;font-size:28px;line-height:1.15;font-weight:600;letter-spacing:-.02em;color:#fff}
+.mpdf-v{margin:6px 0 0;color:#A3A3A3;font-size:13px}
+.mpdf-nota{display:grid;justify-items:end;text-align:right;gap:2px;flex-shrink:0}
+.mpdf-nota span,.mpdf-nota small{font-size:12px;color:#A3A3A3}
+.mpdf-nota b{font-size:46px;line-height:1.05;font-weight:600;letter-spacing:-.03em;color:#0FC589}
+.mpdf-nota b.zr{color:#F2665A}
+.mpdf-c{padding:26px 44px 30px;display:grid;gap:22px}
+.mpdf-info{display:grid;grid-template-columns:1.35fr 1.1fr .8fr 1.1fr;gap:10px}
+.mpdf-info div{border:1px solid #E5E5E5;border-radius:12px;padding:11px 14px;background:#FAFAFA}
+.mpdf-info span{display:block;font-size:11px;color:#737373;margin-bottom:2px}
+.mpdf-info b{font-size:15px;font-weight:600;overflow-wrap:anywhere}
+.mpdf-t{width:100%;border-collapse:collapse}
+.mpdf-t th{text-align:left;font-size:11px;font-weight:500;color:#737373;padding:0 10px 8px;border-bottom:1px solid #E5E5E5}
+.mpdf-t td{padding:9px 10px;border-bottom:1px solid #F0F0F0;vertical-align:middle}
+.mpdf-t tr{page-break-inside:avoid}
+.mpdf-t td:first-child{width:28px;color:#737373}
+.mpdf-t .n{text-align:right;width:70px}
+.mpdf-t .rs{width:120px}
+.mpdf-r{display:inline-flex;align-items:center;border-radius:99px;padding:3px 10px;font-size:12px;font-weight:500;white-space:nowrap;background:rgba(15,197,137,.14);color:#0A8A5F}
+.mpdf-r.er{background:rgba(242,102,90,.14);color:#C2382C}
+.mpdf-obs{border:1px solid #E5E5E5;border-left:3px solid #0FC589;border-radius:12px;padding:14px 18px;page-break-inside:avoid}
+.mpdf-obs h2{margin:0 0 6px;font-size:13px;font-weight:600;letter-spacing:0}
+.mpdf-obs p{margin:0;white-space:pre-wrap;overflow-wrap:anywhere}
+.mpdf-f{font-size:11px;color:#8C8C8C;padding:0 44px 26px}
 .molivre{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px;border-style:dashed;padding:12px 16px}
 .mcvagas{grid-template-columns:1fr 160px 160px!important}
 .moerr{display:flex;flex-wrap:wrap;gap:6px}
@@ -2488,7 +2523,7 @@ function moSetor(L){const s=monSetores().find(x=>x.id===MO.setor),cfg=monCfgDe(s
    <div class="moacoes"><button class="btn sm" data-monova="${esc(a.id)}"${cfg&&a.data.ativo!==false&&!a.fora?'':' aria-disabled="true"'}>${ICO.plus}Nova</button><button class="btn sm" data-mohist="${esc(a.id)}">Histórico</button></div></div>`}).join('')}</div>`
   :'<div class="panel embreve"><p class="muted">Nenhum agente cadastrado neste setor. Um administrador cadastra em Configurações › Agentes monitorados.</p></div>'}`}
 function moHistorico(L){const a=moAgente(MO.hist),s=SET().find(x=>x.id===a.data.setor),M=L.filter(x=>x.data.agente===a.id).sort((x,y)=>y.data.data.localeCompare(x.data.data)||y.criado-x.criado),cfg=monCfgDe(a.data.setor);
- const item=x=>{const d=x.data;return `<div class="panel moitem"><div class="moih"><span class="chip ln">${esc(monVagaRot(d.vaga))}</span><span class="chip ${d.zerada?'er':''}">${d.zerada?'Zerada':moPct(d.nota)}</span><b>${esc(dfmt(d.data))}</b>${d.protocolo?`<span class="muted">Protocolo ${esc(d.protocolo)}</span>`:''}<span class="muted">${d.perdidos?`${nf(d.perdidos)} ${d.perdidos===1?'ponto perdido':'pontos perdidos'} de ${nf(d.total)}`:`Sem pontos perdidos (${nf(d.total)})`}</span><button class="btn sm" data-moeditar="${esc(x.id)}">${ICO.edit}Editar</button></div>
+ const item=x=>{const d=x.data;return `<div class="panel moitem"><div class="moih"><span class="chip ln">${esc(monVagaRot(d.vaga))}</span><span class="chip ${d.zerada?'er':''}">${d.zerada?'Zerada':moPct(d.nota)}</span><b>${esc(dfmt(d.data))}</b>${d.protocolo?`<span class="muted">Protocolo ${esc(d.protocolo)}</span>`:''}<span class="muted">${d.perdidos?`${nf(d.perdidos)} ${d.perdidos===1?'ponto perdido':'pontos perdidos'} de ${nf(d.total)}`:`Sem pontos perdidos (${nf(d.total)})`}</span><button class="btn sm" data-mopdf="${esc(x.id)}">${MO_PDF_ICO}Baixar PDF</button><button class="btn sm" data-moeditar="${esc(x.id)}">${ICO.edit}Editar</button></div>
   ${d.erros.length?`<div class="moerr">${d.erros.map(c=>`<span class="chip ${c.zera?'er':'ln'}">${esc(c.nome)}${c.zera?' · zera':c.peso?` · −${nf(c.peso)}`:''}</span>`).join('')}</div>`:''}${d.zeradaManual?'<div class="moerr"><span class="chip er">Zerada manualmente</span></div>':''}
   <p class="moobs">${esc(d.observacao)}</p><small class="muted">Avaliado por ${esc(moAvaliador(x.criado_por))}${x.atualizado!==x.criado?` · alterado por ${esc(moAvaliador(x.atualizado_por))}`:''}</small></div>`};
  const V=monVagas(a.data.setor),VL=monVagasLista(V),semVaga=M.filter(x=>!x.data.vaga||!VL.some(v=>monVagaIgual({...v,mes:MO.mes},x.data.vaga)));
@@ -2510,7 +2545,7 @@ function moCriterios(){const{x}=ED,setor=x?x.data.setor:(moAgente(ED.agente)||{d
  return {L,cfg,modo:(cfg&&cfg.data.modo)||'erros',total:x?x.data.total:cfg?cfg.data.total:0,zm:!!(cfg&&cfg.data.zerarManual)||!!(x&&x.data.zeradaManual)}}
 function moPrevia(){const{L,total}=moCriterios(),F=L.filter(c=>ED.falhas.has(c.id)),perd=F.reduce((t,c)=>t+c.peso,0),zer=ED.zm||perd>=total||F.some(c=>c.zera),nota=zer?0:Math.round((total-perd)/total*10000)/100;
  return `<b class="${zer?'mozer':''}">${zer?'Zerada':pct(nota)}</b><span>${nf(perd)} ${perd===1?'ponto perdido':'pontos perdidos'} de ${nf(total)}</span>${ED.zm?'<span class="chip er">Zerada manualmente</span>':''}`}
-function rEdMo(){const{id,x}=ED;if(ED.rendered)return;ED.rendered=true;const a=moAgente(ED.agente),s=SET().find(y=>y.id===(x?x.data.setor:a.data.setor)),{L,modo,zm}=moCriterios();
+function rEdMo(){const{id,x}=ED;if(ED.rendered)return;ED.rendered=true;if(ED.feito)return rEdMoFeito();const a=moAgente(ED.agente),s=SET().find(y=>y.id===(x?x.data.setor:a.data.setor)),{L,modo,zm}=moCriterios();
  const marcado=c=>modo==='acertos'&&!c.zera?!ED.falhas.has(c.id):ED.falhas.has(c.id);
  const caixa=c=>`<label class="mocrit${c.zera?' zr':''}"><input type="checkbox" data-mocrit="${esc(c.id)}"${marcado(c)?' checked':''}><span><b>${esc(c.nome)}</b><small>${c.zera?'Crítico: zera a monitoria':modo==='acertos'?`${nf(c.peso)} pontos`:`−${nf(c.peso)} pontos`}${c.antigo?' · critério que não existe mais':''}</small>${c.descricao?`<details><summary>Ver o que é avaliado</summary><p>${esc(c.descricao)}</p></details>`:''}</span></label>`;
  const comuns=L.filter(c=>!c.zera),criticos=L.filter(c=>c.zera);
@@ -2546,7 +2581,9 @@ async function moSalvar(btn){const ed=ED,{id,x}=ed,obs=$('mo_obs').value.trim(),
   const r=await DB.regSave(id?{area:'monitoria',id,versao:x.atualizado,data:d}:{area:'monitoria',data:d});
   /* uma monitoria de outro mês: abre o mês dela para aparecer na tela */
   maLimpar();if(!vaga&&data.slice(0,7)!==MO.mes)MO.mes=data.slice(0,7);
-  if(ED===ed)closeEd();toast(id?'Monitoria salva':`Monitoria registrada: ${r.item.data.zerada?'zerada':pct(r.item.data.nota)}`)}
+  /* monitoria nova: o painel continua aberto com a opção de baixar o PDF */
+  if(ED===ed){if(id)closeEd();else{ED={kind:'mon',feito:r.item};rEd();const b=$('ed').querySelector('[data-mopdf]');b&&b.focus()}}
+  toast(id?'Monitoria salva':`Monitoria registrada: ${r.item.data.zerada?'zerada':pct(r.item.data.nota)}`)}
  catch(e){btn.innerHTML=lbl;btn.removeAttribute('aria-disabled');moErro(e,ed)}
  moCarregar()}
 async function moExcluir(btn){const ed=ED,{id,x}=ed;
@@ -2554,6 +2591,35 @@ async function moExcluir(btn){const ed=ED,{id,x}=ed;
  btn.setAttribute('aria-disabled','true');
  try{await DB.regDelete('monitoria',id);maLimpar();if(ED===ed)closeEd();toast('Monitoria excluída')}catch(e){btn.removeAttribute('aria-disabled');moErro(e,ed)}
  moCarregar()}
+/* ---------- PDF de uma monitoria (html2pdf, carregado só na hora) ----------
+   critérios: os ativos do setor hoje e os que a monitoria guardou com erro (com o peso do dia); média: a do agente no mês da monitoria */
+const MO_PDF_ICO='<svg class="i" viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>';
+function rEdMoFeito(){const x=ED.feito,d=x.data,s=SET().find(y=>y.id===d.setor);
+ $('ed').innerHTML=`<div class="edh"><div class="row"><span>Monitorias · ${esc(s?s.nome:'')}</span><button class="ico" data-edclose aria-label="Fechar">${ICO.x}</button></div><div><div class="k">Monitoria registrada</div><h3>${esc(d.agenteNome)}</h3></div></div>
+ <div class="edb"><div class="moprev" role="status"><b class="${d.zerada?'mozer':''}">${d.zerada?'Zerada':pct(d.nota)}</b><span>${esc(monVagaRot(d.vaga))} · ${esc(dfmt(d.data))}</span></div>
+ <p class="muted">A monitoria já está no histórico. O PDF também pode ser baixado depois, pelo histórico do agente.</p>
+ <div class="eda"><button class="btn pri" data-mopdf="${esc(x.id)}">${MO_PDF_ICO}Baixar PDF</button><button class="btn" data-edclose>Fechar</button></div></div>`}
+function moPdfHTML(x){const d=x.data,cfg=monCfgDe(d.setor),s=SET().find(y=>y.id===d.setor),err=new Map(d.erros.map(c=>[c.id,c]));
+ const L=(cfg?cfg.data.criterios:[]).filter(c=>c.ativo!==false||err.has(c.id)).map(c=>err.has(c.id)?{...c,peso:err.get(c.id).peso,zera:err.get(c.id).zera}:c);
+ d.erros.forEach(c=>{if(!L.some(y=>y.id===c.id))L.push(c)});
+ const mes=moMesRef(x),M=[...(MO.itens||[]).filter(y=>y.id!==x.id&&y.data.agente===d.agente&&moMesRef(y)===mes),x];
+ /* a marca vira imagem (o html2canvas não desenha <use> nem SVG embutido com fidelidade) */
+ const sym=id=>{const e=document.getElementById(id),[,,w,h]=e.getAttribute('viewBox').split(/\s+/);return `<img alt="" src="data:image/svg+xml;charset=utf-8,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="${e.getAttribute('viewBox')}">${e.innerHTML.replace(/currentColor/g,'#0FC589')}</svg>`)}">`};
+ const info=[['Protocolo',d.protocolo||'—'],['Mês',dgMesNome(mes)],['Data',dfmt(d.data)],[`Média do mês · ${M.length} ${M.length===1?'monitoria':'monitorias'}`,moPct(moMedia(M))]];
+ return `<div class="mpdf"><div class="mpdf-h"><div><div class="mpdf-brand">${sym('ig')}<i></i>${sym('wm')}</div><p class="mpdf-k">Relatório de monitoria${s?` · ${esc(s.nome)}`:''}</p><h1>${esc(d.agenteNome)}</h1><p class="mpdf-v">${esc(monVagaRot(d.vaga))}</p></div>
+  <div class="mpdf-nota"><span>Nota desta monitoria</span><b class="${d.zerada?'zr':''}">${d.zerada?'Zerada':pct(d.nota)}</b><small>${d.zeradaManual?'Zerada manualmente':d.perdidos?`${nf(d.perdidos)} ${d.perdidos===1?'ponto perdido':'pontos perdidos'} de ${nf(d.total)}`:`Sem pontos perdidos (${nf(d.total)})`}</small></div></div>
+  <div class="mpdf-c"><div class="mpdf-info">${info.map(([k,v])=>`<div><span>${esc(k)}</span><b>${esc(v)}</b></div>`).join('')}</div>
+  <table class="mpdf-t"><thead><tr><th>#</th><th>Critério</th><th class="n">Peso</th><th class="rs">Resultado</th></tr></thead><tbody>${L.map((c,i)=>`<tr><td>${i+1}º</td><td>${esc(c.nome)}</td><td class="n">${c.zera?'Crítico':nf(c.peso)}</td><td class="rs">${err.has(c.id)?'<span class="mpdf-r er">Não passou</span>':'<span class="mpdf-r">Passou</span>'}</td></tr>`).join('')}</tbody></table>
+  <div class="mpdf-obs"><h2>Observação</h2><p>${esc(d.observacao)}</p></div></div>
+  <div class="mpdf-f">Central de Processos · gerado em ${esc(dfmt(today()))}</div></div>`}
+async function moPdf(x,btn){if(MO.pdf)return;MO.pdf=true;const lbl=btn.innerHTML;btn.textContent='Gerando…';btn.setAttribute('aria-disabled','true');
+ const w=document.createElement('div');w.className='mpdfw';w.setAttribute('aria-hidden','true');
+ try{if(!window.html2pdf)try{await loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js')}catch(e){throw new Error('Não foi possível gerar o PDF sem internet.')}
+  w.innerHTML=moPdfHTML(x);document.body.append(w);await document.fonts.ready;
+  const arq=String(x.data.agenteNome).normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'agente';
+  await html2pdf().set({margin:0,filename:`monitoria-${arq}-${x.data.data}.pdf`,image:{type:'jpeg',quality:.95},html2canvas:{scale:2,backgroundColor:'#ffffff'},jsPDF:{unit:'mm',format:'a4',orientation:'portrait'},pagebreak:{mode:['css']}}).from(w.firstElementChild).save()}
+ catch(e){toast(e.message||'Não foi possível gerar o PDF.',true)}
+ finally{w.remove();MO.pdf=false;if(btn.isConnected){btn.innerHTML=lbl;btn.removeAttribute('aria-disabled')}}}
 /* ---------- planilhas do Excel com o visual da Central (ExcelJS) ---------- */
 async function xlNova(){if(!window.ExcelJS)try{await loadScript('https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js')}catch(e){throw new Error('Não foi possível gerar o Excel sem internet.')}
  const wb=new ExcelJS.Workbook();wb.creator='Central de Processos';wb.created=new Date();return wb}
@@ -2605,6 +2671,7 @@ document.addEventListener('click',e=>{const t=e.target.closest&&e.target.closest
  else if(d.mohist){MO.hist=d.mohist;rMon();scrollTo({top:0})}
  else if(d.monova)openMo(d.monova,null,d.movaga||null);
  else if(d.moeditar){const x=(MO.itens||[]).find(y=>y.id===d.moeditar);if(x)openMo(x.data.agente,x.id)}
+ else if(d.mopdf){const x=(MO.itens||[]).find(y=>y.id===d.mopdf)||(ED&&ED.feito&&ED.feito.id===d.mopdf?ED.feito:null);if(x)moPdf(x,t)}
  else if(d.momes){const n=+d.momes,m=moMesSoma(MO.mes,n);if(n>0&&m>today().slice(0,7))return;MO.mes=m;MO.itens=null;MO.mesLido=null;moCarregar();rMon();const b=document.querySelector(`[data-momes="${n}"]`);b&&b.focus()}
  else if('mozerar' in d){ED.zm=!ED.zm;ED.rendered=false;const s=$('mo_obs').value,dt=$('mo_data').value,pr=$('mo_prot').value;rEdMo();$('mo_obs').value=s;$('mo_data').value=dt;$('mo_prot').value=pr;const b=$('ed').querySelector('[data-mozerar]');b&&b.focus()}
  else if('mosalvar' in d)moSalvar(t);
