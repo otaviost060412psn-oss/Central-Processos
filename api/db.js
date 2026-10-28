@@ -293,6 +293,21 @@ const regRefs=async(client,area,d,id)=>{
  if(q.rows.length!==new Set([d.de,d.para]).size)fail(400,'Etapa de origem ou de destino não encontrada.');
 };
 const regArea=a=>{if(typeof a!=='string'||!Object.hasOwn(REG_AREAS,a))fail(400,'Área inválida.');return REG_AREAS[a]};
+/* restauração de backup de monitoria: a área guarda, além dos campos digitados, o que regRefs calculou na hora (setor, critérios errados com nome/peso/zera do dia, total, agente). Diferente dessa, a nota, os pontos perdidos e se foi zerada NUNCA vêm do arquivo: são sempre recalculados aqui a partir dos critérios e do total, como no registro normal, para que um backup não possa gravar uma nota fabricada */
+const regMonRestore=x=>{
+ const data=regDia(x.data,'Data da monitoria');if(!data)fail(400,'Informe a data da monitoria.');
+ if(!regId(x.agente))fail(400,'Escolha o agente monitorado.');
+ if(!regId(x.setor))fail(400,'Setor inválido.');
+ const total=x.total;if(typeof total!=='number'||!Number.isFinite(total)||total<=0||total>100000)fail(400,'Total de pontos inválido.');
+ const E=x.erros==null?[]:x.erros;if(!Array.isArray(E)||E.length>100)fail(400,'Critérios: lista inválida.');
+ const vistos=new Set(),erros=E.map(c=>{if(!c||typeof c!=='object'||!regId(c.id)||c.id.length>40||vistos.has(c.id))fail(400,'Critério inválido.');vistos.add(c.id);
+  const peso=c.peso;if(typeof peso!=='number'||!Number.isFinite(peso)||peso<0||peso>100000)fail(400,'Peso inválido.');
+  return {id:c.id,nome:regTxt(c.nome,200,'O nome do critério',true),peso,zera:c.zera===true}});
+ let vaga=null;if(x.vaga!=null){const g=x.vaga;if(typeof g!=='object'||Array.isArray(g)||typeof g.mes!=='string'||!/^\d{4}-(0[1-9]|1[0-2])$/.test(g.mes)||!(g.semana===null||g.semana===undefined||(Number.isInteger(g.semana)&&g.semana>=1&&g.semana<=6))||!(Number.isInteger(g.numero)&&g.numero>=1&&g.numero<=100))fail(400,'Vaga inválida.');vaga={mes:g.mes,semana:g.semana==null?null:g.semana,numero:g.numero}}
+ const zeradaManual=x.zeradaManual===true,perdidos=erros.reduce((t,c)=>t+c.peso,0),zerada=zeradaManual||perdidos>=total||erros.some(c=>c.zera),nota=zerada?0:Math.round((total-perdidos)/total*10000)/100;
+ return {data,agente:x.agente,setor:x.setor,agenteNome:regTxt(x.agenteNome,120,'Nome do agente'),total,perdidos,nota,zerada,zeradaManual,vaga,protocolo:regTxt(x.protocolo,100,'Protocolo').trim(),erros,observacao:regTxt(x.observacao,2000,'A observação',true)};
+};
+const REG_RESTORE_LOTE=200;
 /* uma gravação por grupo de cada vez, até o fim da transação: evita travas cruzadas e ordem repetida */
 const regTrava=(client,A)=>client.query('SELECT pg_advisory_xact_lock(hashtext($1))',['cp_registros:'+A.grupo]);
 const regRow=r=>({id:r.id,area:r.area,data:r.data,ordem:r.ordem,criado:Number(r.criado),criado_por:r.criado_por,atualizado:Number(r.atualizado),atualizado_por:r.atualizado_por});
@@ -527,6 +542,60 @@ export default async function handler(req,res){
     await client.query('UPDATE cp_registros r SET ordem=v.o FROM unnest($1::text[]) WITH ORDINALITY AS v(id,o) WHERE r.id=v.id',[ids]);
     await client.query('COMMIT')}catch(e){await client.query('ROLLBACK');throw e}finally{client.release()}
    return res.json({ok:true});
+  }
+  else if(action==='regBackup'){
+   const q=await pool.query('SELECT * FROM cp_registros ORDER BY area,ordem NULLS LAST,criado');
+   return res.json({itens:q.rows.map(regRow)});
+  }
+  else if(action==='regRestore'){
+   /* nunca apaga; registro existente só é substituído se o do arquivo for mais recente. não reaplica regRefs inteiro (confia na estrutura, como o restore de semanas e de agenda),
+      mas confere o que evitaria dado inconsistente ou duplicado: existência de referências (agente, etapas, projeto) e unicidade por setor/vaga, com trava por grupo igual à gravação normal */
+   const itens=b.itens;if(!Array.isArray(itens)||!itens.length||itens.length>REG_RESTORE_LOTE)fail(400,`Envie de 1 a ${REG_RESTORE_LOTE} registros por vez.`);
+   const ts=v=>Number.isSafeInteger(v)&&v>0&&v<=Date.now()+864e5;
+   const ids=new Set(),vagas=new Set(),regs=itens.map((r,i)=>{try{
+    if(!r||typeof r!=='object'||Array.isArray(r))fail(400,'Formato inválido.');
+    if(!regId(r.id))fail(400,'Identificador inválido.');
+    if(ids.has(r.id))fail(400,'Identificador repetido no arquivo.');ids.add(r.id);
+    const A=regArea(r.area);
+    if(r.ordem!=null&&!(Number.isInteger(r.ordem)&&r.ordem>=0))fail(400,'Ordem inválida.');
+    if(A.ordenada&&r.ordem==null)fail(400,'Esta área exige ordem.');
+    if(!A.ordenada&&r.ordem!=null)fail(400,'Esta área não tem ordem.');
+    if(!regId(r.criado_por)||!regId(r.atualizado_por))fail(400,'Autor inválido.');
+    if(!ts(r.criado)||!ts(r.atualizado)||r.criado>r.atualizado)fail(400,'Datas de criação ou atualização inválidas.');
+    const x=r.data&&typeof r.data==='object'&&!Array.isArray(r.data)?r.data:fail(400,'Dados inválidos.');
+    const data=r.area==='monitoria'?regMonRestore(x):A.campos(x);
+    if(r.area==='monitoria'&&data.vaga){const chave=data.agente+':'+data.vaga.mes+':'+(data.vaga.semana??'')+':'+data.vaga.numero;if(vagas.has(chave))fail(400,'Vaga repetida no arquivo.');vagas.add(chave)}
+    return {id:r.id,area:r.area,data,ordem:r.ordem??null,criado:r.criado,criado_por:r.criado_por,atualizado:r.atualizado,atualizado_por:r.atualizado_por};
+   }catch(e){fail(400,`Registro ${i+1}: ${e.status?e.message:'formato inválido.'}`)}
+   });
+   if(b.validar===true)return res.json({ok:true,validos:regs.length});
+   let novos=0,atualizados=0,ignorados=0;
+   const client=await pool.connect();try{await client.query('BEGIN');
+    for(const g of [...new Set(regs.map(r=>regArea(r.area).grupo))].sort())await regTrava(client,{grupo:g});
+    for(const area of [...new Set(regs.map(r=>r.area))]){
+     const A=regArea(area),lim=A.limite||REG_LIMITE,idsArea=regs.filter(r=>r.area===area).map(r=>r.id);
+     const existentes=new Set((await client.query('SELECT id FROM cp_registros WHERE area=$1 AND id=ANY($2)',[area,idsArea])).rows.map(x=>x.id));
+     const novosArea=idsArea.filter(id=>!existentes.has(id)).length;
+     if(novosArea){const atual=(await client.query('SELECT COUNT(*)::int AS n FROM cp_registros WHERE area=$1',[area])).rows[0].n;if(atual+novosArea>lim)fail(400,`A área "${area}" ultrapassaria o limite de ${lim} registros.`)}
+    }
+    for(const r of regs){
+     if(r.area==='monitoria'){
+      if(!(await client.query("SELECT 1 FROM cp_registros WHERE area='monit_agente' AND id=$1",[r.data.agente])).rows.length)fail(400,'Agente monitorado não encontrado para o registro '+r.id+'.');
+      if(r.data.vaga&&(await client.query("SELECT 1 FROM cp_registros WHERE area='monitoria' AND id<>$1 AND data->>'agente'=$2 AND data->'vaga'->>'mes'=$3 AND COALESCE(data->'vaga'->>'semana','')=$4 AND data->'vaga'->>'numero'=$5",[r.id,r.data.agente,r.data.vaga.mes,r.data.vaga.semana==null?'':String(r.data.vaga.semana),String(r.data.vaga.numero)])).rows.length)fail(400,'Esta vaga já tem outra monitoria registrada (registro '+r.id+').');
+     }
+     if(r.area==='jornada_fluxo'){
+      const q=await client.query("SELECT id FROM cp_registros WHERE area='jornada_etapa' AND id=ANY($1)",[[r.data.de,r.data.para]]);
+      if(q.rows.length!==new Set([r.data.de,r.data.para]).size)fail(400,'Etapa de origem ou de destino não encontrada para o caminho '+r.id+'.');
+     }
+     if(r.area==='projeto_hist'&&!(await client.query("SELECT 1 FROM cp_registros WHERE area='projeto' AND id=$1",[r.data.projeto])).rows.length)fail(400,'Projeto não encontrado para o histórico '+r.id+'.');
+     if(r.area==='monit_setor'&&(await client.query("SELECT 1 FROM cp_registros WHERE area='monit_setor' AND data->>'setor'=$1 AND id<>$2",[r.data.setor,r.id])).rows.length)fail(400,'Este setor já tem critérios cadastrados (registro '+r.id+').');
+     if(r.area==='monit_gestor'&&(await client.query("SELECT 1 FROM cp_registros WHERE area='monit_gestor' AND data->>'setor'=$1 AND id<>$2",[r.data.setor,r.id])).rows.length)fail(400,'Este setor já tem gestor cadastrado (registro '+r.id+').');
+     if(r.area==='monit_geral'&&(await client.query("SELECT 1 FROM cp_registros WHERE area='monit_geral' AND id<>$1",[r.id])).rows.length)fail(400,'A configuração geral já existe (registro '+r.id+').');
+     const q=await client.query('INSERT INTO cp_registros(id,area,data,ordem,criado,criado_por,atualizado,atualizado_por) VALUES($1,$2,$3,$4,$5,$6,$7,$8) ON CONFLICT(id) DO UPDATE SET data=EXCLUDED.data,ordem=EXCLUDED.ordem,atualizado=EXCLUDED.atualizado,atualizado_por=EXCLUDED.atualizado_por WHERE cp_registros.area=EXCLUDED.area AND cp_registros.atualizado<EXCLUDED.atualizado RETURNING (xmax=0) AS novo',[r.id,r.area,JSON.stringify(r.data),r.ordem,r.criado,r.criado_por,r.atualizado,r.atualizado_por]);
+     if(!q.rows.length)ignorados++;else if(q.rows[0].novo)novos++;else atualizados++;
+    }
+    await client.query('COMMIT')}catch(e){await client.query('ROLLBACK');throw e}finally{client.release()}
+   return res.json({ok:true,novos,atualizados,ignorados});
   }
   else fail(400,'Operação desconhecida');
   return res.json({ok:true});
