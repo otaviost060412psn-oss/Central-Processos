@@ -1466,7 +1466,7 @@ async function delAg(id,cancelar){const x=agAchar(id);if(!x)return;
 document.addEventListener('click',e=>{
  const t=e.target.closest('button');if(!t)return;
  /* ao sair, a agenda da conta anterior é apagada da memória e da tela */
- if(t.id==='logout'){AG=agVazio(null);$('p-agenda').innerHTML='';JR=jrVazio(null);$('p-an-jornada').innerHTML='';DG=dgVazio(null);$('p-an-diag').innerHTML='';PJ=pjVazio(null);$('p-pm-proj').innerHTML='';$('p-pm-fut').innerHTML='';PQ.html=null;PQ.abertas.clear();$('p-an-perg').innerHTML='';Object.assign(POR,{sel:null,html:null});$('p-an-setor').innerHTML='';MON=monVazio(null);MA.dono=null;MA.meses={};Object.assign(MO,{setor:null,hist:null,itens:null,mesLido:null,dono:null,erro:false,limitado:false,denovo:false,html:null,mes:today().slice(0,7)});$('p-monitorias').innerHTML='';return}
+ if(t.id==='logout'){AG=agVazio(null);$('p-agenda').innerHTML='';JR=jrVazio(null);$('p-an-jornada').innerHTML='';DG=dgVazio(null);$('p-an-diag').innerHTML='';PJ=pjVazio(null);$('p-pm-proj').innerHTML='';$('p-pm-fut').innerHTML='';PQ.html=null;PQ.abertas.clear();$('p-an-perg').innerHTML='';Object.assign(POR,{sel:null,html:null});$('p-an-setor').innerHTML='';MON=monVazio(null);MA.dono=null;MA.meses={};Object.assign(MO,{setor:null,equipe:null,hist:null,itens:null,mesLido:null,dono:null,erro:false,limitado:false,denovo:false,html:null,mes:today().slice(0,7)});$('p-monitorias').innerHTML='';return}
  if(t.getAttribute('aria-disabled')==='true')return;const d=t.dataset;let foco=null;
  if(d.agaba){AG.aba=d.agaba;foco=`[data-agaba="${d.agaba}"]`}
  else if('agenc' in d){AG.encerradas=!AG.encerradas;foco='[data-agenc]'}
@@ -2522,12 +2522,12 @@ document.addEventListener('click',e=>{
 /* ---------- monitorias: tela de todos os usuários ----------
    setores → cards dos agentes do setor (média e nº de monitorias do mês) → nova monitoria e histórico do agente por semana.
    As monitorias são buscadas por mês; a nota é calculada pelo servidor (aqui só a prévia) */
-const MO={setor:null,hist:null,mes:today().slice(0,7),itens:null,mesLido:null,dono:null,carregando:false,denovo:false,erro:false,limitado:false,html:null};
+const MO={setor:null,equipe:null,hist:null,mes:today().slice(0,7),itens:null,mesLido:null,dono:null,carregando:false,denovo:false,erro:false,limitado:false,html:null};
 const moDatas=m=>{const[y,mm]=m.split('-').map(Number);return [m+'-01',ymd(new Date(y,mm,0))]};
 const moMesSoma=(m,n)=>{const[y,mm]=m.split('-').map(Number),d=new Date(y,mm-1+n,1);return ymd(d).slice(0,7)};
 async function moCarregar(){
  if(!meId)return;
- if(MO.dono!==meId)Object.assign(MO,{dono:meId,itens:null,mesLido:null,erro:false,limitado:false,denovo:false,setor:null,hist:null,html:null,mes:today().slice(0,7)});
+ if(MO.dono!==meId)Object.assign(MO,{dono:meId,itens:null,mesLido:null,erro:false,limitado:false,denovo:false,setor:null,equipe:null,hist:null,html:null,mes:today().slice(0,7)});
  const mes=MO.mes;if(MO.carregando){MO.denovo=true;return}MO.carregando=true;const dono=MO.dono;
  try{const de=moDatas(mes)[0],ate=moDatas(moMesSoma(mes,1))[1],r=await DB.regList('monitoria',{de,ate});if(MO.dono!==dono||MO.mes!==mes)return;
   const novo=r.itens||[],mudou=MO.mesLido!==mes||JSON.stringify(MO.itens)!==JSON.stringify(novo);
@@ -2556,8 +2556,8 @@ function rMon(){if(MON.dono!==meId)monCarregar();if(MO.dono!==meId||(MO.mesLido!
  if(!MON.setores||!MON.agentes)h=monEstado();
  else if(!L)h=MO.erro?`<div class="panel cfgp"><p class="muted">Não foi possível carregar as monitorias deste mês.</p><div><button class="btn sm" data-morecarregar>Tentar de novo</button></div></div>`:'<div class="panel"><p class="muted" role="status">Carregando…</p></div>';
  else if(MO.hist&&moAgente(MO.hist))h=moHistorico(L);
- else if(MO.setor&&S_.some(s=>s.id===MO.setor))h=moSetor(L);
- else{MO.setor=null;MO.hist=null;
+ else if(MO.setor&&S_.some(s=>s.id===MO.setor)){if(!moTemEquipes(MO.setor)||(MO.equipe&&MO.equipe!=='*'&&MO.equipe!=='-'&&!(MON.equipes||[]).some(e=>e.id===MO.equipe&&e.data.setor===MO.setor)))MO.equipe=null;h=MO.equipe==null&&moTemEquipes(MO.setor)?moEquipes(L):moSetor(L)}
+ else{MO.setor=null;MO.equipe=null;MO.hist=null;
   h=`<div class="mogrid">${S_.map(s=>{const A=monAgentesDe(s.id).filter(a=>a.data.ativo!==false),M=L.filter(x=>x.data.setor===s.id),cfg=monCfgDe(s.id);
    return `<button class="panel mocard mosetor" data-mosetor="${esc(s.id)}"><b>${esc(s.nome)}</b><span class="mopct">${moPct(moMedia(M))}</span><small class="muted">${M.length} ${M.length===1?'monitoria':'monitorias'} no mês · ${A.length} ${A.length===1?'agente':'agentes'}</small>${cfg?'':'<small class="pjfalta">Sem critérios cadastrados</small>'}</button>`}).join('')}</div>`}
  const html=`<header class="phead"><div><p class="kick">Monitorias</p><h1>Monitorias de qualidade</h1><p class="sub">Escolha o setor, depois o agente: registre uma nova monitoria ou veja o histórico.</p></div><div class="tools">${moPlanilha()}</div></header>${MON.limitado||MO.limitado?'<div class="banner"><span class="dot wa"></span><div>Há muitos registros: parte deles não está sendo exibida.</div></div>':''}${moMesBarra()}${h}`;
@@ -2567,14 +2567,27 @@ function moAgentesSetor(setor,M){const A=monAgentesDe(setor).filter(a=>a.data.at
  /* quem teve monitoria neste setor no mês mas foi excluído ou mudou de setor também aparece, para nada ficar invisível */
  [...new Set(M.map(x=>x.data.agente))].filter(id=>!A.some(a=>a.id===id)).forEach(id=>{const ag=moAgente(id);if(ag)A.push({...ag,fora:true})});
  return A}
-function moSetor(L){const s=monSetores().find(x=>x.id===MO.setor),cfg=monCfgDe(s.id),M=L.filter(x=>x.data.setor===s.id),A=moAgentesSetor(s.id,M);
- return `<div class="mobar"><button class="btn ghost sm" data-mosetor="">${ICO.l}Setores</button><h2>${esc(s.nome)}</h2><button class="btn sm" data-moexp${MO.exportando?' aria-disabled="true"':''}><svg class="i" viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>${MO.exportando?'Gerando…':'Baixar planilha do setor'}</button></div>
- <div class="panel momedia"><div><p class="kick">Média da equipe — ${esc(dgMesNome(MO.mes))}</p><b>${moPct(moMedia(M))}</b></div><span class="muted">${M.length} ${M.length===1?'monitoria':'monitorias'} no mês</span></div>
+/* equipes do setor: o agente conta na equipe em que está hoje; quem saiu do setor ou não tem equipe fica em "Sem equipe" ('-').
+   MO.equipe: null = escolhendo a equipe, '*' = todas as equipes (o setor inteiro), '-' = sem equipe, ou o id da equipe */
+const moTemEquipes=setor=>(MON.equipes||[]).some(e=>e.data.setor===setor);
+const moEqDe=(a,setor)=>!a.fora&&a.data.equipe&&(MON.equipes||[]).some(e=>e.id===a.data.equipe&&e.data.setor===setor)?a.data.equipe:'-';
+/* agentes e monitorias do recorte escolhido (equipe '*' ou vazia = setor inteiro) */
+function moRecorte(setor,L,eq){const M=L.filter(x=>x.data.setor===setor),A=moAgentesSetor(setor,M);if(!eq||eq==='*')return {A,M};
+ const A2=A.filter(a=>moEqDe(a,setor)===eq),ids=new Set(A2.map(a=>a.id));return {A:A2,M:M.filter(x=>ids.has(x.data.agente))}}
+const moEqNome=(setor,eq)=>!eq||eq==='*'?'':eq==='-'?'Sem equipe':((MON.equipes||[]).find(e=>e.id===eq)||{data:{nome:'Equipe'}}).data.nome;
+function moEquipes(L){const s=monSetores().find(x=>x.id===MO.setor),{A,M}=moRecorte(s.id,L,'*'),usadas=new Set(A.map(a=>moEqDe(a,s.id)));
+ const E=monEquipesDe(s.id).map(e=>e.id).concat((MON.equipes||[]).filter(e=>e.data.setor===s.id&&e.data.ativo===false&&usadas.has(e.id)).sort((a,b)=>a.data.nome.localeCompare(b.data.nome)).map(e=>e.id));if(usadas.has('-'))E.push('-');
+ const card=(eq,nome,dica)=>{const r=moRecorte(s.id,L,eq);return `<button class="panel mocard mosetor" data-moeq="${esc(eq)}"><b>${esc(nome)}</b><span class="mopct">${moPct(moMedia(r.M))}</span><small class="muted">${r.M.length} ${r.M.length===1?'monitoria':'monitorias'} no mês · ${r.A.length} ${r.A.length===1?'agente':'agentes'}</small>${dica?`<small class="muted">${dica}</small>`:''}</button>`};
+ return `<div class="mobar"><button class="btn ghost sm" data-mosetor="">${ICO.l}Setores</button><h2>${esc(s.nome)}</h2></div>
+ <p class="kick mocont">Escolha a equipe</p><div class="mogrid">${card('*','Todas as equipes','Média de qualidade do setor inteiro')}${E.map(eq=>card(eq,moEqNome(s.id,eq),'')).join('')}</div>`}
+function moSetor(L){const s=monSetores().find(x=>x.id===MO.setor),cfg=monCfgDe(s.id),eqs=moTemEquipes(s.id),eq=eqs?MO.equipe:'*',{A,M}=moRecorte(s.id,L,eq),eqN=moEqNome(s.id,eq);
+ return `<div class="mobar">${eqs?`<button class="btn ghost sm" data-moeq="">${ICO.l}Equipes</button>`:`<button class="btn ghost sm" data-mosetor="">${ICO.l}Setores</button>`}<h2>${esc(s.nome)}${eqs?` · ${esc(eqN||'Todas as equipes')}`:''}</h2><button class="btn sm" data-moexp${MO.exportando?' aria-disabled="true"':''}><svg class="i" viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>${MO.exportando?'Gerando…':eqN?'Baixar planilha da equipe':'Baixar planilha do setor'}</button></div>
+ <div class="panel momedia"><div><p class="kick">${eqN?'Média da equipe':eqs?'Média de todas as equipes':'Média da equipe'} — ${esc(dgMesNome(MO.mes))}</p><b>${moPct(moMedia(M))}</b></div><span class="muted">${M.length} ${M.length===1?'monitoria':'monitorias'} no mês</span></div>
  ${cfg?'':'<div class="banner"><span class="dot wa"></span><div>Este setor ainda não tem critérios de monitoria. Um administrador cadastra em Configurações › Critérios de monitoria.</div></div>'}
  ${A.length?`<p class="kick mocont">${A.length} ${A.length===1?'agente':'agentes'}</p><div class="mogrid">${A.map(a=>{const Ma=M.filter(x=>x.data.agente===a.id);
   return `<div class="moag"><button class="panel mocard" data-mohist="${esc(a.id)}" aria-label="Histórico de ${esc(a.data.nome)}"><span class="moav" style="background:${moCor(a.data.nome)}" aria-hidden="true">${esc(iniciais(a.data.nome))}</span><b>${esc(a.data.nome)}</b><span class="mopct">${moPct(moMedia(Ma))}</span><small class="muted">${Ma.length} ${Ma.length===1?'monitoria':'monitorias'}</small>${a.fora?`<small class="muted">${a.excluido?'Agente excluído':'Não está mais neste setor'}</small>`:a.data.ativo===false?'<small class="muted">Inativo</small>':''}</button>
    <div class="moacoes"><button class="btn sm" data-monova="${esc(a.id)}"${cfg&&a.data.ativo!==false&&!a.fora?'':' aria-disabled="true"'}>${ICO.plus}Nova</button><button class="btn sm" data-mohist="${esc(a.id)}">Histórico</button></div></div>`}).join('')}</div>`
-  :'<div class="panel embreve"><p class="muted">Nenhum agente cadastrado neste setor. Um administrador cadastra em Configurações › Agentes monitorados.</p></div>'}`}
+  :eqN?'<div class="panel embreve"><p class="muted">Nenhum agente nesta equipe.</p></div>':'<div class="panel embreve"><p class="muted">Nenhum agente cadastrado neste setor. Um administrador cadastra em Configurações › Agentes monitorados.</p></div>'}`}
 function moHistorico(L){const a=moAgente(MO.hist),s=SET().find(x=>x.id===a.data.setor),M=L.filter(x=>x.data.agente===a.id).sort((x,y)=>y.data.data.localeCompare(x.data.data)||y.criado-x.criado),cfg=monCfgDe(a.data.setor);
  const item=x=>{const d=x.data;return `<div class="panel moitem"><div class="moih"><span class="chip ln">${esc(monVagaRot(d.vaga))}</span><span class="chip ${d.zerada?'er':''}">${d.zerada?'Zerada':moPct(d.nota)}</span><b>${esc(dfmt(d.data))}</b>${d.protocolo?`<span class="muted">Protocolo ${esc(d.protocolo)}</span>`:''}<span class="muted">${d.perdidos?`${nf(d.perdidos)} ${d.perdidos===1?'ponto perdido':'pontos perdidos'} de ${nf(d.total)}`:`Sem pontos perdidos (${nf(d.total)})`}</span><button class="btn sm" data-mopdf="${esc(x.id)}">${MO_PDF_ICO}Baixar PDF</button><button class="btn sm" data-moeditar="${esc(x.id)}">${ICO.edit}Editar</button></div>
   ${d.erros.length?`<div class="moerr">${d.erros.map(c=>`<span class="chip ${c.zera?'er':'ln'}">${esc(c.nome)}${c.zera?' · zera':c.peso?` · −${nf(c.peso)}`:''}</span>`).join('')}</div>`:''}${d.zeradaManual?'<div class="moerr"><span class="chip er">Zerada manualmente</span></div>':''}
@@ -2697,7 +2710,7 @@ function xlAba(wb,nome,{titulo,sub,info=[],cab,linhas,cor}){
 async function xlSalvar(wb,arq){const bl=new Blob([await wb.xlsx.writeBuffer()],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}),l=document.createElement('a');l.href=URL.createObjectURL(bl);l.download=arq;document.body.appendChild(l);l.click();l.remove();setTimeout(()=>URL.revokeObjectURL(l.href),4000)}
 /* planilha do setor no mês da tela: aba Resumo e uma aba por agente com as monitorias, na ordem das vagas */
 async function moExportar(){const s=monSetores().find(x=>x.id===MO.setor),L=moDoMes();if(!s||!L||MO.exportando)return;
- const mes=MO.mes,lim=MO.limitado,M=L.filter(x=>x.data.setor===s.id),A=moAgentesSetor(s.id,M),VL=monVagasLista(monVagas(s.id));
+ const eq=moTemEquipes(s.id)?MO.equipe:'*',eqN=moEqNome(s.id,eq),mes=MO.mes,lim=MO.limitado,{A,M}=moRecorte(s.id,L,eq),VL=monVagasLista(monVagas(s.id));
  MO.exportando=true;rMon();
  try{
   const wb=await xlNova(),num=v=>isN(v)?+v.toFixed(2):'',sub=`${dgMesNome(mes)} · exportado em ${dfmt(today())}`;
@@ -2706,21 +2719,22 @@ async function moExportar(){const s=monSetores().find(x=>x.id===MO.setor),L=moDo
   const ordem=x=>{const i=VL.findIndex(v=>monVagaIgual({...v,mes},x.data.vaga));return i<0?VL.length:i};
   const Ma=a=>M.filter(x=>x.data.agente===a.id).sort((x,y)=>ordem(x)-ordem(y)||x.data.data.localeCompare(y.data.data)||x.criado-y.criado);
   const sit=a=>a.fora?(a.excluido?'Agente excluído':'Não está mais neste setor'):a.data.ativo===false?'Inativo':'';
-  xlAba(wb,'Resumo',{titulo:`MONITORIAS | ${s.nome}`,sub,info:[['Setor',s.nome],['Mês',dgMesNome(mes)],['Média da equipe (%)',num(moMedia(M))],['Monitorias',M.length]],cab:['Agente','Monitorias','Média (%)','Zeradas','Situação'],
+  xlAba(wb,'Resumo',{titulo:`MONITORIAS | ${s.nome}${eqN?' · '+eqN:''}`,sub,info:[['Setor',s.nome],...(eqN?[['Equipe',eqN]]:[]),['Mês',dgMesNome(mes)],['Média da equipe (%)',num(moMedia(M))],['Monitorias',M.length]],cab:['Agente','Monitorias','Média (%)','Zeradas','Situação'],
    linhas:A.map(a=>{const X=Ma(a);return [a.data.nome,X.length,num(moMedia(X)),X.filter(x=>x.data.zerada).length,sit(a)]}),cor:l=>l[4]?'apagado':null});
   /* critérios ativos do setor: no modo acertos o peso é o que o critério vale; nos demais, o que se perde ao errar */
   const cfg=monCfgDe(s.id),cd=cfg?cfg.data:{criterios:[]};
   xlAba(wb,'Critérios',{titulo:`CRITÉRIOS DE AVALIAÇÃO | ${s.nome}`,sub,cab:['Critério','Descrição',cd.modo==='acertos'?'Pontos que vale':'Pontos perdidos'],linhas:cd.criterios.filter(c=>c.ativo!==false).map(c=>[c.nome,c.descricao||'',c.zera?'Zera a nota':+c.peso||0]),cor:l=>l[2]==='Zera a nota'?'erro':null});
   A.forEach(a=>xlAba(wb,aba(a.data.nome),{titulo:`MONITORIAS | ${a.data.nome}`,sub:`${s.nome} · ${sub}`,cab:['Vaga','Data','Protocolo','Nota (%)','Zerada','Pontos perdidos','Critérios com erro','Observação','Avaliado por','Alterado por'],
    linhas:Ma(a).map(x=>{const d=x.data;return [monVagaRot(d.vaga),dfmt(d.data),d.protocolo||'',num(d.nota),d.zerada?(d.zeradaManual?'Sim (manual)':'Sim'):'Não',d.perdidos||0,d.erros.map(c=>c.nome+(c.zera?' (zera)':'')).join('; '),d.observacao||'',moAvaliador(x.criado_por),x.atualizado!==x.criado?moAvaliador(x.atualizado_por):'']}),cor:l=>l[4]!=='Não'?'erro':null}));
-  const arq=String(s.nome).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'setor';
+  const arq=String(s.nome+(eqN?' '+eqN:'')).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'setor';
   await xlSalvar(wb,`monitorias-${arq}-${mes}.xlsx`);
   toast(lim?'Planilha gerada, mas há muitos registros: parte deles pode ter ficado de fora.':'Planilha gerada',lim);
  }catch(e){toast(e.message||'Não foi possível exportar.',true)}
  finally{MO.exportando=false;if(page==='monitorias')rMon()}}
 document.addEventListener('click',e=>{const t=e.target.closest&&e.target.closest('button');if(!t||t.getAttribute('aria-disabled')==='true')return;const d=t.dataset;
  if('moexp' in d)moExportar();
- else if(d.mosetor!==undefined){MO.setor=d.mosetor||null;MO.hist=null;rMon();scrollTo({top:0})}
+ else if(d.mosetor!==undefined){if((d.mosetor||null)!==MO.setor)MO.equipe=null;MO.setor=d.mosetor||null;MO.hist=null;rMon();scrollTo({top:0})}
+ else if(d.moeq!==undefined){MO.equipe=d.moeq||null;rMon();scrollTo({top:0})}
  else if(d.mohist){MO.hist=d.mohist;rMon();scrollTo({top:0})}
  else if(d.monova)openMo(d.monova,null,d.movaga||null);
  else if(d.moeditar){const x=(MO.itens||[]).find(y=>y.id===d.moeditar);if(x)openMo(x.data.agente,x.id)}
