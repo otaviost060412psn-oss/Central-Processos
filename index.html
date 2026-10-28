@@ -1117,7 +1117,7 @@ const LocalDB={
 };
 
 /* ---------------- banco: Firebase ---------------- */
-const loadScript=src=>new Promise((res,rej)=>{const s=document.createElement('script');s.src=src;s.onload=res;s.onerror=()=>rej(new Error('Não foi possível carregar '+src));document.head.appendChild(s)});
+const loadScript=(src,integrity)=>new Promise((res,rej)=>{const s=document.createElement('script');s.src=src;if(integrity){s.integrity=integrity;s.crossOrigin='anonymous'}s.onload=res;s.onerror=()=>rej(new Error('Não foi possível carregar '+src));document.head.appendChild(s)});
 const FB='https://www.gstatic.com/firebasejs/10.12.2/';
 const FireDB={
  mode:'firebase',unsub:[],
@@ -2694,14 +2694,14 @@ function moPdfHTML(x){const d=x.data,cfg=monCfgDe(d.setor),s=SET().find(y=>y.id=
   <div class="mpdf-f">Central de Processos · gerado em ${esc(dfmt(today()))}</div></div>`}
 async function moPdf(x,btn){if(MO.pdf)return;MO.pdf=true;const lbl=btn.innerHTML;btn.textContent='Gerando…';btn.setAttribute('aria-disabled','true');
  const w=document.createElement('div');w.className='mpdfw';w.setAttribute('aria-hidden','true');
- try{if(!window.html2pdf)try{await loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js')}catch(e){throw new Error('Não foi possível gerar o PDF sem internet.')}
+ try{if(!window.html2pdf)try{await loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js','sha384-Yv5O+t3uE3hunW8uyrbpPW3iw6/5/Y7HitWJBLgqfMoA36NogMmy+8wWZMpn3HWc')}catch(e){throw new Error('Não foi possível gerar o PDF sem internet.')}
   w.innerHTML=moPdfHTML(x);document.body.append(w);await document.fonts.ready;
   const arq=String(x.data.agenteNome).normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'agente';
   await html2pdf().set({margin:0,filename:`monitoria-${arq}-${x.data.data}.pdf`,image:{type:'jpeg',quality:.95},html2canvas:{scale:2,backgroundColor:'#ffffff'},jsPDF:{unit:'mm',format:'a4',orientation:'portrait'},pagebreak:{mode:['css']}}).from(w.firstElementChild).save()}
  catch(e){toast(e.message||'Não foi possível gerar o PDF.',true)}
  finally{w.remove();MO.pdf=false;if(btn.isConnected){btn.innerHTML=lbl;btn.removeAttribute('aria-disabled')}}}
 /* ---------- planilhas do Excel com o visual da Central (ExcelJS) ---------- */
-async function xlNova(){if(!window.ExcelJS)try{await loadScript('https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js')}catch(e){throw new Error('Não foi possível gerar o Excel sem internet.')}
+async function xlNova(){if(!window.ExcelJS)try{await loadScript('https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js','sha384-Pqp51FUN2/qzfxZxBCtF0stpc9ONI6MYZpVqmo8m20SoaQCzf+arZvACkLkirlPz')}catch(e){throw new Error('Não foi possível gerar o Excel sem internet.')}
  const wb=new ExcelJS.Workbook();wb.creator='Central de Processos';wb.created=new Date();return wb}
 const XL={verde:'FF176B45',escuro:'FF0A3125',marinho:'FF1F3864',gelo:'FFE8F4EA',zebra:'FFF4F8F5',borda:'FFD0D7D3',total:'FFFFF2CC',erro:'FFFCE4E4',apagado:'FF8C8C8C',branco:'FFFFFFFF'};
 /* uma aba: faixa verde de título, subtítulo, bloco de informações (opcional), cabeçalho azul com filtro e linhas zebradas; cor(linha) devolve 'total', 'erro' ou 'apagado' */
