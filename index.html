@@ -429,7 +429,7 @@ button.pli:hover{background:var(--card2)}
 .stag{position:absolute;right:96px;bottom:84px;z-index:3;font:600 20px/1 var(--fb);letter-spacing:.18em;opacity:.85}
 .sfx{background:rgba(10,49,37,.6);border:1px solid rgba(232,244,234,.2);border-radius:28px;display:grid;grid-template-columns:1fr 1fr}
 .sfx>div{padding:40px 44px;border-right:1px solid rgba(232,244,234,.2);border-bottom:1px solid rgba(232,244,234,.2)}
-.sfx>div:nth-child(2n){border-right:0}.sfx.um>div{border-bottom:0}.sfx>div:nth-child(n+3){border-bottom:0}
+.sfx>div:nth-child(2n){border-right:0}.sfx.um>div{border-bottom:0}.sfx>div:nth-child(n+3){border-bottom:0}.sfx.seis>div:nth-child(n+3){border-bottom:1px solid rgba(232,244,234,.2)}.sfx.seis>div:nth-child(n+5){border-bottom:0}.sfx .d.bad{color:#ffb3ab}
 .sfx .l{font-size:24px;color:rgba(232,244,234,.84)}
 .sfx .v{font:700 96px/1 var(--fd);letter-spacing:-.04em;margin:14px 0 12px;font-variant-numeric:tabular-nums}
 .sfx .v.bad{color:#ffb3ab}.sfx .v.mid{color:#ffd99a}
@@ -2818,13 +2818,13 @@ function goWeek(id){sel=id;wordEdit=false;pIdx=0;closeEd();closeWp();render()}
 /* ---------- início ---------- */
 /* ---------- visão geral: números, o que precisa de atenção e cards das áreas ----------
    reaproveita o que as outras áreas já carregam; as demandas da equipe toda e os compromissos de hoje são lidos aqui (VG) */
-const VG={dono:null,prom:null,lido:0,dem:null,hoje:null,erro:false,limitado:false};
+const VG={dono:null,prom:null,areas:null,lido:0,dem:null,hoje:null,erro:false,limitado:false};
 /* meses de monitoria lidos para o mês m: o próprio e o seguinte (registro atrasado tem data no mês seguinte e vaga no mês m), como na tela de Monitorias */
 const vgMeses=m=>{const s=moMesSoma(m,1);return s<=today().slice(0,7)?[m,s]:[m]};
 function vgCarregar(w){if(!meId||!isAdmin()||VG.prom)return;if(VG.dono!==meId)Object.assign(VG,{dono:meId,lido:0,dem:null,hoje:null,erro:false,limitado:false});
  if(Date.now()-VG.lido<60000)return;const dono=VG.dono,mes=w.inicio.slice(0,7),hj=today(),volta=()=>{if(VG.dono===dono&&page==='inicio')render()};
  /* as outras áreas carregam em paralelo e só pedem um novo desenho quando terminam */
- Promise.allSettled([anGarantir(),MON.dono!==meId||!MON.agentes?monCarregar():null,...vgMeses(mes).map(maCarregarMes)]).then(volta);
+ VG.areas=Promise.allSettled([anGarantir(),MON.dono!==meId||!MON.agentes?monCarregar():null,...vgMeses(mes).map(maCarregarMes)]).then(volta);
  VG.prom=(async()=>{try{const[d,c]=await Promise.all([DB.agendaList({pessoa:'*',demandas:'abertas'}),DB.agendaList({pessoa:'*',de:hj,ate:hj})]);
   if(VG.dono!==dono)return;VG.dem=(d.itens||[]).filter(x=>x.status!=='cancelada');VG.hoje=(c.itens||[]).filter(x=>x.tipo==='agenda'&&x.dia===hj);VG.limitado=!!(d.limitado||c.limitado);VG.erro=false}
   catch(e){if(VG.dono===dono)VG.erro=true}finally{VG.prom=null;if(VG.dono===dono)VG.lido=Date.now();volta()}})()}
@@ -2833,8 +2833,8 @@ const vgN=(n,a,b)=>`${nf(n)} ${n===1?a:b}`;
 const vgMon=w=>{const m=w.inicio.slice(0,7),E=vgMeses(m).map(x=>MA.dono===meId&&MA.meses[x]);return E.every(e=>e&&e.itens)?E.flatMap(e=>e.itens).filter(x=>moMesRef(x)===m):null};
 /* alguma área falhou ao carregar (a nova tentativa acontece sozinha) */
 const vgErro=w=>VG.erro||(DG.dono===meId&&DG.erro)||(PJ.dono===meId&&PJ.erro)||(JR.dono===meId&&JR.erro)||(MON.dono===meId&&MON.erro)||vgMeses(w.inicio.slice(0,7)).some(x=>MA.dono===meId&&MA.meses[x]&&MA.meses[x].erro&&!MA.meses[x].itens);
-/* lista "precisa de atenção": [texto, detalhe, botão] */
-function vgAtencao(w){const A=[],go=(pg,t)=>`<button class="btn sm" data-go="${pg}">${t||'Abrir'}</button>`,nomes=L=>L.slice(0,4).map(esc).join(', ')+(L.length>4?` e mais ${L.length-4}`:'');
+/* lista "precisa de atenção": [texto, detalhe, botão]; texto e detalhe em texto puro (a tela, o Excel e os slides escapam) */
+function vgAtencao(w){const A=[],go=(pg,t)=>`<button class="btn sm" data-go="${pg}">${t||'Abrir'}</button>`,nomes=L=>L.slice(0,4).join(', ')+(L.length>4?` e mais ${L.length-4}`:'');
  const fq=calcQ(w).rows.filter(r=>!rowDone('q',r)).map(r=>r.nome),fo=calcO(w).rows.filter(r=>!rowDone('o',r)).map(r=>r.nome);
  if(fq.length)A.push(['Qualidade da semana sem lançamento',nomes(fq),go('qualidade')]);
  if(fo.length)A.push(['Operações da semana sem lançamento',nomes(fo),go('operacoes')]);
@@ -2849,8 +2849,8 @@ function vgAtencao(w){const A=[],go=(pg,t)=>`<button class="btn sm" data-go="${p
    const ate=passado?Infinity:Math.min(V.semanas,Math.ceil(+hj.slice(8)/7)-1),VL=monVagasLista(V).filter(v=>v.semana===null||v.semana<=ate),por=new Map();
    Ag.forEach(a=>{const k=VL.filter(v=>!M.some(x=>x.data.agente===a.id&&monVagaIgual({...v,mes},x.data.vaga))).length;if(!k)return;const eq=monEquipeDoAg(a),nm=s.nome+(eq?' · '+eq.data.nome:'');por.set(nm,(por.get(nm)||0)+k)});
    por.forEach((k,nm)=>vagas.push(`${nm}: ${k}`))});
-  if(sem.length)A.push([`Agentes sem monitoria em ${dgMesNome(mes).toLowerCase()}`,esc(sem.join(' · ')),go('monitorias')]);
-  if(vagas.length)A.push([passado?`Vagas de monitoria não preenchidas em ${dgMesNome(mes).toLowerCase()}`:'Vagas de monitoria vazias em semanas que já passaram',esc(vagas.join(' · ')),go('monitorias')]);
+  if(sem.length)A.push([`Agentes sem monitoria em ${dgMesNome(mes).toLowerCase()}`,sem.join(' · '),go('monitorias')]);
+  if(vagas.length)A.push([passado?`Vagas de monitoria não preenchidas em ${dgMesNome(mes).toLowerCase()}`:'Vagas de monitoria vazias em semanas que já passaram',vagas.join(' · '),go('monitorias')]);
   const z=L.filter(x=>x.data.zerada).length;if(z)A.push([`${z} ${z===1?'monitoria zerada':'monitorias zeradas'} em ${dgMesNome(mes).toLowerCase()}`,'',go('monitorias')])}
  if(DG.dono===meId&&DG.itens){const g=DG.itens.filter(x=>dgAtivo(x)&&(x.data.gravidade==='critica'||x.data.gravidade==='alta'));
   if(g.length)A.push([`${g.length} ${g.length===1?'problema crítico ou alto ativo':'problemas críticos ou altos ativos'}`,nomes(g.map(x=>x.data.titulo)),go('an-diag')])}
@@ -2860,30 +2860,39 @@ function vgAtencao(w){const A=[],go=(pg,t)=>`<button class="btn sm" data-go="${p
  if(VG.dem){const at=VG.dem.filter(agAtrasada);if(at.length)A.push([`${at.length} ${at.length===1?'demanda atrasada':'demandas atrasadas'}`,nomes(at.map(x=>`${x.titulo} (${agNomeDe(x)})`)),go('agenda')])}
  if(VG.hoje&&VG.hoje.length)A.push([`${VG.hoje.length} ${VG.hoje.length===1?'compromisso hoje':'compromissos hoje'}`,nomes(VG.hoje.slice().sort((a,b)=>(a.hora_ini||'').localeCompare(b.hora_ini||'')).map(x=>`${x.hora_ini?x.hora_ini+' ':''}${x.titulo} (${agNomeDe(x)})`)),go('agenda')]);
  return A}
+/* números e áreas da visão geral (texto puro): usados pela tela, pelo Excel e pelos slides.
+   nums: [rótulo, valor (null = carregando), detalhe, classe do valor, classe do detalhe]; areas: [título, linhas (null = carregando), [página, botão]] */
+function vgDados(w){const sq=status(w,'q'),so=status(w,'o'),Q=calcQ(w),O=calcO(w),L=vgMon(w),dg=DG.dono===meId&&DG.itens,pj=PJ.dono===meId&&PJ.itens,jr=JR.dono===meId&&JR.etapas,mesN=dgMesNome(w.inicio.slice(0,7)).toLowerCase();
+ const nDg=dg&&dg.filter(dgAtivo),nPj=pj&&pj.filter(x=>x.data.status==='andamento'),atPj=nPj&&nPj.filter(pjAtrasado),atDem=VG.dem&&VG.dem.filter(agAtrasada);
+ const Ativos=MON.agentes?MON.agentes.filter(a=>a.data.ativo!==false&&monSetores().some(s=>s.id===a.data.setor)):null,ev=L&&Ativos?Ativos.filter(a=>L.some(x=>x.data.agente===a.id)).length:null;
+ const nums=[['Qualidade da semana',pct(Q.q),'',qCls(Q.q)],['Backlog atual',nf(O.back),'',isN(O.back)&&O.back>O.trat?'er':''],
+  [`Monitorias de ${mesN}`,L?moPct(moMedia(L)):null,L?vgN(L.length,'monitoria','monitorias'):''],
+  ['Problemas ativos',nDg?nf(nDg.length):null,nDg?vgN(nDg.filter(x=>x.data.gravidade==='critica').length,'crítico','críticos'):''],
+  ['Projetos em andamento',nPj?nf(nPj.length):null,atPj?vgN(atPj.length,'atrasado','atrasados'):'','',atPj&&atPj.length?'er':''],
+  ['Demandas abertas',VG.dem?nf(VG.dem.length):null,atDem?vgN(atDem.length,'atrasada','atrasadas'):'','',atDem&&atDem.length?'er':'']];
+ const areas=[['Calibragem Semanal',[`Qualidade: ${sq.label}${sq.sub?' · '+sq.sub:''}`,`Operações: ${so.label}${so.sub?' · '+so.sub:''}`,w.fechada?'Semana fechada':'Semana aberta'],[['qualidade','Qualidade'],['operacoes','Operações']]],
+  ['Monitorias',L?[`Média de ${mesN}: ${moPct(moMedia(L))}`,`${vgN(L.length,'monitoria','monitorias')} · ${vgN(L.filter(x=>x.data.zerada).length,'zerada','zeradas')}`,...(isN(ev)?[`${nf(ev)} de ${vgN(Ativos.length,'agente avaliado','agentes avaliados')}`]:[])]:null,[['monitorias']]],
+  ['Agenda e Demandas',VG.dem?[`${vgN(VG.dem.length,'demanda aberta','demandas abertas')} · ${nf(VG.dem.filter(x=>x.status==='andamento').length)} em andamento`,vgN(atDem.length,'atrasada','atrasadas'),vgN((VG.hoje||[]).length,'compromisso hoje','compromissos hoje')]:null,[['agenda']]],
+  ['Jornada do Cliente',jr&&dg?[vgN(jr.length,'etapa','etapas'),vgN(jr.filter(e=>(jrProblemas(e.id)||[]).length).length,'etapa com problemas ativos','etapas com problemas ativos')]:null,[['an-jornada']]],
+  ['Diagnósticos',dg?[`${vgN(nDg.length,'problema ativo','problemas ativos')} (${nf(dg.filter(x=>x.data.situacao==='investigacao').length)} em investigação)`,vgN(dg.filter(x=>x.data.situacao==='resolvido').length,'resolvido','resolvidos')]:null,[['an-diag']]],
+  ['Projetos e Melhorias',pj?[`${nf(nPj.length)} em andamento · ${vgN(atPj.length,'atrasado','atrasados')}`,`${nf(pj.filter(x=>PJ_FUT.includes(x.data.status)).length)} no Planejamento Futuro`,vgN(pj.filter(x=>x.data.status==='concluido').length,'concluído','concluídos')]:null,[['pm-proj','Projetos'],['pm-fut','Futuro']]],
+  ['Análises',['Perguntas-chave e comparação por setor'],[['an-perg','Perguntas-chave'],['an-setor','Por setor']]]];
+ return {nums,areas,pronto:!!(L&&MON.agentes&&dg&&pj&&VG.dem)}}
+/* espera tudo o que a visão geral usa (apresentação e Excel); devolve false se algo não carregou */
+async function vgGarantir(w){if(!w||!isAdmin())return false;VG.lido=0;vgCarregar(w);await VG.prom;await VG.areas;
+ await Promise.allSettled([anGarantir(),MON.dono!==meId||!MON.agentes?monCarregar():null,...vgMeses(w.inicio.slice(0,7)).map(maCarregarMes)]);
+ for(let i=0;i<150&&[DG,PJ,JR,MON].some(x=>x.carregando);i++)await new Promise(r=>setTimeout(r,100));
+ return vgDados(w).pronto&&!vgErro(w)}
 function rInicio(w){vgCarregar(w);
  const sq=status(w,'q'),so=status(w,'o'),pend=[['Qualidade',sq],['Operações',so]].map(([n,s])=>s.complete?`${n} preenchida`:`${n} com ${s.sub}`).join(' · ');
  const card=`<div class="wst"><span class="dot ${w.fechada?'wa':'ok'}"></span><div class="tx"><b>${w.fechada?'Semana fechada':'Semana aberta para lançamentos'}</b><small>${w.fechada?(isAdmin()?'Só administradores podem alterar os números desta semana.':'Os números desta semana não podem mais ser alterados.'):pend}</small></div>${isAdmin()?(w.fechada?`<button class="btn sm" data-wlock="${w.inicio}">${ICO.unlock}Reabrir semana</button>`:`<button class="btn sm lk" data-wlock="${w.inicio}">${ICO.lock}Fechar semana</button>`):''}</div>`;
  const col=f=>{const s=f==='q'?sq:so,pg=f==='q'?'qualidade':'operacoes';return `<div><div class="colh"><h2>${FR[f]}</h2><span class="chip ${s.cls}"><span class="dot ${s.cls}"></span>${s.label}${s.sub?' · '+s.sub:''}</span></div><div class="kpis">${f==='q'?kQ(w):kO(w)}</div><div class="mini"><span>${s.last?`Último lançamento: ${esc(s.by||'')} em ${tsTxt(s.last)}`:'Nenhum dado lançado nesta semana'}</span><span class="tools"><button class="btn sm ghost" data-go="${pg}">Abrir ${FR[f]}</button>${canEdit(w)?`<button class="btn sm" data-goedit="${f}">${ICO.edit}Ir para edição</button>`:''}</span></div></div>`};
- const Q=calcQ(w),O=calcO(w),L=vgMon(w),dg=DG.dono===meId&&DG.itens,pj=PJ.dono===meId&&PJ.itens,jr=JR.dono===meId&&JR.etapas,car='<span class="none">…</span>',mesN=dgMesNome(w.inicio.slice(0,7)).toLowerCase();
- const nDg=dg&&dg.filter(dgAtivo),nPj=pj&&pj.filter(x=>x.data.status==='andamento'),atPj=nPj&&nPj.filter(pjAtrasado),atDem=VG.dem&&VG.dem.filter(agAtrasada);
- const faixa=`<div class="kpis vgk">${kpi('Qualidade da semana',pct(Q.q),qCls(Q.q),'')+kpi('Backlog atual',nf(O.back),isN(O.back)&&O.back>O.trat?'er':'','')
-  +kpi(`Monitorias de ${mesN}`,L?moPct(moMedia(L)):car,'',L?`<span>${nf(L.length)} ${L.length===1?'monitoria':'monitorias'}</span>`:'')
-  +kpi('Problemas ativos',nDg?nf(nDg.length):car,'',nDg?`<span>${vgN(nDg.filter(x=>x.data.gravidade==='critica').length,'crítico','críticos')}</span>`:'')
-  +kpi('Projetos em andamento',nPj?nf(nPj.length):car,'',atPj?`<span class="${atPj.length?'er':''}">${nf(atPj.length)} ${atPj.length===1?'atrasado':'atrasados'}</span>`:'')
-  +kpi('Demandas abertas',VG.dem?nf(VG.dem.length):car,'',atDem?`<span class="${atDem.length?'er':''}">${nf(atDem.length)} ${atDem.length===1?'atrasada':'atrasadas'}</span>`:'')}</div>`;
- const A=vgAtencao(w),pronto=L&&MON.agentes&&dg&&pj&&VG.dem,falhou=vgErro(w);
+ const D=vgDados(w),A=vgAtencao(w),falhou=vgErro(w);
+ const faixa=`<div class="kpis vgk">${D.nums.map(([l,v,d,c,dc])=>kpi(esc(l),v===null?'<span class="none">…</span>':esc(v),c,d?`<span class="${dc||''}">${esc(d)}</span>`:'')).join('')}</div>`;
  const aten=`<div class="sech"><div><h2>Precisa de atenção</h2><p>Semana de ${periodo(w)} e situação atual das áreas.${falhou?' Parte dos dados não carregou; tentando de novo em instantes.':''}${VG.limitado?' Há muitas demandas: parte delas pode não estar sendo contada.':''}</p></div></div>
- <div class="vgat">${A.map(([t,d,b])=>`<div class="it"><span class="dot wa"></span><div class="tx"><b>${t}</b>${d?`<small>${d}</small>`:''}</div>${b}</div>`).join('')}${A.length?'':pronto?'<div class="it"><span class="dot ok"></span><div class="tx"><b>Tudo em dia ✓</b></div></div>':`<div class="it"><div class="tx"><span class="muted" role="status">${falhou?'Aguardando os dados que não carregaram…':'Carregando…'}</span></div></div>`}</div>`;
- const area=(t,linhas,bts)=>`<div class="panel"><b>${t}</b>${linhas.map(l=>`<span>${l}</span>`).join('')}<div class="tools">${bts}</div></div>`,ab=(pg,t)=>`<button class="btn sm ghost" data-go="${pg}">${t||'Abrir'}</button>`;
- const Ativos=MON.agentes?MON.agentes.filter(a=>a.data.ativo!==false&&monSetores().some(s=>s.id===a.data.setor)):null,ativos=Ativos&&Ativos.length,ev=L&&Ativos?Ativos.filter(a=>L.some(x=>x.data.agente===a.id)).length:null;
- const areas=`<div class="sech vgev"><div><h2>Áreas</h2></div></div><div class="vgar">
-  ${area('Calibragem Semanal',[`Qualidade: ${sq.label}${sq.sub?' · '+sq.sub:''}`,`Operações: ${so.label}${so.sub?' · '+so.sub:''}`,w.fechada?'Semana fechada':'Semana aberta'],ab('qualidade','Qualidade')+ab('operacoes','Operações'))}
-  ${area('Monitorias',L?[`Média de ${mesN}: ${moPct(moMedia(L))}`,`${vgN(L.length,'monitoria','monitorias')} · ${vgN(L.filter(x=>x.data.zerada).length,'zerada','zeradas')}`,isN(ev)&&isN(ativos)?`${nf(ev)} de ${vgN(ativos,'agente avaliado','agentes avaliados')}`:'']:['Carregando…'],ab('monitorias'))}
-  ${area('Agenda e Demandas',VG.dem?[`${vgN(VG.dem.length,'demanda aberta','demandas abertas')} · ${nf(VG.dem.filter(x=>x.status==='andamento').length)} em andamento`,vgN(atDem.length,'atrasada','atrasadas'),vgN((VG.hoje||[]).length,'compromisso hoje','compromissos hoje')]:['Carregando…'],ab('agenda'))}
-  ${area('Jornada do Cliente',jr&&dg?[`${nf(jr.length)} ${jr.length===1?'etapa':'etapas'}`,`${vgN(jr.filter(e=>(jrProblemas(e.id)||[]).length).length,'etapa com problemas ativos','etapas com problemas ativos')}`]:['Carregando…'],ab('an-jornada'))}
-  ${area('Diagnósticos',dg?[`${vgN(nDg.length,'problema ativo','problemas ativos')} (${nf(dg.filter(x=>x.data.situacao==='investigacao').length)} em investigação)`,`${vgN(dg.filter(x=>x.data.situacao==='resolvido').length,'resolvido','resolvidos')}`]:['Carregando…'],ab('an-diag'))}
-  ${area('Projetos e Melhorias',pj?[`${nf(nPj.length)} em andamento · ${vgN(atPj.length,'atrasado','atrasados')}`,`${nf(pj.filter(x=>PJ_FUT.includes(x.data.status)).length)} no Planejamento Futuro`,`${vgN(pj.filter(x=>x.data.status==='concluido').length,'concluído','concluídos')}`]:['Carregando…'],ab('pm-proj','Projetos')+ab('pm-fut','Futuro'))}
-  ${area('Análises',['Perguntas-chave e comparação por setor'],ab('an-perg','Perguntas-chave')+ab('an-setor','Por setor'))}</div>`;
+ <div class="vgat">${A.map(([t,d,b])=>`<div class="it"><span class="dot wa"></span><div class="tx"><b>${esc(t)}</b>${d?`<small>${esc(d)}</small>`:''}</div>${b}</div>`).join('')}${A.length?'':D.pronto?'<div class="it"><span class="dot ok"></span><div class="tx"><b>Tudo em dia ✓</b></div></div>':`<div class="it"><div class="tx"><span class="muted" role="status">${falhou?'Aguardando os dados que não carregaram…':'Carregando…'}</span></div></div>`}</div>`;
+ const ab=([pg,t])=>`<button class="btn sm ghost" data-go="${pg}">${t||'Abrir'}</button>`;
+ const areas=`<div class="sech vgev"><div><h2>Áreas</h2></div></div><div class="vgar">${D.areas.map(([t,linhas,bts])=>`<div class="panel"><b>${esc(t)}</b>${(linhas||['Carregando…']).map(l=>`<span>${esc(l)}</span>`).join('')}<div class="tools">${bts.map(ab).join('')}</div></div>`).join('')}</div>`;
  $('p-inicio').innerHTML=`<header class="phead"><div><p class="kick">Semana de ${periodo(w)}</p><h1>Visão Geral</h1></div><div class="tools"><button class="btn pri" data-present><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M8 5.5v13l11-6.5z"/></svg>Apresentar esta semana</button></div></header>${faixa}${aten}<div class="sech"><div><h2>Semana</h2></div></div>${card}<div class="cols">${col('q')}${col('o')}</div><div class="cols vgev"><div>${rChart(w,'q').replace('Evolução</h2>','Evolução · Qualidade</h2>')}</div><div>${rChart(w,'o').replace('Evolução</h2>','Evolução · Operações</h2>')}</div></div>${areas}`}
 
 /* ---------- frentes ---------- */
@@ -3137,15 +3146,15 @@ $('loginForm').onsubmit=async e=>{e.preventDefault();loginErr('');const b=$('lbt
 
 /* ---------- Excel ---------- */
 /* ---------- exportar dados (Configurações): áreas escolhidas, cada uma com seu período, num Excel só ---------- */
-const EX_AREAS=[['cal','Calibragem Semanal'],['ag','Agenda e Demandas'],['an','Análises'],['pm','Projetos e Melhorias']];
+const EX_AREAS=[['vg','Visão Geral'],['cal','Calibragem Semanal'],['ag','Agenda e Demandas'],['an','Análises'],['pm','Projetos e Melhorias']];
 const EX_DSH=[['mes','Mês atual'],['mesant','Mês anterior'],['tri','Últimos 3 meses'],['ano','Este ano']];
 const exRange=k=>{const d=new Date(),y=d.getFullYear(),m=d.getMonth(),fim=(a,b)=>ymd(new Date(a,b+1,0));
  return k==='mes'?[ymd(new Date(y,m,1)),fim(y,m)]:k==='mesant'?[ymd(new Date(y,m-1,1)),fim(y,m-1)]:k==='tri'?[ymd(new Date(y,m-2,1)),fim(y,m)]:k==='ano'?[y+'-01-01',y+'-12-31']:null};
 const exSemanas=k=>k==='tudo'?(ids().length?[ids()[0],ids().at(-1)]:null):shortRange(k);
 const exSoma=(s,n)=>{const d=new Date(s+'T12:00:00');d.setDate(d.getDate()+n);return ymd(d)};
-const exNovo=()=>{const[aDe,aAte]=exRange('mes');return {cal:true,ag:false,an:false,cFrom:sel,cTo:sel,cShort:null,aDe,aAte,aShort:'mes',semPrazo:true,dDe:aDe,dAte:aAte,dShort:'mes',pm:false,pDe:aDe,pAte:aAte,pShort:'mes',pAbertos:true,ocupado:false}};
+const exNovo=()=>{const[aDe,aAte]=exRange('mes');return {vg:false,vSem:sel,cal:true,ag:false,an:false,cFrom:sel,cTo:sel,cShort:null,aDe,aAte,aShort:'mes',semPrazo:true,dDe:aDe,dAte:aAte,dShort:'mes',pm:false,pDe:aDe,pAte:aAte,pShort:'mes',pAbertos:true,ocupado:false}};
 let EX=null;
-function rCfgExport(){if(!EX)EX=exNovo();if(!S.weeks[EX.cFrom]||!S.weeks[EX.cTo])Object.assign(EX,{cFrom:sel,cTo:sel,cShort:null});const E=EX,todas=EX_AREAS.every(([k])=>E[k]);
+function rCfgExport(){if(!EX)EX=exNovo();if(!S.weeks[EX.vSem])EX.vSem=sel;if(!S.weeks[EX.cFrom]||!S.weeks[EX.cTo])Object.assign(EX,{cFrom:sel,cTo:sel,cShort:null});const E=EX,todas=EX_AREAS.every(([k])=>E[k]);
  const all=ids().slice().reverse(),opt=v=>all.map(id=>`<option value="${id}"${id===v?' selected':''}>${wkTxt(S.weeks[id])} ${id.slice(0,4)}${S.weeks[id].fechada?' · fechada':''}</option>`).join('');
  const chk=(id,t,on,extra='')=>`<label class="dgchk"><input type="checkbox" id="${id}"${extra}${on?' checked':''}>${t}</label>`;
  const datas=(p,txt)=>`<div class="pc-s" role="group" aria-label="Atalhos de período">${EX_DSH.map(([k,t])=>`<button class="${E[p+'Short']===k?'on':''}" data-exds="${p}:${k}">${t}</button>`).join('')}</div>
@@ -3153,6 +3162,8 @@ function rCfgExport(){if(!EX)EX=exNovo();if(!S.weeks[EX.cFrom]||!S.weeks[EX.cTo]
  const L=E.cal?periodWeeks(E.cFrom,E.cTo):[];
  return `<div id="ex_box">
  <div class="panel cfgp"><h3>O que exportar</h3><div class="exchks">${chk('ex_todas','Todas',todas)}${EX_AREAS.map(([k,t])=>chk('ex_'+k,t,E[k],` data-exa="${k}"`)).join('')}</div></div>
+ ${E.vg?`<div class="panel cfgp"><h3>Visão Geral</h3><p class="muted">Os números, o que precisa de atenção e a situação das áreas, como na tela. A Calibragem e as Monitorias usam a semana escolhida (as Monitorias, o mês dela); Diagnósticos, Projetos e Demandas mostram a situação de hoje.</p>
+  <div class="frow"><div class="f"><label for="ex_vSem">Semana</label><select id="ex_vSem">${opt(E.vSem)}</select></div></div></div>`:''}
  ${E.cal?`<div class="panel cfgp"><h3>Calibragem Semanal</h3><p class="muted">Qualidade, Operações, Planos de ação e Palavra da Semana das semanas escolhidas.</p>
   <div class="pc-s" role="group" aria-label="Atalhos de semanas">${[...SHORTS,['tudo','Todas as semanas']].map(([k,t])=>{const r=exSemanas(k);return `<button class="${E.cShort===k?'on':''}" data-excs="${k}"${r?'':' disabled'}>${t}</button>`}).join('')}</div>
   <div class="frow"><div class="f"><label for="ex_cFrom">Da semana</label><select id="ex_cFrom">${opt(E.cFrom)}</select></div><div class="f"><label for="ex_cTo">Até a semana</label><select id="ex_cTo">${opt(E.cTo)}</select></div></div>
@@ -3172,6 +3183,7 @@ document.addEventListener('change',e=>{const t=e.target;if(!EX||!t.closest||!t.c
  if(id==='ex_todas')EX_AREAS.forEach(([k])=>EX[k]=t.checked);
  else if(t.dataset.exa)EX[t.dataset.exa]=t.checked;
  else if(id==='ex_cFrom'||id==='ex_cTo'){EX[id.slice(3)]=t.value;if(EX.cFrom>EX.cTo)[EX.cFrom,EX.cTo]=[EX.cTo,EX.cFrom];EX.cShort=null}
+ else if(id==='ex_vSem'){EX.vSem=t.value;return}
  else if(id==='ex_semPrazo'){EX.semPrazo=t.checked;return}
  else if(id==='ex_pAbertos'){EX.pAbertos=t.checked;return}
  /* datas digitadas: só guarda, sem redesenhar enquanto a pessoa digita */
@@ -3193,6 +3205,11 @@ async function exportXlsx(){if(!isAdmin()||!EX||EX.ocupado)return;const X=EX,E={
  try{
   /* add(aba, [cabeçalho, ...linhas], período mostrado no subtítulo, cor da linha) */
   const wb=await xlNova(),add=(n,[cab,...linhas],per,cor)=>xlAba(wb,n,{titulo:`CENTRAL DE PROCESSOS | ${n.toUpperCase()}`,sub:(per?per+' · ':'')+`exportado em ${dfmt(today())}`,cab,linhas,cor}),entre=(de,ate)=>`De ${dfmt(de)} a ${dfmt(ate)}`,dia=t=>t?dfmt(ymd(new Date(t))):'';
+  if(E.vg){const w=S.weeks[E.vSem];if(!w)throw new Error('Escolha a semana da Visão Geral.');
+   if(!await vgGarantir(w))msg('Atenção: parte dos dados da Visão Geral não carregou; a aba pode estar incompleta.');if(VG.limitado)limitado=true;
+   const D=vgDados(w),A=vgAtencao(w);
+   add('Visão Geral',[['Bloco','Item','Valor','Detalhe'],...D.nums.map(([l,v,d])=>['Números',l,v===null?'':v,d||'']),...(A.length?A.map(([t,d])=>['Precisa de atenção',t,'',d||'']):[['Precisa de atenção',D.pronto?'Tudo em dia':'Dados incompletos','','']]),
+    ...D.areas.map(([t,l])=>['Áreas',t,'',(l||['Não carregou']).join(' · ')])],`Semana de ${periodo(w)} · situação de ${dfmt(today())}`)}
   if(E.cal&&!await maGarantir(periodWeeks(E.cFrom,E.cTo)))msg('Atenção: não foi possível ler as monitorias; os números automáticos podem estar incompletos.');
   if(E.cal){const L=periodWeeks(E.cFrom,E.cTo),sem=w=>`${dfmt(w.inicio)} a ${dfmt(w.fim)}`,per=L.length?`Semanas de ${dfmt(L[0].inicio)} a ${dfmt(L[L.length-1].fim)}`:'';
    add('Qualidade',[['Semana','Equipe','Monitorias','Qualidade (%)','Zeradas','Agentes','Responsável','Preenchido por'],...L.flatMap(w=>{const Q=calcQ(w);return [...Q.rows.map(r=>[sem(w),r.nome,r.monitorias??'',r.qualidade??'',r.zeradas??'',r.agentes??'',r.responsavel||'',r.by||'']),[sem(w),'Total',Q.mon??'',Q.q!==null?+Q.q.toFixed(2):'',Q.zer??'',Q.ag??'','','']]})],per,l=>l[1]==='Total'?'total':null);
@@ -3345,7 +3362,7 @@ function presBaixar(tt,arq){
  toast('Apresentação baixada.')}
 $('pcfgDl').onclick=()=>presIr(true);
 const odelta=(cur,prev,better,kind,lab)=>{if(!isN(cur)||!isN(prev))return `<span>Sem ${lab.replace('vs. ','')} para comparar</span>`;const d=cur-prev;if(Math.abs(d)<0.005)return `<span>Igual ${lab.includes('período')?'ao período anterior':'à semana anterior'}</span>`;const good=(d>0)===(better==='up');const t=kind==='pct'?nf(Math.abs(d),2)+' p.p.':kind==='dur'?dur(Math.abs(d)):nf(Math.abs(d));return `<span class="${good?'good':'badc'}">${d>0?'▲':'▼'} ${t}</span> ${lab}`};
-/* modo: "cal" (Calibragem Semanal, completa) ou "geral" (Visão Geral: capa e números) */
+/* modo: "cal" (Calibragem Semanal, completa) ou "geral" (Visão Geral: capa, resumo, atenção, números e áreas) */
 function buildSlides(L,modo){
  const n=L.length,first=L[0],last=L.at(-1),Q=aggQ(L),O=aggO(L),pv=prevPeriod(L),PQ=pv&&aggQ(pv),PO=pv&&aggO(pv),pend=pendentes(L);
  const lab=n===1?'vs. semana anterior':'vs. período anterior',ptxt=n===1?`Semana de ${periodo(first)}`:`${dshort(first.inicio)} a ${dfmt(last.fim)} · ${n} semanas`,ftxt=ptxt+(pend.length?` · ${pend.length} ${pend.length===1?'semana':'semanas'} com dados pendentes`:'');
@@ -3373,7 +3390,12 @@ function buildSlides(L,modo){
  s.push({t:'Operações · Planos de ação',h:plSlide('o')});
  const W=palavrasPeriod(L);PWL=W;
  if(modo!=='geral')s.push({t:'Palavra da Semana',h:side('Para fechar',n>1?'As palavras do período':'As palavras da semana',W.length?`${W.length} ${W.length===1?'colaborador':'colaboradores'}. Clique num nome para revelar ${n>1?'as palavras':'a palavra'}.`:'Nenhuma palavra registrada.')+`<div class="body">${W.length?`<div class="swbig wait" id="swbig"><small>&nbsp;</small><b>Clique num nome para ver ${n>1?'as palavras':'a palavra'}</b></div><div class="swn" id="swn">${W.map((x,j)=>`<button data-swn="${j}">${esc(x.nome)}</button>`).join('')}</div>`:'<div class="swbig"><small>&nbsp;</small><b class="none">Nenhuma palavra registrada</b></div>'}</div>`});
- if(modo==='geral'){PWL=[];s[0]=presCapa('Visão Geral','QUALIDADE • OPERAÇÕES','Período de referência',`${dfmt(first.inicio)} a ${dfmt(last.fim)}${n>1?` · ${n} semanas`:''}`);presMontar(s.filter(x=>['Capa','Qualidade · Números','Operações · Números'].includes(x.t)));return}
+ if(modo==='geral'){PWL=[];s[0]=presCapa('Visão Geral','QUALIDADE • OPERAÇÕES','Período de referência',`${dfmt(first.inicio)} a ${dfmt(last.fim)}${n>1?` · ${n} semanas`:''}`);const B=s.filter(x=>['Capa','Qualidade · Números','Operações · Números'].includes(x.t)),D=vgDados(last),A=vgAtencao(last),V=[],Ar=[];
+  /* resumo, atenção e áreas da visão geral: semana mais recente do período; Diagnósticos, Projetos e Demandas como estão hoje */
+  V.push({t:'Visão Geral · Resumo',h:presLado('Visão Geral','Resumo',`Semana de ${periodo(last)}. Diagnósticos, Projetos e Demandas como estão em ${dfmt(today())}.`,ftxt)+`<div class="body"><div class="sfx seis">${D.nums.map(([l,v,d,c,dc])=>`<div><div class="l">${esc(l)}</div><div class="v${c==='er'?' bad':''}">${esc(v===null?'—':v)}</div><div class="d${dc==='er'?' bad':''}">${esc(d||'')}</div></div>`).join('')}</div></div>`});
+  presLista(V,'Visão Geral','Precisa de atenção','',ftxt,A,6,'<th>O que</th><th>Detalhe</th>',([t,d])=>`<tr><td><span class="nm">${esc(t)}</span></td><td>${esc(presCorta(d,140))}</td></tr>`,'Tudo em dia ✓');
+  presLista(Ar,'Visão Geral','Áreas','',ftxt,D.areas,7,'<th>Área</th><th>Situação</th>',([t,l])=>`<tr><td><span class="nm">${esc(t)}</span></td><td>${esc((l||['—']).join(' · '))}</td></tr>`,'');
+  presMontar([B[0],...V,...B.slice(1),...Ar]);return}
  slides=s;
  $('slides').innerHTML=s.map(x=>`<section class="sl ${x.c||''}">${x.h}</section>`).join('');
  $('psegs').innerHTML=s.map((x,i)=>`<i data-si="${i}" title="${esc(x.t)}"></i>`).join('');
@@ -3549,7 +3571,10 @@ function buildSlidesRel(setor,A,EQ,gestor,C,M,de,ate){PWL=[];const rod=`${esc(se
 let presTok=0;
 async function presIr(baixar){const m=presModo,tk=++presTok,pg=page;
  if(m==='geral'||m==='cal'){closePcfg();const L=periodWeeks(pFrom,pTo),LL=[...L,...(prevPeriod(L)||[])];
-  if(!maPronto(LL.map(w=>w.inicio))){const tk=++presTok,pg=page,ok=await maGarantir(LL);if(tk!==presTok||page!==pg||!meId)return;if(!ok)toast('Não foi possível ler as monitorias: os números automáticos podem estar incompletos.',true)}baixar?downloadPres(L,m):startPres(L,m);return}
+  if(!maPronto(LL.map(w=>w.inicio))){const tk=++presTok,pg=page,ok=await maGarantir(LL);if(tk!==presTok||page!==pg||!meId)return;if(!ok)toast('Não foi possível ler as monitorias: os números automáticos podem estar incompletos.',true)}
+  if(!L.length)return;
+  if(m==='geral'){const tk=++presTok,pg=page,ok=await vgGarantir(L.at(-1));if(tk!==presTok||page!==pg||!meId)return;if(!ok)toast('Parte dos dados da Visão Geral não carregou: a apresentação pode estar incompleta.',true)}
+  baixar?downloadPres(L,m):startPres(L,m);return}
  let de,ate;const mes=pMo;if(m==='mon'&&!(mes&&/^\d{4}-(0[1-9]|1[0-2])$/.test(mes)))return toast('Confira o mês.',true);
  if(m==='ag'||m==='pm'||m==='rel'){({de,ate}=pAg);if(!de||!ate||![de,ate].every(d=>/^\d{4}-\d{2}-\d{2}$/.test(d)&&d>='2000-01-01'&&d<='2100-12-31'))return toast('Confira as datas do período.',true);
   if(de>ate)[de,ate]=[ate,de];
