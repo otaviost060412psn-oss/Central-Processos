@@ -297,8 +297,15 @@ export default async function handler(req,res){
    if(depois>SEM_LIMITE&&depois>antes)fail(413,'A semana ficou grande demais. Encurte os textos.');await client.query('UPDATE cp_weeks SET data=$2 WHERE id=$1',[b.id,j]);await client.query('COMMIT')}catch(e){await client.query('ROLLBACK');throw e}finally{client.release()}return res.json({ok:true});
   }
   if(action==='setPassword'){
-   if(b.id!==u.id)requireAdmin(u);else if(!check(String(b.atual||''),u.password_hash))fail(403,'Senha atual incorreta.');
-   if(String(b.senha||'').length<8)fail(400,'A senha precisa ter pelo menos 8 caracteres.');await pool.query('UPDATE cp_users SET password_hash=$2 WHERE id=$1',[b.id,pass(b.senha)]);return res.json({ok:true});
+   const self=b.id===u.id;
+   if(!self)requireAdmin(u);else if(!check(String(b.atual||''),u.password_hash))fail(403,'Senha atual incorreta.');
+   if(String(b.senha||'').length<8)fail(400,'A senha precisa ter pelo menos 8 caracteres.');
+   /* trocar a senha derruba as demais sessões: a própria pessoa mantém a sessão atual; o alvo de um admin perde todas. uma transação evita senha trocada com sessões antigas ainda válidas */
+   const client=await pool.connect();try{await client.query('BEGIN');await client.query('UPDATE cp_users SET password_hash=$2 WHERE id=$1',[b.id,pass(b.senha)]);
+   if(self)await client.query('DELETE FROM cp_sessions WHERE user_id=$1 AND token_hash<>$2',[b.id,crypto.createHash('sha256').update(token).digest('hex')]);
+   else await client.query('DELETE FROM cp_sessions WHERE user_id=$1',[b.id]);
+   await client.query('COMMIT')}catch(e){await client.query('ROLLBACK');throw e}finally{client.release()}
+   return res.json({ok:true});
   }
   /* agenda: o dono vem sempre da sessão; só administradores consultam ou alteram registros de outras pessoas */
   if(action==='agendaList'){

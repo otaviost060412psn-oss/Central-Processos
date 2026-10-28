@@ -1155,7 +1155,9 @@ const FireDB={
 /* Banco Neon via API segura */
 const NeonDB={
  mode:'neon',cb:null,authCb:null,user:null,timer:null,canSetOthersPassword:true,
- async req(action,data={}){const r=await fetch('/api/db',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify({action,...data})});const j=await r.json().catch(()=>({error:'Resposta inválida do servidor'}));if(!r.ok)throw new Error(j.error||'Erro ao acessar o servidor');return j},
+ async req(action,data={}){const r=await fetch('/api/db',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify({action,...data})});const j=await r.json().catch(()=>({error:'Resposta inválida do servidor'}));if(r.status===401&&action!=='login')this.sessaoExpirada();if(!r.ok)throw new Error(j.error||'Erro ao acessar o servidor');return j},
+ /* sessão caducou (401) em qualquer chamada: avisa e recarrega a página inteira, que já limpa toda a tela e volta ao login */
+ sessaoExpirada(){if(this._expirada)return;this._expirada=true;clearInterval(this.timer);this.timer=null;setTimeout(()=>toast('Sua sessão expirou. A página será recarregada.',true),0);setTimeout(()=>location.reload(),1500)},
  async init(){await this.req('health')},
  onAuth(cb){this.authCb=cb;this.req('me').then(r=>{this.user=r.user;cb(r.user?{id:r.user.id}:null)}).catch(()=>cb(null))},
  async login(usr,p,keep){const r=await this.req('login',{usuario:usr,senha:p,keep});this.user=r.user;this.authCb({id:r.user.id})},
