@@ -45,12 +45,37 @@ const semObj=(v,max,qual)=>{if(!v||typeof v!=='object'||Array.isArray(v))fail(40
  for(const[k,x]of E){if(!/^[A-Za-z][A-Za-z0-9_]{0,29}$/.test(k)||k in Object.prototype)fail(400,qual+' inválido.');
   if(typeof x==='string'){if(x.length>max)fail(400,`Texto muito longo em ${SEM_ROTULO[k]||k} (máximo de ${max.toLocaleString('pt-BR')} caracteres).`)}
   else if(!(x===null||typeof x==='boolean'||(typeof x==='number'&&Number.isFinite(x))))fail(400,qual+' inválido.')}};
-const semPlano=(v,nome)=>{if(v===null)return null;semObj(v,2000,'Plano de ação');if(!['q','o'].includes(v.frente)||typeof v.setor!=='string'||!SEM_ID.test(v.setor))fail(400,'Plano de ação inválido.');
- if(v.prazo!=null&&v.prazo!==''&&!isDia(v.prazo))fail(400,'Prazo do plano inválido.');return {...v,by:nome,at:Date.now()}};
-const semPalavra=(v,nome)=>{if(v===null)return null;semObj(v,200,'Palavra');if(typeof v.palavra!=='string'||!v.palavra.trim())fail(400,'Palavra inválida.');return {...v,by:nome,at:Date.now()}};
+const semPlanoValido=v=>{if(v===null)return;semObj(v,2000,'Plano de ação');if(!['q','o'].includes(v.frente)||typeof v.setor!=='string'||!SEM_ID.test(v.setor))fail(400,'Plano de ação inválido.');
+ if(v.prazo!=null&&v.prazo!==''&&!isDia(v.prazo))fail(400,'Prazo do plano inválido.')};
+const semPlano=(v,nome)=>{semPlanoValido(v);return v===null?null:{...v,by:nome,at:Date.now()}};
+const semPalavraValida=v=>{if(v===null)return;semObj(v,200,'Palavra');if(typeof v.palavra!=='string'||!v.palavra.trim())fail(400,'Palavra inválida.')};
+const semPalavra=(v,nome)=>{semPalavraValida(v);return v===null?null:{...v,by:nome,at:Date.now()}};
 const semFoto=v=>{if(v===null)return null;if(!v||typeof v!=='object'||Array.isArray(v)||Object.keys(v).length>50)fail(400,'Números congelados inválidos.');
  for(const[k,x]of Object.entries(v))if(!SEM_ID.test(k)||!x||typeof x!=='object'||!['monitorias','qualidade','zeradas','agentes'].every(c=>semNum(x[c]??null,c==='qualidade'?100:null))||!semTxt(x.responsavel??null,2000))fail(400,'Números congelados inválidos.');
  return Object.fromEntries(Object.entries(v).map(([k,x])=>[k,{monitorias:x.monitorias??null,qualidade:x.qualidade??null,zeradas:x.zeradas??null,agentes:x.agentes??null,responsavel:x.responsavel??null}]))};
+/* formato completo de uma semana (usado só no restore de backup; não reescreve nada, só valida) */
+const SEM_TOPO=['inicio','fim','fechada','q','o','planos','palavras','criadaEm','sla','slaBy','slaAt','maCongelado'];
+const SEM_GRUPO_MAX=200;
+const semGrupo=(v,qual)=>{if(!v||typeof v!=='object'||Array.isArray(v))fail(400,qual+' inválido.');const E=Object.entries(v);if(E.length>SEM_GRUPO_MAX)fail(400,qual+' inválido.');for(const[setor,vals] of E){if(!SEM_ID.test(setor))fail(400,qual+' inválido.');semObj(vals,500,qual)}};
+const semSemana=data=>{
+ if(!data||typeof data!=='object'||Array.isArray(data))fail(400,'Semana malformada.');
+ for(const k of Object.keys(data))if(!SEM_TOPO.includes(k))fail(400,'Campo desconhecido na semana: '+String(k).slice(0,60));
+ if(!isDia(data.inicio)||!isDia(data.fim))fail(400,'Datas da semana inválidas.');
+ if(typeof data.fechada!=='boolean')fail(400,'Campo "fechada" inválido.');
+ if(data.criadaEm!=null&&!semNum(data.criadaEm))fail(400,'Campo "criadaEm" inválido.');
+ if(data.sla!=null&&!semNum(data.sla))fail(400,'SLA inválido.');
+ if(data.slaBy!=null&&typeof data.slaBy!=='string')fail(400,'Campo "slaBy" inválido.');
+ if(data.slaAt!=null&&!semNum(data.slaAt))fail(400,'Campo "slaAt" inválido.');
+ semGrupo(data.q||{},'Números de qualidade');
+ semGrupo(data.o||{},'Números de operações');
+ const planos=data.planos||{};if(typeof planos!=='object'||Array.isArray(planos))fail(400,'Planos inválidos.');
+ const EP=Object.entries(planos);if(EP.length>SEM_GRUPO_MAX)fail(400,'Planos inválidos.');
+ for(const[id,v] of EP){if(!SEM_ID.test(id))fail(400,'Identificador de plano inválido.');semPlanoValido(v)}
+ const palavras=data.palavras||{};if(typeof palavras!=='object'||Array.isArray(palavras))fail(400,'Palavras inválidas.');
+ const EW=Object.entries(palavras);if(EW.length>SEM_GRUPO_MAX)fail(400,'Palavras inválidas.');
+ for(const[id,v] of EW){if(!SEM_ID.test(id))fail(400,'Identificador de palavra inválido.');semPalavraValida(v)}
+ if(data.maCongelado!=null)semFoto(data.maCongelado);
+};
 /* devolve [caminho, valor] já conferido; recusa o que não for da tela */
 function semCampo(k,v,u){const p=String(k).split('.'),nome=u.nome,agora=Date.now(),bad=()=>fail(400,'Campo inválido: '+String(k).slice(0,60));
  if(v===undefined)v=null;
@@ -384,8 +409,24 @@ export default async function handler(req,res){
   if(action==='deleteWeek')await pool.query('DELETE FROM cp_weeks WHERE id=$1',[b.id]);
   else if(action==='saveSettings')await pool.query('INSERT INTO cp_settings(id,data) VALUES(1,$1) ON CONFLICT(id) DO UPDATE SET data=$1',[JSON.stringify(b.settings)]);
   else if(action==='restore'){
-   const backup=b.backup||{};if(backup.settings)await pool.query('INSERT INTO cp_settings(id,data) VALUES(1,$1) ON CONFLICT(id) DO UPDATE SET data=$1',[JSON.stringify(backup.settings)]);
-   for(const [id,data] of Object.entries(backup.weeks||{}))await pool.query('INSERT INTO cp_weeks(id,data) VALUES($1,$2) ON CONFLICT(id) DO UPDATE SET data=$2',[id,JSON.stringify(data)]);
+   const backup=b.backup||{};
+   if(backup.settings!=null&&(typeof backup.settings!=='object'||Array.isArray(backup.settings)))fail(400,'Backup inválido: configurações malformadas.');
+   const weeks=backup.weeks||{};
+   if(typeof weeks!=='object'||Array.isArray(weeks))fail(400,'Backup inválido: semanas malformadas.');
+   const entradas=Object.entries(weeks);
+   if(entradas.length>5000)fail(400,'Backup inválido: excesso de semanas.');
+   for(const [id,data] of entradas){
+    if(!isDia(id)||new Date(id+'T00:00:00Z').getUTCDay()!==1)fail(400,'Backup inválido: semana "'+id+'" fora do formato esperado.');
+    semSemana(data);
+    if(Buffer.byteLength(JSON.stringify(data))>SEM_LIMITE)fail(400,'Backup inválido: semana "'+id+'" grande demais.');
+   }
+   const client=await pool.connect();
+   try{
+    await client.query('BEGIN');
+    if(backup.settings)await client.query('INSERT INTO cp_settings(id,data) VALUES(1,$1) ON CONFLICT(id) DO UPDATE SET data=$1',[JSON.stringify(backup.settings)]);
+    for(const [id,data] of entradas)await client.query('INSERT INTO cp_weeks(id,data) VALUES($1,$2) ON CONFLICT(id) DO UPDATE SET data=$2',[id,JSON.stringify(data)]);
+    await client.query('COMMIT');
+   }catch(e){await client.query('ROLLBACK');throw e}finally{client.release()}
   }
   else if(action==='addUser'){
    const x=b.user||{};if(!x.nome||!x.usuario||String(x.senha||'').length<8)fail(400,'Informe nome, usuário e senha de pelo menos 8 caracteres.');
