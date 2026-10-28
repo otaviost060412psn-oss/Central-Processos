@@ -151,7 +151,11 @@ const REG_AREAS={
    return {id:c.id,nome:regTxt(c.nome,200,'O nome do critério',true),descricao:regTxt(c.descricao,2000,'A descrição do critério'),peso,zera:c.zera===true,ativo:c.ativo!==false}});
   /* modo 'erros': o avaliador marca o que deu errado; 'acertos': os critérios começam marcados e desmarcar tira os pontos (os que zeram continuam sendo marcados).
      Nos dois, a monitoria guarda em 'erros' os critérios em falha */
-  return {setor:x.setor,total,modo:regOpcao(x.modo,['erros','acertos'],'Modo')||'erros',zerarManual:x.zerarManual===true,criterios}}},
+  /* vagas de cada agente no mês: 'semanas' (N semanas × M monitorias) ou 'total' (M monitorias sem semanas) */
+  const V=x.vagas==null?{}:x.vagas;if(typeof V!=='object'||Array.isArray(V))fail(400,'Vagas inválidas.');
+  const vm=regOpcao(V.modo,['semanas','total'],'Vagas')||'semanas',vi=(v,max,pad)=>{const n=v==null?pad:v;if(!(Number.isInteger(n)&&n>=1&&n<=max))fail(400,'Quantidade de vagas inválida.');return n};
+  const vagas=vm==='total'?{modo:'total',total:vi(V.total,100,15)}:{modo:'semanas',semanas:vi(V.semanas,6,4),porSemana:vi(V.porSemana,10,2)};
+  return {setor:x.setor,total,modo:regOpcao(x.modo,['erros','acertos'],'Modo')||'erros',zerarManual:x.zerarManual===true,vagas,criterios}}},
  /* configuração geral das monitorias (um registro só): link da planilha de preenchimento */
  monit_geral:{grupo:'monit_cfg',ordenada:false,leitura:true,campos:x=>{
   const p=regTxt(x.planilha,1000,'O link da planilha').trim();if(p&&!/^https:\/\/[^\s<>"'\x00-\x1f\x7f]+$/i.test(p))fail(400,'Link inválido: use um endereço https:// sem espaços ou aspas.');
@@ -161,7 +165,8 @@ const REG_AREAS={
   const data=regDia(x.data,'Data da monitoria');if(!data)fail(400,'Informe a data da monitoria.');
   if(!regId(x.agente))fail(400,'Escolha o agente monitorado.');
   const E=x.erros==null?[]:x.erros;if(!Array.isArray(E)||E.length>100||!E.every(c=>regId(c)&&c.length<=40))fail(400,'Critérios: lista inválida.');const erros=[...new Set(E)];
-  return {data,agente:x.agente,protocolo:regTxt(x.protocolo,100,'Protocolo').trim(),erros,zeradaManual:x.zeradaManual===true,observacao:regTxt(x.observacao,2000,'A observação',true)}}}};
+  let vaga=null;if(x.vaga!=null){const g=x.vaga;if(typeof g!=='object'||Array.isArray(g)||typeof g.mes!=='string'||!/^\d{4}-(0[1-9]|1[0-2])$/.test(g.mes)||!(g.semana===null||g.semana===undefined||(Number.isInteger(g.semana)&&g.semana>=1&&g.semana<=6))||!(Number.isInteger(g.numero)&&g.numero>=1&&g.numero<=100))fail(400,'Vaga inválida.');vaga={mes:g.mes,semana:g.semana==null?null:g.semana,numero:g.numero}}
+  return {data,agente:x.agente,vaga,protocolo:regTxt(x.protocolo,100,'Protocolo').trim(),erros,zeradaManual:x.zeradaManual===true,observacao:regTxt(x.observacao,2000,'A observação',true)}}}};
 /* registros que dependem de outros: um caminho só existe entre etapas que existem */
 const regRefs=async(client,area,d,id)=>{
  /* um registro de critérios por setor */
@@ -180,6 +185,12 @@ const regRefs=async(client,area,d,id)=>{
   /* critério já marcado vale como era; critério novo precisa existir e estar ativo nos critérios de hoje */
   const velhos=new Map((mesmo?antes.data.erros:[]).map(c=>[c.id,c])),atuais=new Map((cfgM?cfgM.data.criterios:[]).filter(c=>c.ativo!==false).map(c=>[c.id,c]));
   d.total=mesmo?antes.data.total:cfg.data.total;
+  /* monitoria nova precisa de vaga; correção de uma antiga sem vaga pode continuar sem */
+  if(!d.vaga&&!(mesmo&&!antes.data.vaga))fail(400,'Escolha a vaga da monitoria.');
+  if(d.vaga){const V=(cfgM&&cfgM.data.vagas)||{modo:'semanas',semanas:4,porSemana:2},va=mesmo&&antes.data.vaga,igual=!!va&&va.mes===d.vaga.mes&&(va.semana??null)===d.vaga.semana&&va.numero===d.vaga.numero;
+   {const[y,m]=d.vaga.mes.split('-').map(Number),ini=d.vaga.mes+'-01',fim=new Date(Date.UTC(y,m+1,0)).toISOString().slice(0,10);if(d.data<ini||d.data>fim)fail(400,'A data da monitoria precisa ficar entre o começo do mês da vaga e o fim do mês seguinte.')}
+   if(!igual){if(V.modo==='total'?(d.vaga.semana!==null||d.vaga.numero>V.total):(d.vaga.semana===null||d.vaga.semana>V.semanas||d.vaga.numero>V.porSemana))fail(400,'Esta vaga não existe para o setor.')}
+   if((await client.query("SELECT 1 FROM cp_registros WHERE area='monitoria' AND id<>$1 AND data->>'agente'=$2 AND data->'vaga'->>'mes'=$3 AND COALESCE(data->'vaga'->>'semana','')=$4 AND data->'vaga'->>'numero'=$5",[String(id||''),d.agente,d.vaga.mes,d.vaga.semana==null?'':String(d.vaga.semana),String(d.vaga.numero)])).rows.length)fail(400,'Esta vaga já tem uma monitoria registrada. Para refazer, edite ou exclua a monitoria no histórico.')}
   d.erros=d.erros.map(cid=>{const c=velhos.get(cid)||atuais.get(cid);if(!c)fail(400,'Critério não encontrado ou inativo.');return {id:c.id,nome:c.nome,peso:c.peso,zera:!!c.zera}});
   d.perdidos=d.erros.reduce((t,c)=>t+c.peso,0);
   if(d.zeradaManual&&!(cfgM&&cfgM.data.zerarManual)&&!(mesmo&&antes.data.zeradaManual))fail(400,'Este setor não permite zerar a monitoria manualmente.');

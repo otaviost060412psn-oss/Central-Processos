@@ -556,6 +556,8 @@ a.btn{text-decoration:none;color:var(--tx)}
 .moitem{display:grid;gap:8px}
 .moih{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px}
 .moih .btn{margin-left:auto}
+.molivre{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px;border-style:dashed;padding:12px 16px}
+.mcvagas{grid-template-columns:1fr 160px 160px!important}
 .moerr{display:flex;flex-wrap:wrap;gap:6px}
 .moobs{margin:0;white-space:pre-wrap;overflow-wrap:anywhere}
 .moprev{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;padding:12px 14px;border-radius:12px;background:var(--card2)}
@@ -2204,7 +2206,7 @@ function porEscolher(k){POR.sel=POR.sel===k?null:k;rSetor();const d=$('por_det')
    todos os usuários leem; só administradores alteram critérios, agentes e link. Os setores são os de Configurações com Qualidade */
 /* modelo inicial dos critérios (documento de monitorias); vira registro só quando um administrador carrega e salva */
 const MON_MODELOS={
- cliente:{total:125,modo:'erros',zerarManual:false,criterios:[
+ cliente:{total:125,modo:'erros',zerarManual:false,vagas:{modo:'semanas',semanas:4,porSemana:2},criterios:[
   ['Abertura do atendimento',10,'- Realizar a primeira interação em até 5 segundos após o início da ligação.'],
   ['Apresentação e identificação',5,'- Chamar o cliente pelo nome.\n- Apresentar-se adequadamente.\n- Identificar a iGreen.\n- Informar que poderá retornar o contato caso a ligação seja desconectada.'],
   ['Encerramento e iGreen Club',25,'- Verificar a utilização do aplicativo iGreen Club.\n- Apresentar os benefícios e enviar o link quando necessário.\n- Perguntar se o cliente possui outras dúvidas.\n- Agradecer o contato e colocar-se à disposição.'],
@@ -2222,7 +2224,7 @@ const MON_MODELOS={
   ['Alteração cadastral sem validação do titular',0,'- Alterar dados da conta por solicitação de terceiros sem validar a identidade ou a autorização do titular.',1],
   ['Abandono do atendimento',0,'- Deixar de responder ao cliente quando ele solicitar informações durante uma espera ou consulta.',1],
   ['Tabulação incorreta',0,'- Não registrar corretamente a causa principal do contato.\n- Tratar incorretamente a prioridade quando houver múltiplas solicitações.',1]]},
- retencao:{total:125,modo:'erros',zerarManual:false,criterios:[
+ retencao:{total:125,modo:'erros',zerarManual:false,vagas:{modo:'semanas',semanas:4,porSemana:2},criterios:[
   ['Saudação e finalização do atendimento',20,'- Realizar a saudação e o encerramento adequadamente.\n- Solicitar a avaliação do atendimento.\n- Explicar o processo de cancelamento e retenção.'],
   ['Sondagem do motivo do cancelamento',25,'- Investigar o motivo da solicitação.\n- Praticar a escuta ativa.\n- Confirmar a causa principal do pedido de cancelamento.'],
   ['Argumentação e reversão',35,'- Utilizar argumentos personalizados.\n- Contornar objeções.\n- Aplicar os recursos disponíveis para tentar reverter o cancelamento.'],
@@ -2235,7 +2237,7 @@ const MON_MODELOS={
   ['Alteração cadastral sem validação do titular',0,'- Alterar dados da conta por solicitação de terceiros sem validar a identidade ou a autorização do titular.',1],
   ['Abandono do atendimento',0,'- Deixar de responder ao cliente durante o atendimento.',1],
   ['Tabulação incorreta',0,'- Não registrar corretamente a causa principal do contato ou realizar uma tabulação inadequada.',1]]},
- inadimplencia:{total:100,modo:'erros',zerarManual:false,criterios:[
+ inadimplencia:{total:100,modo:'erros',zerarManual:false,vagas:{modo:'semanas',semanas:4,porSemana:2},criterios:[
   ['Abertura e identificação',5,'- Realizar a primeira interação em até 5 segundos.\n- Chamar o cliente pelo nome.\n- Apresentar-se e identificar a iGreen.'],
   ['Comunicação e postura',30,'- Demonstrar cordialidade e empatia.\n- Manter interesse, engajamento e senso de urgência.\n- Praticar a escuta ativa e adotar uma postura colaborativa.\n- Utilizar linguagem clara.\n- Evitar erros de pronúncia, gírias, gerundismo e abreviações inadequadas.'],
   ['Diagnóstico da dívida',25,'- Fazer perguntas claras, objetivas e relevantes.\n- Identificar o motivo da inadimplência.\n- Verificar se o cliente se recorda do contrato e se recebeu a fatura.\n- Investigar a previsão de pagamento e as demais informações necessárias.'],
@@ -2249,7 +2251,7 @@ const MON_MODELOS={
   ['Postura ríspida',0,'- Adotar postura ríspida durante o atendimento.',1],
   ['Retenção de ligação',0,'- Critério crítico de retenção de ligação, conforme a classificação do formulário de monitoria.',1]]},
  /* no Suporte ao Licenciado os critérios positivos começam marcados: desmarcar tira os pontos; os críticos começam desmarcados e zeram se marcados */
- licenciado:{total:100,modo:'acertos',zerarManual:true,criterios:[
+ licenciado:{total:100,modo:'acertos',zerarManual:true,vagas:{modo:'total',total:15},criterios:[
   ['Explicação clara e completa',7,'- Fornecer todas as informações necessárias.\n- Garantir que a explicação seja compreensível, correta, completa e suficiente.'],
   ['Atendente empático e atencioso',8,'- Demonstrar atenção e empatia.\n- Responder adequadamente às dúvidas do licenciado.'],
   ['Informações corretas',10,'- Fornecer informações corretas ao licenciado e nos registros internos.\n- Garantir precisão, segurança e conformidade nas informações.'],
@@ -2266,7 +2268,12 @@ const MON_MODELOS={
   ['Envio correto do SLA',3,'- Informar o prazo correto de tratamento conforme o SLA e o POP vigente.'],
   ['Cumprimento de políticas internas e conformidade',7,'- Seguir os procedimentos, as políticas internas, as regras e as orientações da gestão.'],
   ['Omissão de Atendimento',0,'',1],['Falta de Empatia',0,'',1],['Procedimento Incorreto',0,'',1],['Procedimento não realizado',0,'',1],['Ticket indevido',0,'',1]]}};
-const monModelo=setor=>{const m=MON_MODELOS[setor];return m?{_id:null,_v:null,total:m.total,modo:m.modo,zerarManual:m.zerarManual,criterios:m.criterios.map(([nome,peso,descricao,zera])=>({id:'c'+uid(),nome,peso,descricao:descricao||'',zera:!!zera,ativo:true}))}:null};
+/* vagas de cada agente no mês: as gravadas no setor; sem vagas gravadas vale 4 semanas × 2 (a mesma regra do servidor) */
+const monVagas=setor=>{const c=monCfgDe(setor);return clone((c&&c.data.vagas)||{modo:'semanas',semanas:4,porSemana:2})};
+const monVagasLista=V=>V.modo==='total'?Array.from({length:V.total},(_,i)=>({semana:null,numero:i+1,rot:`${i+1}ª monitoria`})):Array.from({length:V.semanas*V.porSemana},(_,i)=>({semana:Math.floor(i/V.porSemana)+1,numero:i%V.porSemana+1,rot:`Semana ${Math.floor(i/V.porSemana)+1} · ${i%V.porSemana+1}ª monitoria`}));
+const monVagaRot=v=>v?(v.semana==null?`${v.numero}ª monitoria`:`Semana ${v.semana} · ${v.numero}ª monitoria`):'Sem vaga';
+const monVagaIgual=(a,b)=>!!a&&!!b&&a.mes===b.mes&&(a.semana??null)===(b.semana??null)&&a.numero===b.numero;
+const monModelo=setor=>{const m=MON_MODELOS[setor];return m?{_id:null,_v:null,total:m.total,modo:m.modo,zerarManual:m.zerarManual,vagas:clone(m.vagas),criterios:m.criterios.map(([nome,peso,descricao,zera])=>({id:'c'+uid(),nome,peso,descricao:descricao||'',zera:!!zera,ativo:true}))}:null};
 const monVazio=dono=>({setores:null,agentes:null,geral:null,limitado:false,dono,carregando:false,denovo:false,erro:false,setorCfg:null,setorAg:null,rasc:{},salvando:false});
 let MON=monVazio(null);
 const monSetores=()=>SETF('q');
@@ -2287,7 +2294,7 @@ async function monCarregar(){
 const monEstado=()=>MON.erro?`<div class="panel cfgp"><p class="muted">Não foi possível carregar as monitorias.</p><div><button class="btn sm" data-monrecarregar>Tentar de novo</button></div></div>`:'<div class="panel"><p class="muted" role="status">Carregando…</p></div>';
 const monAbas=(sel,attr,conta)=>`<div class="pc-s" role="group" aria-label="Setor">${monSetores().map(s=>`<button class="${sel===s.id?'on':''}" ${attr}="${esc(s.id)}" aria-pressed="${sel===s.id}">${esc(s.nome)}${conta?` <span class="muted">${conta(s.id)}</span>`:''}</button>`).join('')}</div>`;
 /* rascunho do formulário de critérios de um setor: o que está gravado (ou nada) até a pessoa mexer */
-const monRascBase=setor=>{const r=monCfgDe(setor);return r?{...clone(r.data),modo:r.data.modo||'erros',zerarManual:!!r.data.zerarManual,criterios:r.data.criterios.map(c=>({descricao:'',...c})),_id:r.id,_v:r.atualizado}:null};
+const monRascBase=setor=>{const r=monCfgDe(setor);return r?{...clone(r.data),modo:r.data.modo||'erros',zerarManual:!!r.data.zerarManual,vagas:r.data.vagas?clone(r.data.vagas):null,criterios:r.data.criterios.map(c=>({descricao:'',...c})),_id:r.id,_v:r.atualizado}:null};
 const monRasc=setor=>Object.hasOwn(MON.rasc,setor)?MON.rasc[setor]:monRascBase(setor);
 const monAlterado=setor=>Object.hasOwn(MON.rasc,setor)&&JSON.stringify(MON.rasc[setor])!==JSON.stringify(monRascBase(setor));
 function rCfgMonCrit(){if(MON.dono!==meId)monCarregar();if(!MON.setores)return monEstado();
@@ -2296,14 +2303,19 @@ function rCfgMonCrit(){if(MON.dono!==meId)monCarregar();if(!MON.setores)return m
  const link=`<div class="panel cfgp"><h3>Planilha de preenchimento</h3><p class="muted">O botão "Planilha de preenchimento" da área de Monitorias abre este link numa nova aba.</p>
   <div class="mclink"><div class="f"><label for="mc_planilha">Link (https://)</label><input id="mc_planilha" type="url" maxlength="1000" value="${esc(g)}" placeholder="https://…" autocomplete="off"><span class="msg"></span></div><button class="btn" data-mcplanilha>Salvar link</button></div></div>`;
  if(!S_.length)return link+'<div class="panel"><p class="muted">Nenhum setor de Qualidade em Configurações › Setores.</p></div>';
- const setor=MON.setorCfg,R=monRasc(setor),rec=monCfgDe(setor),nome=(S_.find(s=>s.id===setor)||{}).nome||'';
+ const setor=MON.setorCfg;
+ if(monCfgDe(setor)&&!monCfgDe(setor).data.vagas&&!Object.hasOwn(MON.rasc,setor)){const b=monRascBase(setor);b.vagas=clone((MON_MODELOS[setor]&&MON_MODELOS[setor].vagas)||{modo:'semanas',semanas:4,porSemana:2});MON.rasc[setor]=b}
+ const R=monRasc(setor),rec=monCfgDe(setor),nome=(S_.find(s=>s.id===setor)||{}).nome||'';
  let corpo;
  if(!R)corpo=`<div class="panel embreve"><p class="muted">${esc(nome)} ainda não tem critérios de monitoria.</p><div class="row">${MON_MODELOS[setor]?`<button class="btn pri" data-mcmodelo>Carregar critérios do documento</button>`:''}<button class="btn" data-mcnovo>Começar do zero</button></div></div>`;
  else{const ativos=R.criterios.filter(c=>c.ativo),soma=ativos.filter(c=>!c.zera).reduce((t,c)=>t+(+c.peso||0),0),bate=soma===+R.total;
-  corpo=`<div class="panel cfgp mcform">
+  corpo=`${rec&&!rec.data.vagas?'<div class="banner"><span class="dot wa"></span><div>As vagas deste setor ainda não foram salvas. Confira a quantidade abaixo e clique em Salvar critérios.</div></div>':''}<div class="panel cfgp mcform">
    <div class="g3"><div class="f"><label for="mc_total">Total de pontos</label><input id="mc_total" type="number" min="1" step="any" data-mcg="total" value="${esc(R.total)}"></div>
    <div class="f"><label for="mc_modo">Como o avaliador marca</label><select id="mc_modo" data-mcg="modo"><option value="erros"${R.modo==='erros'?' selected':''}>Marca o erro (perde os pontos)</option><option value="acertos"${R.modo==='acertos'?' selected':''}>Começa marcado (desmarcar tira os pontos)</option></select></div>
    <label class="dgchk mczm"><input type="checkbox" data-mcg="zerarManual"${R.zerarManual?' checked':''}>Mostrar o botão "Zerar monitoria"</label></div>
+   <div class="g3 mcvagas"><div class="f"><label for="mc_vmodo">Vagas de cada agente no mês</label><select id="mc_vmodo" data-mcv="modo"><option value="semanas"${R.vagas.modo!=='total'?' selected':''}>Por semana</option><option value="total"${R.vagas.modo==='total'?' selected':''}>Total no mês (sem semanas)</option></select></div>
+   ${R.vagas.modo==='total'?`<div class="f"><label for="mc_vtot">Monitorias no mês</label><input id="mc_vtot" type="number" min="1" max="100" step="1" data-mcv="total" value="${esc(R.vagas.total||15)}"></div><div></div>`
+    :`<div class="f"><label for="mc_vsem">Semanas no mês</label><input id="mc_vsem" type="number" min="1" max="6" step="1" data-mcv="semanas" value="${esc(R.vagas.semanas||4)}"></div><div class="f"><label for="mc_vpor">Monitorias por semana</label><input id="mc_vpor" type="number" min="1" max="10" step="1" data-mcv="porSemana" value="${esc(R.vagas.porSemana||2)}"></div>`}</div>
    <p class="muted mcexp">${R.modo==='acertos'?'Os critérios comuns começam marcados no formulário; desmarcar tira os pontos. Os críticos começam desmarcados e zeram a monitoria se forem marcados.':'O avaliador marca o que deu errado e perde os pontos do critério. Marcar um crítico zera a monitoria.'} A monitoria também zera quando a nota chega a 0.</p>
    <p id="mc_soma" class="${bate?'muted':'mcaviso'}">${monSomaTxt(R)}</p>
    <div class="mclist">${R.criterios.map((c,i)=>`<div class="mcrow${c.ativo?'':' off'}${c.zera?' zr':''}">
@@ -2323,6 +2335,7 @@ const monRedesenharCfg=foco=>{if(!monNaTela())return;render.cfgShown=null;rConfi
 /* digitar no formulário só atualiza o rascunho (sem redesenhar), para não perder o cursor */
 document.addEventListener('input',e=>{if(e.target.id==='mc_planilha'){MON.linkRasc=e.target.value;const f=e.target.closest('.f');f.classList.remove('bad');f.querySelector('.msg').textContent='';return}});
 document.addEventListener('input',e=>{const t=e.target;if(!t.closest||!t.closest('#p-config .mcform'))return;const setor=MON.setorCfg,R=MON.rasc[setor]||(MON.rasc[setor]=monRascBase(setor));if(!R)return;
+ if(t.dataset.mcv&&t.dataset.mcv!=='modo'){R.vagas[t.dataset.mcv]=t.value===''?'':+t.value;return}
  if(t.dataset.mc){const[i,k]=t.dataset.mc.split('|'),c=R.criterios[+i];if(!c)return;if(t.type==='checkbox')return;c[k]=k==='peso'?(t.value===''?'':+t.value):t.value}
  else if(t.dataset.mcg&&t.type!=='checkbox'&&t.tagName!=='SELECT')R[t.dataset.mcg]=t.value===''?'':+t.value;
  monSomaAtualizar()});
@@ -2330,6 +2343,8 @@ document.addEventListener('input',e=>{const t=e.target;if(!t.closest||!t.closest
 document.addEventListener('change',e=>{const t=e.target;if(!t.closest||!t.closest('#p-config .mcform'))return;const setor=MON.setorCfg,R=MON.rasc[setor]||(MON.rasc[setor]=monRascBase(setor));if(!R)return;
  if(t.dataset.mc){const[i,k]=t.dataset.mc.split('|'),c=R.criterios[+i];if(!c)return;if(t.type==='checkbox'){c[k]=t.checked;if(k==='zera'&&t.checked)c.peso=0}else return}
  else if(t.dataset.mcg){const k=t.dataset.mcg;if(k==='total')return;R[k]=t.type==='checkbox'?t.checked:t.value}
+ else if(t.dataset.mcv==='modo'){R.vagas=t.value==='total'?{modo:'total',total:15}:{modo:'semanas',semanas:4,porSemana:2}}
+ else if(t.dataset.mcv)return;
  else return;
  monRedesenharCfg(t.id?'#'+CSS.escape(t.id):`[data-mc="${CSS.escape(t.dataset.mc||'')}"],[data-mcg="${CSS.escape(t.dataset.mcg||'')}"]`)});
 async function monSalvarCrit(){const setor=MON.setorCfg,R=monRasc(setor),rec=monCfgDe(setor);if(!R||MON.salvando)return;
@@ -2337,7 +2352,9 @@ async function monSalvarCrit(){const setor=MON.setorCfg,R=monRasc(setor),rec=mon
  if(!R._id&&rec)return toast('Outra pessoa salvou critérios para este setor enquanto você editava. Descarte as alterações para ver a versão atual.',true);
  const total=+R.total;if(!(total>0))return toast('Informe o total de pontos.',true);
  for(const c of R.criterios){if(!String(c.nome||'').trim())return toast('Todo critério precisa de nome.',true);if(!(+c.peso>=0))return toast(`Peso inválido em "${c.nome}".`,true)}
- const data={setor,total,modo:R.modo==='acertos'?'acertos':'erros',zerarManual:!!R.zerarManual,criterios:R.criterios.map(c=>({id:c.id,nome:String(c.nome).trim(),descricao:c.descricao||'',peso:+c.peso||0,zera:!!c.zera,ativo:!!c.ativo}))};
+ const V=R.vagas||{},vi=(v,max)=>Number.isInteger(+v)&&+v>=1&&+v<=max;
+ if(V.modo==='total'?!vi(V.total,100):!(vi(V.semanas,6)&&vi(V.porSemana,10)))return toast('Confira a quantidade de vagas (semanas de 1 a 6, monitorias por semana de 1 a 10, total de 1 a 100).',true);
+ const data={setor,total,modo:R.modo==='acertos'?'acertos':'erros',zerarManual:!!R.zerarManual,vagas:V.modo==='total'?{modo:'total',total:+V.total}:{modo:'semanas',semanas:+V.semanas,porSemana:+V.porSemana},criterios:R.criterios.map(c=>({id:c.id,nome:String(c.nome).trim(),descricao:c.descricao||'',peso:+c.peso||0,zera:!!c.zera,ativo:!!c.ativo}))};
  MON.salvando=true;monRedesenharCfg();
  try{await DB.regSave(R._id?{area:'monit_setor',id:R._id,versao:R._v,data}:{area:'monit_setor',data});delete MON.rasc[setor];toast('Critérios salvos')}
  catch(e){toast(agConflito(e)||e.message,true)}
@@ -2398,7 +2415,7 @@ document.addEventListener('click',e=>{
  const t=e.target.closest&&e.target.closest('button');if(!t||t.getAttribute('aria-disabled')==='true')return;const d=t.dataset;
  if(d.mcsetor){if(MON.setorCfg!==d.mcsetor){MON.setorCfg=d.mcsetor;monRedesenharCfg(`[data-mcsetor="${CSS.escape(d.mcsetor)}"]`)}}
  else if('mcmodelo' in d){MON.rasc[MON.setorCfg]=monModelo(MON.setorCfg);monRedesenharCfg('[data-mcsalvar]')}
- else if('mcnovo' in d){MON.rasc[MON.setorCfg]={_id:null,_v:null,total:100,modo:'erros',zerarManual:false,criterios:[]};monRedesenharCfg('[data-mcadd]')}
+ else if('mcnovo' in d){MON.rasc[MON.setorCfg]={_id:null,_v:null,total:100,modo:'erros',zerarManual:false,vagas:{modo:'semanas',semanas:4,porSemana:2},criterios:[]};monRedesenharCfg('[data-mcadd]')}
  else if('mcadd' in d){const R=MON.rasc[MON.setorCfg]||(MON.rasc[MON.setorCfg]=monRascBase(MON.setorCfg));R.criterios.push({id:'c'+uid(),nome:'',descricao:'',peso:0,zera:false,ativo:true});monRedesenharCfg(`#mc_n${R.criterios.length-1}`)}
  else if(d.mcrm!==undefined){const R=MON.rasc[MON.setorCfg]||(MON.rasc[MON.setorCfg]=monRascBase(MON.setorCfg));R.criterios.splice(+d.mcrm,1);monRedesenharCfg('[data-mcadd]')}
  else if(d.mcmv){const R=MON.rasc[MON.setorCfg]||(MON.rasc[MON.setorCfg]=monRascBase(MON.setorCfg)),[i,dir]=d.mcmv.split('|').map(Number),j=i+dir;if(j<0||j>=R.criterios.length)return;[R.criterios[i],R.criterios[j]]=[R.criterios[j],R.criterios[i]];monRedesenharCfg(`[data-mcmv="${j}|${dir}"]`)}
@@ -2424,13 +2441,15 @@ async function moCarregar(){
  if(!meId)return;
  if(MO.dono!==meId)Object.assign(MO,{dono:meId,itens:null,mesLido:null,erro:false,limitado:false,denovo:false,setor:null,hist:null,html:null,mes:today().slice(0,7)});
  const mes=MO.mes;if(MO.carregando){MO.denovo=true;return}MO.carregando=true;const dono=MO.dono;
- try{const[de,ate]=moDatas(mes),r=await DB.regList('monitoria',{de,ate});if(MO.dono!==dono||MO.mes!==mes)return;
+ try{const de=moDatas(mes)[0],ate=moDatas(moMesSoma(mes,1))[1],r=await DB.regList('monitoria',{de,ate});if(MO.dono!==dono||MO.mes!==mes)return;
   const novo=r.itens||[],mudou=MO.mesLido!==mes||JSON.stringify(MO.itens)!==JSON.stringify(novo);
   Object.assign(MO,{itens:novo,mesLido:mes,limitado:!!r.limitado,erro:false});if(mudou&&page==='monitorias')render();
  }catch(e){if(MO.dono===dono&&MO.mes===mes&&MO.mesLido!==mes){MO.erro=true;if(page==='monitorias')render()}}
  finally{MO.carregando=false;if(MO.denovo){MO.denovo=false;moCarregar()}}
 }
-const moDoMes=()=>MO.mesLido===MO.mes?MO.itens:null;
+/* mês de referência: o da vaga (uma monitoria atrasada pode ter a data no mês seguinte); sem vaga, o da data */
+const moMesRef=x=>x.data.vaga?x.data.vaga.mes:x.data.data.slice(0,7);
+const moDoMes=()=>MO.mesLido===MO.mes?MO.itens.filter(x=>moMesRef(x)===MO.mes):null;
 /* conflito de verdade fecha o painel; erro de validação (agente ou critério desativado no meio) mantém o painel e recarrega a configuração */
 const moErro=(e,ed)=>{const m=String(e&&e.message||''),conf=/alterado por outra pessoa/i.test(m)||m==='Registro não encontrado.';toast(conf?(agConflito(e)||m):m,true);if(conf&&ED===ed)closeEd();else monCarregar();return conf};
 const moMedia=L=>L.length?L.reduce((t,x)=>t+x.data.nota,0)/L.length:null;
@@ -2468,19 +2487,21 @@ function moSetor(L){const s=monSetores().find(x=>x.id===MO.setor),cfg=monCfgDe(s
    <div class="moacoes"><button class="btn sm" data-monova="${esc(a.id)}"${cfg&&a.data.ativo!==false&&!a.fora?'':' aria-disabled="true"'}>${ICO.plus}Nova</button><button class="btn sm" data-mohist="${esc(a.id)}">Histórico</button></div></div>`}).join('')}</div>`
   :'<div class="panel embreve"><p class="muted">Nenhum agente cadastrado neste setor. Um administrador cadastra em Configurações › Agentes monitorados.</p></div>'}`}
 function moHistorico(L){const a=moAgente(MO.hist),s=SET().find(x=>x.id===a.data.setor),M=L.filter(x=>x.data.agente===a.id).sort((x,y)=>y.data.data.localeCompare(x.data.data)||y.criado-x.criado),cfg=monCfgDe(a.data.setor);
- const item=x=>{const d=x.data;return `<div class="panel moitem"><div class="moih"><span class="chip ${d.zerada?'er':''}">${d.zerada?'Zerada':moPct(d.nota)}</span><b>${esc(dfmt(d.data))}</b>${d.protocolo?`<span class="muted">Protocolo ${esc(d.protocolo)}</span>`:''}<span class="muted">${d.perdidos?`${nf(d.perdidos)} ${d.perdidos===1?'ponto perdido':'pontos perdidos'} de ${nf(d.total)}`:`Sem pontos perdidos (${nf(d.total)})`}</span><button class="btn sm" data-moeditar="${esc(x.id)}">${ICO.edit}Editar</button></div>
+ const item=x=>{const d=x.data;return `<div class="panel moitem"><div class="moih"><span class="chip ln">${esc(monVagaRot(d.vaga))}</span><span class="chip ${d.zerada?'er':''}">${d.zerada?'Zerada':moPct(d.nota)}</span><b>${esc(dfmt(d.data))}</b>${d.protocolo?`<span class="muted">Protocolo ${esc(d.protocolo)}</span>`:''}<span class="muted">${d.perdidos?`${nf(d.perdidos)} ${d.perdidos===1?'ponto perdido':'pontos perdidos'} de ${nf(d.total)}`:`Sem pontos perdidos (${nf(d.total)})`}</span><button class="btn sm" data-moeditar="${esc(x.id)}">${ICO.edit}Editar</button></div>
   ${d.erros.length?`<div class="moerr">${d.erros.map(c=>`<span class="chip ${c.zera?'er':'ln'}">${esc(c.nome)}${c.zera?' · zera':c.peso?` · −${nf(c.peso)}`:''}</span>`).join('')}</div>`:''}${d.zeradaManual?'<div class="moerr"><span class="chip er">Zerada manualmente</span></div>':''}
   <p class="moobs">${esc(d.observacao)}</p><small class="muted">Avaliado por ${esc(moAvaliador(x.criado_por))}${x.atualizado!==x.criado?` · alterado por ${esc(moAvaliador(x.atualizado_por))}`:''}</small></div>`};
- const sem=moSemanas(MO.mes);
+ const V=monVagas(a.data.setor),VL=monVagasLista(V),semVaga=M.filter(x=>!x.data.vaga||!VL.some(v=>monVagaIgual({...v,mes:MO.mes},x.data.vaga)));
+ const vaga=v=>{const x=M.find(y=>monVagaIgual({...v,mes:MO.mes},y.data.vaga));return x?item(x):`<div class="panel molivre"><span>${esc(v.rot)} · <span class="muted">livre</span></span>${cfg&&a.data.ativo!==false&&!a.excluido?`<button class="btn sm" data-monova="${esc(a.id)}" data-movaga="${v.semana??''}|${v.numero}">${ICO.plus}Registrar</button>`:''}</div>`};
+ const blocos=V.modo==='total'?[{t:'Monitorias do mês',L:VL}]:Array.from({length:V.semanas},(_,i)=>({t:`Semana ${i+1}`,L:VL.filter(v=>v.semana===i+1)}));
  return `<div class="mobar"><button class="btn ghost sm" data-mosetor="${esc(a.data.setor)}">${ICO.l}${esc(s?s.nome:'Setor')}</button><h2>${esc(a.data.nome)}</h2><button class="btn pri sm" data-monova="${esc(a.id)}"${cfg&&a.data.ativo!==false&&!a.excluido?'':' aria-disabled="true"'}>${ICO.plus}Nova monitoria</button></div>
  <div class="panel momedia"><div><p class="kick">Média — ${esc(dgMesNome(MO.mes))}</p><b>${moPct(moMedia(M))}</b></div><span class="muted">${M.length} ${M.length===1?'monitoria':'monitorias'} no mês</span></div>
- ${M.length?sem.map((w,i)=>{const W=M.filter(x=>x.data.data>=w.de&&x.data.data<=w.ate);return `<section class="mosem"><h3>Semana ${i+1} <span class="muted">${esc(dshort(w.de))} a ${esc(dshort(w.ate))} · ${W.length} ${W.length===1?'monitoria':'monitorias'}</span></h3>${W.length?W.map(item).join(''):'<p class="muted">Nenhuma monitoria nesta semana.</p>'}</section>`}).join('')
-  :'<div class="panel embreve"><p class="muted">Nenhuma monitoria deste agente no mês.</p></div>'}`}
+ ${blocos.map(b=>{const n=b.L.filter(v=>M.some(y=>monVagaIgual({...v,mes:MO.mes},y.data.vaga))).length;return `<section class="mosem"><h3>${b.t} <span class="muted">${n} de ${b.L.length} ${b.L.length===1?'vaga preenchida':'vagas preenchidas'}</span></h3>${b.L.map(vaga).join('')}</section>`}).join('')}
+ ${semVaga.length?`<section class="mosem"><h3>Sem vaga <span class="muted">registradas antes das vagas ou fora delas</span></h3>${semVaga.map(item).join('')}</section>`:''}`}
 /* formulário: no modo "erros" marca o que deu errado; no modo "acertos" os comuns começam marcados e desmarcar tira os pontos.
    Os críticos são sempre marcados quando aconteceram. Em 'erros' a monitoria guarda os critérios em falha */
-function openMo(agente,id){const a=moAgente(agente),x=id?(MO.itens||[]).find(y=>y.id===id):null;if(!a||(id&&!x))return;
+function openMo(agente,id,vagaPre){const a=moAgente(agente),x=id?(MO.itens||[]).find(y=>y.id===id):null;if(!a||(id&&!x))return;
  const cfg=monCfgDe(x?x.data.setor:a.data.setor);if(!cfg&&!x)return;
- ED={kind:'mon',id,agente:a.id,x:x?clone(x):null,falhas:new Set(x?x.data.erros.map(c=>c.id):[]),zm:x?!!x.data.zeradaManual:false};rEd();showEd()}
+ ED={kind:'mon',id,agente:a.id,vagaPre:vagaPre||null,x:x?clone(x):null,falhas:new Set(x?x.data.erros.map(c=>c.id):[]),zm:x?!!x.data.zeradaManual:false};rEd();showEd()}
 /* critérios do formulário: os ativos de hoje e, numa correção, os já marcados que não existem mais (com o peso do dia) */
 function moCriterios(){const{x}=ED,setor=x?x.data.setor:(moAgente(ED.agente)||{data:{}}).data.setor,cfg=monCfgDe(setor);
  const L=(cfg?cfg.data.criterios:[]).filter(c=>c.ativo!==false||ED.falhas.has(c.id)).map(c=>({...c}));
@@ -2493,7 +2514,7 @@ function rEdMo(){const{id,x}=ED;if(ED.rendered)return;ED.rendered=true;const a=m
  const caixa=c=>`<label class="mocrit${c.zera?' zr':''}"><input type="checkbox" data-mocrit="${esc(c.id)}"${marcado(c)?' checked':''}><span><b>${esc(c.nome)}</b><small>${c.zera?'Crítico: zera a monitoria':modo==='acertos'?`${nf(c.peso)} pontos`:`−${nf(c.peso)} pontos`}${c.antigo?' · critério que não existe mais':''}</small>${c.descricao?`<details><summary>Ver o que é avaliado</summary><p>${esc(c.descricao)}</p></details>`:''}</span></label>`;
  const comuns=L.filter(c=>!c.zera),criticos=L.filter(c=>c.zera);
  $('ed').innerHTML=`<div class="edh"><div class="row"><span>Monitorias · ${esc(s?s.nome:'')}</span><button class="ico" data-edclose aria-label="Fechar">${ICO.x}</button></div><div><div class="k">${id?'Editar monitoria':'Nova monitoria'}</div><h3>${esc(a?a.data.nome:x.data.agenteNome)}</h3></div></div>
- <div class="edb"><div class="g2"><div class="f"><label for="mo_data">Data</label><input id="mo_data" type="date" max="${today()}" value="${esc(x?x.data.data:today())}"><span class="msg"></span></div><div class="f"><label for="mo_prot">Protocolo (opcional)</label><input id="mo_prot" maxlength="100" value="${esc(x?x.data.protocolo:'')}" autocomplete="off"><span class="msg"></span></div></div>
+ <div class="edb">${moVagaCampo()}<div class="g2"><div class="f"><label for="mo_data">Data</label><input id="mo_data" type="date" max="${today()}" value="${esc(x?x.data.data:today())}"><span class="msg"></span></div><div class="f"><label for="mo_prot">Protocolo (opcional)</label><input id="mo_prot" maxlength="100" value="${esc(x?x.data.protocolo:'')}" autocomplete="off"><span class="msg"></span></div></div>
  <div class="moprev" id="mo_prev" role="status">${moPrevia()}</div>
  <fieldset class="dgset"><legend>${modo==='acertos'?'Critérios (desmarque o que não foi atendido)':'Critérios (marque o que deu errado)'}</legend><div class="mocrits">${comuns.map(caixa).join('')||'<p class="muted">Nenhum critério.</p>'}</div></fieldset>
  ${criticos.length?`<fieldset class="dgset"><legend>Críticos (marcar zera a monitoria)</legend><div class="mocrits">${criticos.map(caixa).join('')}</div></fieldset>`:''}
@@ -2503,17 +2524,27 @@ function rEdMo(){const{id,x}=ED;if(ED.rendered)return;ED.rendered=true;const a=m
  <div class="eda"><button class="btn pri" data-mosalvar>${id?'Salvar':'Registrar monitoria'}</button><button class="btn" data-edclose>Cancelar</button>${id?`<button class="btn dan" data-moexcluir>${ICO.del}Excluir</button>`:''}</div></div>`}
 $('ed').addEventListener('change',e=>{if(!ED||ED.kind!=='mon'||!e.target.dataset.mocrit)return;const id=e.target.dataset.mocrit,{L,modo}=moCriterios(),c=L.find(y=>y.id===id);if(!c)return;
  const falha=modo==='acertos'&&!c.zera?!e.target.checked:e.target.checked;falha?ED.falhas.add(id):ED.falhas.delete(id);$('mo_prev').innerHTML=moPrevia()});
+/* vagas do mês para este agente: as ocupadas por outra monitoria ficam bloqueadas; numa correção, a própria vaga continua disponível */
+function moVagaCampo(){const{x}=ED,a=moAgente(ED.agente),setor=x?x.data.setor:a.data.setor,mes=x&&x.data.vaga?x.data.vaga.mes:MO.mes,VL=monVagasLista(monVagas(setor));
+ const ocup=v=>(MO.itens||[]).some(y=>y.data.agente===ED.agente&&(!x||y.id!==x.id)&&monVagaIgual({...v,mes},y.data.vaga));
+ const atual=x&&x.data.vaga,pre=ED.vagaPre,livre=VL.find(v=>!ocup(v)),sel=v=>atual?monVagaIgual({...v,mes},atual):pre?(String(v.semana??'')+'|'+v.numero)===pre:livre&&v===livre;
+ const opts=(x&&!atual?'<option value="" selected>Sem vaga (registrada antes das vagas)</option>':'')+VL.map(v=>`<option value="${v.semana??''}|${v.numero}"${ocup(v)?' disabled':''}${!ocup(v)&&sel(v)?' selected':''}>${esc(v.rot)}${ocup(v)?' · já registrada':''}</option>`).join('');
+ const fora=atual&&!VL.some(v=>monVagaIgual({...v,mes},atual))?`<option value="${atual.semana??''}|${atual.numero}" selected>${esc(monVagaRot(atual))} · fora das vagas atuais</option>`:'';
+ return `<div class="f"><label for="mo_vaga">Vaga · ${esc(dgMesNome(mes))}</label><select id="mo_vaga" data-mes="${esc(mes)}">${!x&&!livre?'<option value="" selected>Todas as vagas do mês já foram registradas</option>':''}${fora}${opts}</select><span class="msg" data-h="Cada vaga recebe uma monitoria só. Para refazer uma vaga, edite ou exclua a monitoria no histórico.">Cada vaga recebe uma monitoria só. Para refazer uma vaga, edite ou exclua a monitoria no histórico.</span></div>`}
 async function moSalvar(btn){const ed=ED,{id,x}=ed,obs=$('mo_obs').value.trim(),data=$('mo_data').value;
+ const vs=$('mo_vaga').value,[vsem,vnum]=vs.split('|'),vaga=vs?{mes:$('mo_vaga').dataset.mes,semana:vsem===''?null:+vsem,numero:+vnum}:null;
+ if(!vaga&&!(x&&!x.data.vaga)){const f=$('mo_vaga').closest('.f');f.classList.add('bad');f.querySelector('.msg').textContent='Escolha a vaga da monitoria.';return $('mo_vaga').focus()}
  const erro=(k,m)=>{const f=$(k).closest('.f');f.classList.add('bad');f.querySelector('.msg').textContent=m;$(k).focus()};
  if(!data||($('mo_data').validity&&$('mo_data').validity.badInput))return erro('mo_data','Informe a data da monitoria.');
  if(data>today())return erro('mo_data','A data não pode ser no futuro.');
+ if(vaga){const ini=vaga.mes+'-01',fim=moDatas(moMesSoma(vaga.mes,1))[1];if(data<ini||data>fim)return erro('mo_data',`Para uma vaga de ${dgMesNome(vaga.mes)}, use uma data entre ${dfmt(ini)} e ${dfmt(fim)}.`)}
  if(!obs)return erro('mo_obs','Escreva o que foi observado.');
  const{L}=moCriterios(),erros=L.filter(c=>ed.falhas.has(c.id)).map(c=>c.id);
  const lbl=btn.innerHTML;btn.textContent='Salvando…';btn.setAttribute('aria-disabled','true');
- try{const d={data,agente:ed.agente,protocolo:$('mo_prot').value.trim(),erros,zeradaManual:ed.zm,observacao:obs};
+ try{const d={data,agente:ed.agente,vaga,protocolo:$('mo_prot').value.trim(),erros,zeradaManual:ed.zm,observacao:obs};
   const r=await DB.regSave(id?{area:'monitoria',id,versao:x.atualizado,data:d}:{area:'monitoria',data:d});
   /* uma monitoria de outro mês: abre o mês dela para aparecer na tela */
-  maLimpar();if(data.slice(0,7)!==MO.mes)MO.mes=data.slice(0,7);
+  maLimpar();if(!vaga&&data.slice(0,7)!==MO.mes)MO.mes=data.slice(0,7);
   if(ED===ed)closeEd();toast(id?'Monitoria salva':`Monitoria registrada: ${r.item.data.zerada?'zerada':pct(r.item.data.nota)}`)}
  catch(e){btn.innerHTML=lbl;btn.removeAttribute('aria-disabled');moErro(e,ed)}
  moCarregar()}
@@ -2525,7 +2556,7 @@ async function moExcluir(btn){const ed=ED,{id,x}=ed;
 document.addEventListener('click',e=>{const t=e.target.closest&&e.target.closest('button');if(!t||t.getAttribute('aria-disabled')==='true')return;const d=t.dataset;
  if(d.mosetor!==undefined){MO.setor=d.mosetor||null;MO.hist=null;rMon();scrollTo({top:0})}
  else if(d.mohist){MO.hist=d.mohist;rMon();scrollTo({top:0})}
- else if(d.monova)openMo(d.monova,null);
+ else if(d.monova)openMo(d.monova,null,d.movaga||null);
  else if(d.moeditar){const x=(MO.itens||[]).find(y=>y.id===d.moeditar);if(x)openMo(x.data.agente,x.id)}
  else if(d.momes){const n=+d.momes,m=moMesSoma(MO.mes,n);if(n>0&&m>today().slice(0,7))return;MO.mes=m;MO.itens=null;MO.mesLido=null;moCarregar();rMon();const b=document.querySelector(`[data-momes="${n}"]`);b&&b.focus()}
  else if('mozerar' in d){ED.zm=!ED.zm;ED.rendered=false;const s=$('mo_obs').value,dt=$('mo_data').value,pr=$('mo_prot').value;rEdMo();$('mo_obs').value=s;$('mo_data').value=dt;$('mo_prot').value=pr;const b=$('ed').querySelector('[data-mozerar]');b&&b.focus()}
