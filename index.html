@@ -2765,7 +2765,7 @@ function rChart(w,f){const list=ids().filter(x=>x<=w.inicio).slice(-8),[key,,kin
  <div class="panel"><div class="ch">${pads}${list.map((id,i)=>{const v=vals[i],c=i===n-1;return `<div class="cc ${c?'cur':''} ${c&&bad?'bad':''} ${isN(v)?'':'empty'}"><span class="bv">${isN(v)?fmt(v):'—'}</span><i style="${isN(v)?`height:${Math.max(2,v/max*82)}%`:''}"></i></div>`}).join('')}</div>
  <div class="chl">${pads}${list.map((id,i)=>`<div>${dl(i)}<div class="wl ${i===n-1?'cur':''}">${dshort(id)}</div></div>`).join('')}</div></div>`}
 function rFrente(w,f){const s=status(w,f);
- $(f==='q'?'p-qualidade':'p-operacoes').innerHTML=`<header class="phead"><div><p class="kick">Semana de ${periodo(w)}</p><h1>${FR[f]}</h1><p class="sub">${f==='q'?'Monitorias, nota de qualidade, zeradas e agentes de cada equipe.':'Tickets tratados, backlog e tempo médio de cada setor, mais o SLA da semana.'}</p></div><div class="tools">${canEdit(w)?`<button class="btn pri" data-lancar="${f}">${ICO.edit}Lançar dados</button>`:''}</div></header>
+ $(f==='q'?'p-qualidade':'p-operacoes').innerHTML=`<header class="phead"><div><p class="kick">Semana de ${periodo(w)}</p><h1>${FR[f]}</h1><p class="sub">${f==='q'?'Monitorias, nota de qualidade, zeradas e agentes de cada equipe.':'Tickets tratados, backlog e tempo médio de cada setor, mais o SLA da semana.'}</p></div><div class="tools">${f==='q'&&isAdmin()?`<button class="btn" data-relq><svg class="i" viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>Baixar relatório</button>`:''}${canEdit(w)?`<button class="btn pri" data-lancar="${f}">${ICO.edit}Lançar dados</button>`:''}</div></header>
  ${closedBanner(w)}<div class="kpis">${f==='q'?kQ(w):kO(w)}</div>
  <div class="sec panel" style="padding:6px 6px 2px"><div class="sech" style="padding:12px 12px 0;margin-bottom:6px"><div><h2>${f==='q'?'Resultado por equipe':'Resultado por setor'}</h2><p>${s.complete?'Todos os dados lançados.':s.sub+'.'} ${canEdit(w)?'Clique numa linha para lançar ou corrigir.':'Clique numa linha para ver os detalhes.'}</p></div></div>${rTable(w,f)}</div>
  <div class="sec">${rPlanos(w,f)}</div><div class="sec">${rChart(w,f)}</div>`}
@@ -3129,30 +3129,40 @@ function rPcfg(){const all=ids().slice().reverse(),L=periodWeeks(pFrom,pTo),pend
 const PRES_MODO={inicio:'geral',cal:'cal',agenda:'ag',an:'an',pm:'pm',mon:'mon'};
 const presModoDaPagina=()=>PRES_MODO[areaDe(page)]||null;
 let presModo='cal',pAg=null,pMo=null;
-function openPres(){const m=presModoDaPagina();if(!m||!isAdmin()||((m==='geral'||m==='cal')&&!Wk()))return;closeMenu();presModo=m;
+function openPres(){const m=presModoDaPagina();if(!m||!isAdmin()||((m==='geral'||m==='cal')&&!Wk()))return;closeMenu();presModo=m;pcfgBotoes(false);
  $('pcfgT').textContent={geral:'Apresentar a Visão Geral',cal:'Apresentar a Calibragem Semanal',ag:'Apresentar a Agenda e Demandas',an:'Apresentar as Análises',pm:'Apresentar os Projetos',mon:'Apresentar as Monitorias'}[m];
  $('pcfgSub').textContent=m==='ag'?'Escolha o período. As demandas em aberto aparecem como estão hoje.':m==='pm'?'Escolha o período dos concluídos. Os projetos em aberto aparecem como estão hoje.':m==='an'?'A apresentação mostra a situação de hoje: diagnósticos, Jornada, Perguntas-chave e Por setor (Calibragem das últimas semanas encerradas).':m==='mon'?'Escolha o mês. Entram as monitorias das vagas desse mês, de todos os setores.':'Escolha o período. Ele sempre é formado por semanas inteiras.';
  if(m==='ag'||m==='pm'){const[de,ate]=exRange('mes');pAg={de,ate,short:'mes'};rPcfgAg()}else if(m==='an')rPcfgAn();else if(m==='mon'){pMo=MO.mes||today().slice(0,7);rPcfgMon()}else{pFrom=pTo=sel;pShort=null;rPcfg()}
  $('pcfgMb').classList.add('show');setTimeout(()=>$('pcfgGo').focus(),30)}
 const pAgResumo=()=>{const{de,ate}=pAg,d=de&&ate?Math.round((Date.parse(ate)-Date.parse(de))/864e5)+1:0;
- return `<div class="k">Período</div><div class="big">${d>0?`${d} ${d===1?'dia':'dias'}`:'—'}</div><div>${d>0?`${dfmt(de)} a ${dfmt(ate)}`:'Preencha as duas datas'}</div><div class="mu">${presModo==='pm'?'Projetos em aberto como estão hoje, concluídos no período e planejamento futuro':'Equipe toda: demandas em aberto, concluídas no período e agenda do período'}</div>`};
+ return `<div class="k">Período</div><div class="big">${d>0?`${d} ${d===1?'dia':'dias'}`:'—'}</div><div>${d>0?`${dfmt(de)} a ${dfmt(ate)}`:'Preencha as duas datas'}</div><div class="mu">${presModo==='rel'?(d>1?(m=>`1ª metade: ${dfmt(de)} a ${dfmt(m[0])}<br>2ª metade: ${dfmt(m[1])} a ${dfmt(ate)}`)(relMeio(de,ate)):'Escolha pelo menos 2 dias para comparar as metades'):presModo==='pm'?'Projetos em aberto como estão hoje, concluídos no período e planejamento futuro':'Equipe toda: demandas em aberto, concluídas no período e agenda do período'}</div>`};
 function rPcfgAg(){const{de,ate}=pAg;
  $('pcfgBody').innerHTML=`<div class="pc-l"><div class="pc-s" role="group" aria-label="Atalhos">${EX_DSH.map(([k,t])=>`<button class="${pAg.short===k?'on':''}" data-pagds="${k}">${t}</button>`).join('')}</div>
   <div class="frow"><div class="f"><label for="pAgDe">De</label><input id="pAgDe" type="date" value="${esc(de)}"></div><div class="f"><label for="pAgAte">Até</label><input id="pAgAte" type="date" value="${esc(ate)}"></div></div></div>
   <div class="pc-r">${pAgResumo()}</div>`}
 function rPcfgAn(){$('pcfgBody').innerHTML=`<div class="pc-l"><p class="muted">Números dos diagnósticos, a Jornada do Cliente com a cor do problema ativo mais grave em cada etapa e a lista dos problemas ativos, do mais grave para o menos grave.</p></div>
   <div class="pc-r"><div class="k">Situação em</div><div class="big">${dfmt(today())}</div></div>`}
+/* relatório de qualidade de um setor: a mesma janela, só com o botão de baixar */
+const pcfgBotoes=rel=>{$('pcfgGo').hidden=rel;$('pcfgDl').lastChild.textContent=rel?'Baixar relatório':'Baixar apresentação'};
+let pRel=null;
+function openRel(){if(!isAdmin())return;const S_=monSetores();if(!S_.length)return toast('Nenhum setor cadastrado.',true);closeMenu();presModo='rel';pcfgBotoes(true);
+ if(!pRel||!S_.some(s=>s.id===pRel))pRel=S_[0].id;const[de,ate]=exRange('mes');pAg={de,ate,short:'mes'};
+ $('pcfgT').textContent='Baixar relatório de qualidade';$('pcfgSub').textContent='Escolha o setor e o período. O período é dividido ao meio para comparar a 1ª e a 2ª metade.';
+ rPcfgRel();$('pcfgMb').classList.add('show');setTimeout(()=>$('pcfgDl').focus(),30)}
+document.addEventListener('click',e=>{if(e.target.closest&&e.target.closest('[data-relq]'))openRel()});
+function rPcfgRel(){rPcfgAg();$('pcfgBody').querySelector('.pc-l').insertAdjacentHTML('afterbegin',`<div class="pc-s" role="group" aria-label="Setor">${monSetores().map(s=>`<button class="${pRel===s.id?'on':''}" data-prelsetor="${esc(s.id)}" aria-pressed="${pRel===s.id}">${esc(s.nome)}</button>`).join('')}</div>`)}
 function rPcfgMon(){const hoje=today().slice(0,7);if(pMo>hoje)pMo=hoje;
  $('pcfgBody').innerHTML=`<div class="pc-l"><div class="momes"><button class="ico" data-pmomes="-1" aria-label="Mês anterior">${ICO.l}</button><b>${esc(dgMesNome(pMo))}</b><button class="ico" data-pmomes="1" aria-label="Próximo mês"${pMo>=hoje?' aria-disabled="true"':''}>${ICO.r}</button></div>
   <p class="muted">Um slide com todos os setores; depois, para cada setor, os agentes (média, monitorias e zeradas) e os 5 critérios mais errados.</p></div>
   <div class="pc-r"><div class="k">Mês de referência</div><div class="big">${esc(dgMesNome(pMo))}</div><div class="mu">Monitorias de todos os setores</div></div>`}
 function closePcfg(){$('pcfgMb').classList.remove('show')}
 $('pcfgMb').addEventListener('click',e=>{const pm=e.target.closest('[data-pmomes]');if(pm){if(pm.getAttribute('aria-disabled')!=='true'&&pMo){pMo=moMesSoma(pMo,+pm.dataset.pmomes);rPcfgMon()}return}
- const g=e.target.closest('[data-pagds]');if(g&&pAg){const r=exRange(g.dataset.pagds);if(r){[pAg.de,pAg.ate]=r;pAg.short=g.dataset.pagds;rPcfgAg()}return}
+ const rs=e.target.closest('[data-prelsetor]');if(rs){pRel=rs.dataset.prelsetor;rPcfgRel();return}
+ const g=e.target.closest('[data-pagds]');if(g&&pAg){const r=exRange(g.dataset.pagds);if(r){[pAg.de,pAg.ate]=r;pAg.short=g.dataset.pagds;presModo==='rel'?rPcfgRel():rPcfgAg()}return}
  const b=e.target.closest('[data-pshort]');if(!b)return;const r=shortRange(b.dataset.pshort);if(!r)return;[pFrom,pTo]=r;pShort=b.dataset.pshort;rPcfg()});
 $('pcfgMb').addEventListener('change',e=>{if(e.target.id==='pAgDe'||e.target.id==='pAgAte'){pAg[e.target.id==='pAgDe'?'de':'ate']=e.target.value;pAg.short=null;
   $('pcfgMb').querySelectorAll('[data-pagds]').forEach(b=>b.classList.remove('on'));const r=$('pcfgMb').querySelector('.pc-r');if(r)r.innerHTML=pAgResumo();return}
- if(presModo==='ag'||presModo==='an'||presModo==='pm'||presModo==='mon')return;
+ if(presModo==='ag'||presModo==='an'||presModo==='pm'||presModo==='mon'||presModo==='rel')return;
  if(e.target.id==='pFrom')pFrom=e.target.value;if(e.target.id==='pTo')pTo=e.target.value;if(pFrom>pTo)[pFrom,pTo]=[pTo,pFrom];pShort=null;rPcfg()});
 $('pcfgNo').onclick=closePcfg;
 $('pcfgGo').onclick=()=>presIr(false);
@@ -3314,22 +3324,60 @@ function buildSlidesMon(A,M,mes){PWL=[];const rod=`Mês de referência: ${dgMesN
   /* setor sem monitoria no mês fica só com o slide dos agentes */
   if(r.M.length)s.push({t:`${r.nome} · Critérios mais errados`,h:presLado(esc(r.nome),'Critérios mais errados','Os 5 critérios que mais apareceram como erro nas monitorias do mês.',rod)+`<div class="body">${T.length?`<table class="stbl"><thead><tr><th>Critério</th><th class="n">Vezes</th><th class="n">% das monitorias</th></tr></thead><tbody>${T.map(c=>`<tr><td><span class="nm">${esc(presCorta(c.nome,70))}</span>${c.zera?' <span class="chip w">zera</span>':''}</td><td class="n">${nf(c.n)}</td><td class="n">${pct(c.n/r.M.length*100)}</td></tr>`).join('')}</tbody></table>`:'<div class="smiss">Nenhum critério errado no mês.</div>'}</div>`})});
  presMontar(s)}
+/* metades do período do relatório: a 1ª fica com o dia a mais quando o total é ímpar */
+const relMeio=(de,ate)=>{const n=Math.round((Date.parse(ate)-Date.parse(de))/864e5)+1,m=exSoma(de,Math.ceil(n/2)-1);return [m,exSoma(m,1)]};
+/* relatório de qualidade de um setor no período: A agentes, C critérios do setor (ou null), M monitorias do setor por data */
+function buildSlidesRel(setor,A,C,M,de,ate){PWL=[];const rod=`${esc(setor.nome)} · ${dfmt(de)} a ${dfmt(ate)}`,[m1,m2]=relMeio(de,ate),total=M.length?M[0].data.total:(C?C.data.total:0);
+ const media=moMedia,mPerd=L=>L.length?L.reduce((t,x)=>t+(+x.data.perdidos||0),0)/L.length:null,avg=V=>{const v=V.filter(isN);return v.length?v.reduce((a,b)=>a+b,0)/v.length:null};
+ const pp=v=>isN(v)?`${nf(v,2)} / ${nf(total)}`:'—',dl=v=>!isN(v)?'—':Math.abs(v)<0.005?'0,00 p.p.':`<span class="${v>0?'good':'badc'}">${v>0?'+':''}${nf(v,2)} p.p.</span>`;
+ /* atendentes: quem teve monitoria no período (o nome vem do cadastro ou, se excluído, da própria monitoria) */
+ const G=[...new Set(M.map(x=>x.data.agente))].map(id=>{const a=A.find(y=>y.id===id),X=M.filter(x=>x.data.agente===id),X1=X.filter(x=>x.data.data<=m1),X2=X.filter(x=>x.data.data>=m2),q1=media(X1),q2=media(X2);
+  return {nome:String(a?a.data.nome:(X[0].data.agenteNome||'Agente excluído')),X,q:media(X),p:mPerd(X),q1,q2,ev:isN(q1)&&isN(q2)?q2-q1:null}}).sort((a,b)=>a.nome.localeCompare(b.nome));
+ /* médias do setor a partir das qualidades individuais; nas metades, só quem teve monitoria nas duas */
+ const Q=avg(G.map(g=>g.q)),P=avg(G.map(g=>g.p)),Gc=G.filter(g=>isN(g.ev)),Q1=avg(Gc.map(g=>g.q1)),Q2=avg(Gc.map(g=>g.q2)),EV=isN(Q1)&&isN(Q2)?Q2-Q1:null;
+ const evo=Gc.filter(g=>g.ev>=0.005).length,est=Gc.filter(g=>Math.abs(g.ev)<0.005).length,caiu=Gc.filter(g=>g.ev<=-0.005).length,cem=M.filter(x=>!x.data.zerada&&x.data.nota>=100).length,zer=M.filter(x=>x.data.zerada).length;
+ const s=[presCapa('Alinhamento<br>de Qualidade','QUALIDADE • MONITORIAS',esc(setor.nome),`${dfmt(de)} a ${dfmt(ate)}`)];
+ if(!M.length){s.push({t:'Sem monitorias',h:presLado('Relatório de qualidade','Sem monitorias','',rod)+'<div class="body"><div class="smiss">Nenhuma monitoria registrada neste setor no período escolhido.</div></div>'});presMontar(s);return}
+ const tile=(l,v,d,c)=>`<div><div class="l">${l}</div><div class="v${c?' '+c:''}" style="font-size:${String(v).length>8?64:96}px">${v}</div><div class="d">${d}</div></div>`;
+ s.push({t:'Visão geral',h:presLado('Visão geral',esc(setor.nome),`Resultado das monitorias de ${dfmt(de)} a ${dfmt(ate)}.`,rod)+`<div class="body"><div class="sfx">${tile('Atendentes avaliados',nf(G.length),'Com pelo menos uma monitoria')}${tile('Monitorias realizadas',nf(M.length),`${nf(cem)} com 100% · ${nf(zer)} ${zer===1?'zerada':'zeradas'}`)}${tile('Média de pontos perdidos',pp(P),'Média dos atendentes')}${tile('Qualidade média',pct(Q),`1ª → 2ª metade: ${dl(EV)}`)}</div></div>`});
+ /* tabela em páginas de 7 linhas; a linha do setor fica no rodapé da última página */
+ const tabela=(k,t,d,cab,linha,pe)=>presPag(G,7).forEach((Pg,i,T)=>{const tt=t+(T.length>1?` (${i+1}/${T.length})`:'');
+  s.push({t:`${k} · ${tt}`,h:presLado(k,tt,d,rod)+`<div class="body"><table class="stbl"><thead><tr>${cab}</tr></thead><tbody>${Pg.map(linha).join('')}</tbody>${i===T.length-1?`<tfoot><tr>${pe}</tr></tfoot>`:''}</table></div>`})});
+ tabela('Resultados de qualidade','Pontuação por atendente','Qualidade de cada monitoria = pontos que restaram ÷ total; média só com as monitorias realizadas.','<th>Atendente</th><th class="n">Monitorias</th><th class="n">Pontos perdidos</th><th class="n">Qualidade</th>',
+  g=>`<tr><td><span class="nm">${esc(presCorta(g.nome,40))}</span></td><td class="n">${nf(g.X.length)}</td><td class="n">${pp(g.p)}</td><td class="n">${pct(g.q)}</td></tr>`,`<td>Média do setor</td><td class="n">${nf(M.length)}</td><td class="n">${pp(P)}</td><td class="n">${pct(Q)}</td>`);
+ tabela('Comparativo','1ª x 2ª metade',`1ª metade: ${dfmt(de)} a ${dfmt(m1)} · 2ª metade: ${dfmt(m2)} a ${dfmt(ate)}. — : sem monitoria nas duas metades (fica fora da comparação).`,'<th>Atendente</th><th class="n">1ª metade</th><th class="n">2ª metade</th><th class="n">Evolução</th>',
+  g=>`<tr><td><span class="nm">${esc(presCorta(g.nome,40))}</span></td><td class="n">${pct(g.q1)}</td><td class="n">${pct(g.q2)}</td><td class="n">${dl(g.ev)}</td></tr>`,`<td>Setor (média)</td><td class="n">${pct(Q1)}</td><td class="n">${pct(Q2)}</td><td class="n">${dl(EV)}</td>`);
+ s.push({t:'Leitura do período',h:presLado('Leitura do período','Evolução individual',`${nf(Gc.length)} de ${nf(G.length)} atendentes tiveram monitoria nas duas metades.`,rod)+`<div class="body"><div class="sfx">${tile('Com evolução',nf(evo),'Atendentes que melhoraram')}${tile('Estáveis',nf(est),'Mesma qualidade')}${tile('Com queda',nf(caiu),'Atendentes que pioraram',caiu>0?'bad':'')}${tile('Monitorias com 100%',nf(cem),`${nf(zer)} ${zer===1?'zerada':'zeradas'} por erro crítico`,'')}</div></div>`});
+ /* critérios errados: em quantas monitorias cada um apareceu; o número é a posição do critério no cadastro do setor */
+ const ord=new Map(((C&&C.data.criterios)||[]).map((c,i)=>[c.id,i+1])),E=new Map();M.forEach(x=>(x.data.erros||[]).forEach(c=>{const k=c.id||c.nome,o=E.get(k)||{nome:String(c.nome??''),zera:!!c.zera,n:ord.get(c.id),q:0};o.q++;E.set(k,o)}));
+ const T5=[...E.values()].filter(c=>!c.zera).sort((a,b)=>b.q-a.q||a.nome.localeCompare(b.nome)).slice(0,5),Z=[...E.values()].filter(c=>c.zera).sort((a,b)=>b.q-a.q),zm=M.filter(x=>x.data.zeradaManual).length;
+ s.push({t:'Pontos de atenção',h:presLado('Pontos de atenção','Onde mais se perdeu ponto','Os 5 critérios que mais apareceram como erro nas monitorias do período.',rod)+`<div class="body">${T5.length?`<table class="stbl"><thead><tr><th>Critério</th><th class="n">Perda em</th></tr></thead><tbody>${T5.map(c=>`<tr><td><span class="nm">${esc(presCorta(c.nome,70))}</span>${c.n?`<span class="sub2">Critério ${c.n}</span>`:''}</td><td class="n">${nf(c.q)} de ${nf(M.length)}</td></tr>`).join('')}</tbody></table>`:'<div class="smiss">Nenhum critério errado no período.</div>'}${Z.length||zm?`<div class="smiss" style="margin-top:22px"><b>Erros críticos que zeraram a monitoria:</b> ${[...Z.map(c=>`${esc(presCorta(c.nome,60))} (${nf(c.q)})`),...(zm?[`zerada manualmente (${nf(zm)})`]:[])].join(' · ')}</div>`:''}</div>`});
+ /* destaques: observações das monitorias com 100%, das mais recentes para as mais antigas */
+ const D=M.filter(x=>!x.data.zerada&&x.data.nota>=100&&String(x.data.observacao||'').trim()).sort((a,b)=>b.data.data.localeCompare(a.data.data)||b.criado-a.criado).slice(0,6);
+ s.push({t:'Destaques',h:presLado('Destaques','O que deu certo','Observações registradas nas monitorias com 100% do período.',rod)+`<div class="body">${D.length?`<table class="stbl"><tbody>${D.map(x=>{const g=G.find(y=>y.X.includes(x));return `<tr><td><span class="nm">${esc(presCorta(g?g.nome:'',40))}</span><span class="sub2">${esc(presCorta(x.data.observacao,150))}</span></td><td class="n">${dshort(x.data.data)}</td></tr>`}).join('')}</tbody></table>`:'<div class="smiss">Nenhuma monitoria com 100% e observação no período.</div>'}</div>`});
+ s.push(presCapa('Obrigado','QUALIDADE • MONITORIAS',esc(setor.nome),`${dfmt(de)} a ${dfmt(ate)}`));s.at(-1).t='Encerramento';
+ presMontar(s)}
 /* busca os dados da área (Agenda, Análises, Projetos e Monitorias), monta os slides e apresenta ou baixa */
 let presTok=0;
 async function presIr(baixar){const m=presModo,tk=++presTok,pg=page;
  if(m==='geral'||m==='cal'){closePcfg();const L=periodWeeks(pFrom,pTo),LL=[...L,...(prevPeriod(L)||[])];
   if(!maPronto(LL.map(w=>w.inicio))){const tk=++presTok,pg=page,ok=await maGarantir(LL);if(tk!==presTok||page!==pg||!meId)return;if(!ok)toast('Não foi possível ler as monitorias: os números automáticos podem estar incompletos.',true)}baixar?downloadPres(L,m):startPres(L,m);return}
  let de,ate;const mes=pMo;if(m==='mon'&&!(mes&&/^\d{4}-(0[1-9]|1[0-2])$/.test(mes)))return toast('Confira o mês.',true);
- if(m==='ag'||m==='pm'){({de,ate}=pAg);if(!de||!ate||![de,ate].every(d=>/^\d{4}-\d{2}-\d{2}$/.test(d)&&d>='2000-01-01'&&d<='2100-12-31'))return toast('Confira as datas do período.',true);
+ if(m==='ag'||m==='pm'||m==='rel'){({de,ate}=pAg);if(!de||!ate||![de,ate].every(d=>/^\d{4}-\d{2}-\d{2}$/.test(d)&&d>='2000-01-01'&&d<='2100-12-31'))return toast('Confira as datas do período.',true);
   if(de>ate)[de,ate]=[ate,de];
   /* na Agenda o período vira várias consultas; nos Projetos ele só filtra os concluídos */
   const anos=m==='pm'?5:1;if((Date.parse(ate)-Date.parse(de))/864e5>366*anos)return toast(`Escolha um período de até ${anos===1?'1 ano':anos+' anos'}.`,true)}
- closePcfg();toast('Preparando a apresentação…');let limitado=false;const lim=r=>{if(r.limitado)limitado=true;return r.itens||[]};
+ /* setor do relatório fixado antes das consultas: trocar o setor na janela no meio não mistura nome e dados */
+ const stRel=m==='rel'?monSetores().find(x=>x.id===pRel):null;
+ closePcfg();toast(m==='rel'?'Preparando o relatório…':'Preparando a apresentação…');let limitado=false;const lim=r=>{if(r.limitado)limitado=true;return r.itens||[]};
  try{if(m==='ag'){const C=new Map();
    const[ab,agd]=await Promise.all([DB.agendaList({pessoa:'*',demandas:'abertas'}),DB.agendaList({pessoa:'*',de,ate})]);
    for(let d=de;d<=ate;d=exSoma(d,31)){const f=[exSoma(d,30),ate].sort()[0];lim(await DB.agendaList({pessoa:'*',encerradas:true,desde:new Date(d+'T00:00:00').getTime(),ate:new Date(f+'T23:59:59.999').getTime()})).forEach(x=>C.set(x.id,x))}
    buildSlidesAg({abertas:lim(ab),concl:[...C.values()],agenda:lim(agd).filter(x=>x.tipo==='agenda')},de,ate)}
   else if(m==='pm')buildSlidesPm(lim(await DB.regList('projeto')),de,ate);
+  else if(m==='rel'){if(!stRel)throw new Error('Escolha o setor.');const st=stRel;
+   const[ra,rs,rm]=await Promise.all([DB.regList('monit_agente'),DB.regList('monit_setor'),DB.regList('monitoria',{de,ate})]);
+   buildSlidesRel(st,lim(ra),lim(rs).find(x=>x.data.setor===st.id)||null,lim(rm).filter(x=>x.data.setor===st.id&&x.data.data>=de&&x.data.data<=ate),de,ate)}
   else if(m==='mon'){const[ra,rm]=await Promise.all([DB.regList('monit_agente'),DB.regList('monitoria',{de:moDatas(mes)[0],ate:moDatas(moMesSoma(mes,1))[1]})]);
    buildSlidesMon(lim(ra),lim(rm).filter(x=>moMesRef(x)===mes),mes)}
   else{const[re,rd]=await Promise.all([DB.regList('jornada_etapa'),DB.regList('diagnostico'),anGarantir()]);buildSlidesAn(lim(re),lim(rd))}
@@ -3337,6 +3385,9 @@ async function presIr(baixar){const m=presModo,tk=++presTok,pg=page;
  if(tk!==presTok||page!==pg||!meId||!isAdmin())return;
  if(m==='an'){if(!pqPronto())toast('Perguntas-chave e Por setor ficaram de fora: os dados não terminaram de carregar.',true);else if(JR.limitado||DG.limitado||PJ.limitado)limitado=true}
  if(limitado)toast('Atenção: havia registros demais e parte deles ficou de fora da apresentação.',true);
+ /* no relatório, monitorias cortadas pelo limite deixariam a 2ª metade incompleta: não gera o arquivo */
+ if(m==='rel'&&limitado)return toast('Há monitorias demais neste período: escolha um período menor.',true);
+ if(m==='rel'){const st=stRel,arq=String(st?st.nome:'setor').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'setor';presBaixar(`Relatório de qualidade · ${st?st.nome:''} · ${dfmt(de)} a ${dfmt(ate)}`,`relatorio-qualidade-${arq}-${de}-a-${ate}.html`);return}
  if(baixar)m==='ag'?presBaixar(`Agenda e Demandas · ${dfmt(de)} a ${dfmt(ate)}`,`apresentacao-agenda-${de}-a-${ate}.html`):m==='pm'?presBaixar(`Projetos · ${dfmt(de)} a ${dfmt(ate)}`,`apresentacao-projetos-${de}-a-${ate}.html`):m==='mon'?presBaixar(`Monitorias · ${dgMesNome(mes)}`,`apresentacao-monitorias-${mes}.html`):presBaixar(`Análises · ${dfmt(today())}`,`apresentacao-analises-${today()}.html`);
  else presAbrir()}
 function show(i,back){si=Math.max(0,Math.min(slides.length-1,i));document.querySelectorAll('.sl').forEach((el,k)=>{el.classList.remove('on','bk');if(k===si){void el.offsetWidth;el.classList.add('on');if(back)el.classList.add('bk')}});
