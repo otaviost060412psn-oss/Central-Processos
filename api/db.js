@@ -422,7 +422,14 @@ export default async function handler(req,res){
   const regLivre=()=>{if(!['regList','regSave','regDelete'].includes(action)||typeof b.area!=='string'||!Object.hasOwn(REG_AREAS,b.area))return false;const A=REG_AREAS[b.area];return action==='regList'?!!A.leitura:!!A.escrita};
   if(!regLivre())requireAdmin(u);
   if(action==='deleteWeek')await pool.query('DELETE FROM cp_weeks WHERE id=$1',[b.id]);
-  else if(action==='saveSettings')await pool.query('INSERT INTO cp_settings(id,data) VALUES(1,$1) ON CONFLICT(id) DO UPDATE SET data=$1',[JSON.stringify(b.settings)]);
+  else if(action==='saveSettings'){
+   const st=b.settings||{};
+   if(st.coresColab!=null){
+    if(typeof st.coresColab!=='object'||Array.isArray(st.coresColab))fail(400,'Cores inválidas.');
+    for(const v of Object.values(st.coresColab))if(typeof v!=='string'||!/^#[0-9a-fA-F]{6}$/.test(v))fail(400,'Cor inválida.');
+   }
+   await pool.query('INSERT INTO cp_settings(id,data) VALUES(1,$1) ON CONFLICT(id) DO UPDATE SET data=$1',[JSON.stringify(st)]);
+  }
   else if(action==='restore'){
    const backup=b.backup||{};
    if(backup.settings!=null&&(typeof backup.settings!=='object'||Array.isArray(backup.settings)))fail(400,'Backup inválido: configurações malformadas.');

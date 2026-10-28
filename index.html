@@ -1086,7 +1086,7 @@ const FR={q:'Qualidade',o:'Operações'};
 
 const DEFAULTS={colaboradores:[],
  setores:[{id:'licenciado',nome:'Suporte ao licenciado'},{id:'cliente',nome:'Suporte ao cliente'},{id:'retencao',nome:'Retenção'},{id:'inadimplencia',nome:'Inadimplência'}],
- colabMigrado:true};
+ colabMigrado:true,coresColab:{}};
 const emptyWeek=id=>({inicio:id,fim:addDays(id,4),fechada:false,q:{},o:{},planos:{},palavras:{},criadaEm:Date.now()});
 const errMsg=e=>{const c=(e&&e.code)||'';if(/wrong-password|invalid-credential|user-not-found|invalid-login|invalid-email/.test(c))return 'Usuário ou senha incorretos.';if(/too-many-requests/.test(c))return 'Muitas tentativas. Aguarde alguns minutos e tente de novo.';if(/network/.test(c))return 'Sem conexão com a internet. Verifique e tente de novo.';if(/permission-denied/.test(c))return 'Você não tem permissão para essa ação.';if(/email-already-in-use/.test(c))return 'Esse usuário já existe ou já existiu. Escolha outro nome, ou exclua a conta antiga em Authentication, no Console do Firebase.';if(/weak-password/.test(c))return 'A senha precisa ter pelo menos 6 caracteres.';if(/requires-recent-login/.test(c))return 'Por segurança, saia e entre de novo antes de trocar a senha.';return (e&&e.message)||'Algo deu errado. Tente de novo.'};
 
@@ -1315,10 +1315,11 @@ const agEquipe=()=>AG.ver==='*';
 /* cor pela ordem de cadastro das contas: quem entra depois não muda a cor de ninguém (excluir uma conta desloca as cadastradas depois dela);
    com mais de 10 contas as cores se repetem, por isso o nome sempre aparece junto; conta excluída fica cinza */
 const agNomeOrd=(a,b)=>String(a.nome||a.usuario||'').localeCompare(String(b.nome||b.usuario||''));
-const agCor=id=>{const i=S.users.findIndex(u=>u.id===id);return i<0?'var(--mu2)':AG_CORES[i%AG_CORES.length]};
+const CORHEX=v=>typeof v==='string'&&/^#[0-9a-f]{6}$/i.test(v);
+const agCor=id=>{const ov=ST().coresColab[id];if(CORHEX(ov))return ov;const i=S.users.findIndex(u=>u.id===id);return i<0?'var(--mu2)':AG_CORES[i%AG_CORES.length]};
 const agNomeDe=x=>{const u=S.users.find(u=>u.id===x.user_id);return u?u.nome||u.usuario:`${x.resp_nome||x.resp_usuario||'Sem nome'} (conta excluída)`};
 /* na equipe toda: faixa fina com a cor da pessoa e o nome dela no alto do cartão */
-const agPc=x=>agEquipe()?{c:' pc',s:` style="--pc:${agCor(x.user_id)}"`,n:`<span class="agp">${esc(agNomeDe(x))}</span>`}:{c:'',s:'',n:''};
+const agPc=x=>agEquipe()?{c:' pc',s:` style="--pc:${esc(agCor(x.user_id))}"`,n:`<span class="agp">${esc(agNomeDe(x))}</span>`}:{c:'',s:'',n:''};
 const agVerTxt=()=>{if(AG.ver===meId)return 'Sua agenda e suas demandas';if(agEquipe())return 'Agenda e demandas da equipe toda';
  const u=S.users.find(u=>u.id===AG.ver)||(AG.excluidas||[]).find(p=>p.id===AG.ver);return u?`Agenda e demandas de ${u.nome||u.usuario||'Sem nome'}`:'Agenda e demandas de uma conta excluída'};
 /* as contas ativas vêm da lista de usuários; as excluídas que ainda têm registros, do servidor (uma vez por login) */
@@ -1367,12 +1368,12 @@ function agCal(pronto){
  Object.values(por).forEach(L=>L.sort((a,b)=>(a.tipo===b.tipo?0:a.tipo==='agenda'?-1:1)||(a.hora_ini||'').localeCompare(b.hora_ini||'')));
  const cel=d=>{const L=por[d]||[],atr=L.some(agAtrasada),n=+d.slice(8);
   /* na equipe toda, o pontinho mostra a cor da pessoa; o status continua nas etiquetas do painel do dia */
-  const pts=L.slice(0,3).map(x=>agEquipe()?`<i class="dot" style="background:${agCor(x.user_id)}"></i>`:`<i class="dot ${x.tipo==='agenda'?'ag':agAtrasada(x)?'er':(AG_ST[x.status]||AG_ST.planejada)[1]}"></i>`).join('')+(L.length>3?`<small>+${L.length-3}</small>`:'');
+  const pts=L.slice(0,3).map(x=>agEquipe()?`<i class="dot" style="background:${esc(agCor(x.user_id))}"></i>`:`<i class="dot ${x.tipo==='agenda'?'ag':agAtrasada(x)?'er':(AG_ST[x.status]||AG_ST.planejada)[1]}"></i>`).join('')+(L.length>3?`<small>+${L.length-3}</small>`:'');
   return `<button class="agd${d.slice(0,7)!==AG.mes?' fora':''}${d===hj?' hoje':''}${d===AG.dia?' sel':''}" data-agdia="${d}" aria-pressed="${d===AG.dia}" aria-label="${n} de ${MESL[+d.slice(5,7)-1].toLowerCase()} de ${d.slice(0,4)}${d===hj?', hoje':''}${L.length?`, ${L.length} ${L.length===1?'item':'itens'}${atr?', com demanda atrasada':''}`:''}"><span class="n">${n}</span><span class="pts">${pts}</span>${L.length?`<span class="qt${atr?' er':''}">${L.length}</span>`:''}</button>`};
  const L=por[AG.dia]||[],dd=pdate(AG.dia);
  /* legenda de cores: só as pessoas que têm algo neste mês */
  const P=agEquipe()?[...new Map(AG.itens.filter(x=>x.dia.slice(0,7)===AG.mes).map(x=>[x.user_id,x])).values()].sort((a,b)=>agNomeDe(a).localeCompare(agNomeDe(b))):[];
- const leg=P.length?`<div class="agleg" role="list" aria-label="Cores por pessoa">${P.map(x=>`<span role="listitem"><i class="dot" style="background:${agCor(x.user_id)}"></i>${esc(agNomeDe(x))}</span>`).join('')}</div>`:'';
+ const leg=P.length?`<div class="agleg" role="list" aria-label="Cores por pessoa">${P.map(x=>`<span role="listitem"><i class="dot" style="background:${esc(agCor(x.user_id))}"></i>${esc(agNomeDe(x))}</span>`).join('')}</div>`:'';
  return `<div class="agwrap"><div class="panel agcal"><div class="agnav"><button class="ico" data-agmes="-1" aria-label="Mês anterior">${ICO.l}</button><b>${MESL[m-1]} ${y}</b><button class="ico" data-agmes="1" aria-label="Próximo mês">${ICO.r}</button><button class="btn sm ghost" data-aghoje ${AG.dia===hj?'aria-disabled="true"':''}>Hoje</button></div>
  <div class="agsem">${DSEM.map(s=>`<span>${s}</span>`).join('')}</div><div class="aggrid">${g.map(cel).join('')}</div>${leg}${pronto?'':'<p class="muted agload" role="status">Carregando…</p>'}</div>
  <div class="panel agdia"><div class="sech"><div><h2>${DSEML[dd.getDay()]}, ${+AG.dia.slice(8)} de ${MESL[dd.getMonth()].toLowerCase()}</h2><p>${L.length?`${L.length} ${L.length===1?'item':'itens'}`:'Nada programado para este dia.'}</p></div></div>${L.length?`<div class="aglist">${L.map(agItem).join('')}</div>`:''}<button class="btn" data-agnovo="agenda">${ICO.plus}Nova atividade neste dia</button></div></div>`;
@@ -2947,12 +2948,17 @@ function rPalavra(w){const L=pessoasDaSemana(w);
  <div class="pwl">${L.map((x,i)=>`<button data-pwi="${i}" class="${i===pIdx?'on':''}"><span class="k">${i+1}</span>${esc(x.nome)}${x.palavra?'':' <span class="none" style="margin-left:auto;font-size:12px">sem palavra</span>'}</button>`).join('')}</div></div>`}
 
 /* ---------- configurações ---------- */
-const CFGT=[['usuarios','Usuários','users','Quem acessa o sistema e quem é administrador'],['setores','Setores','build','Equipes e setores do sistema'],['semanas','Semanas','cal','Criar, fechar, reabrir e excluir semanas'],['colaboradores','Colaboradores','person','Cadastro permanente para a Palavra da Semana'],['jornada','Jornada do Cliente','target','Etapas da jornada e caminhos fora da ordem'],['monitcrit','Critérios de monitoria','target','Pontos, critérios e regras de cada setor, e o link da planilha'],['monitag','Agentes monitorados','person','Quem é monitorado em cada setor'],['backup','Backup','save','Baixar ou restaurar uma cópia dos dados'],['exportacao','Exportar dados','save','Baixar em Excel os dados das áreas que você escolher']];
+const CFGT=[['usuarios','Usuários','users','Quem acessa o sistema e quem é administrador'],['corescol','Cores da agenda','cal','A cor de cada pessoa na agenda da equipe toda'],['setores','Setores','build','Equipes e setores do sistema'],['semanas','Semanas','cal','Criar, fechar, reabrir e excluir semanas'],['colaboradores','Colaboradores','person','Cadastro permanente para a Palavra da Semana'],['jornada','Jornada do Cliente','target','Etapas da jornada e caminhos fora da ordem'],['monitcrit','Critérios de monitoria','target','Pontos, critérios e regras de cada setor, e o link da planilha'],['monitag','Agentes monitorados','person','Quem é monitorado em cada setor'],['backup','Backup','save','Baixar ou restaurar uma cópia dos dados'],['exportacao','Exportar dados','save','Baixar em Excel os dados das áreas que você escolher']];
 function rConfig(){const el=$('p-config'),s=ST();
  if(!cfgView){el.innerHTML=`<header class="phead"><div><p class="kick">Área do administrador</p><h1>Configurações</h1><p class="sub">Escolha o que você quer alterar.</p></div></header><div class="tiles">${CFGT.map(([k,n,i,d])=>`<button class="tile" data-cfg="${k}"><span class="ti">${ICO[i]}</span><b>${n}</b><span>${d}</span></button>`).join('')}</div>`;return}
  const T=CFGT.find(t=>t[0]===cfgView)||CFGT[0];let h='',sub=T[3];
  if(cfgView==='usuarios'){sub=`Administradores têm acesso total: Configurações, semanas fechadas e backup. ${nAdm()} ${nAdm()===1?'administrador':'administradores'} hoje.`;
   h=`<div class="ucards">${S.users.slice().sort((a,b)=>(b.admin-a.admin)||String(a.nome).localeCompare(b.nome)).map(u=>`<button class="uc" data-uopen="${u.id}"><span class="av">${esc((u.nome||'?')[0])}</span><span><b>${esc(u.nome)}</b><small>${esc(u.usuario)}</small></span><span class="chip ${u.admin?'ok':'ln'}">${u.admin?'Administrador':'Comum'}</span>${u.id===meId?'<span class="me">Você está conectado com este usuário</span>':''}</button>`).join('')}<button class="uc add" data-uopen="">${ICO.plus} Adicionar usuário</button></div>`}
+ if(cfgView==='corescol'){sub='Vale só na visão "Equipe toda" da Agenda (calendário e lista de demandas). Quem não tiver cor escolhida aqui continua com a cor automática.';
+  h=`<div class="panel cfgp"><p class="muted">Clique na cor para escolher outra. "Usar automática" volta para a cor que o sistema define sozinho pela ordem de cadastro.</p>
+  <div class="list" id="corList">${S.users.slice().sort(agNomeOrd).map(u=>{const i=S.users.findIndex(x=>x.id===u.id),auto=AG_CORES[i%AG_CORES.length],atual=agCor(u.id);
+   return `<div class="li" data-id="${u.id}" data-auto="${esc(auto)}"><b style="flex:1">${esc(u.nome||u.usuario)}</b><input type="color" value="${esc(atual)}" aria-label="Cor de ${esc(u.nome||u.usuario)}"><button class="btn sm ghost" data-rmcor>Usar automática</button></div>`}).join('')}</div>
+  <div><button class="btn pri" data-act="saveCores">Salvar cores</button></div></div>`}
  if(cfgView==='setores')h=`<div class="panel cfgp"><p class="muted">Em cada setor, marque onde ele aparece: Qualidade, Operações ou nas duas. Renomear não apaga os dados já lançados. Um setor removido, ou desmarcado de uma frente, some das próximas telas, mas os números antigos continuam guardados.</p>
   <div class="list" id="setList">${s.setores.map((x,i)=>`<div class="li" data-id="${x.id}"><input value="${esc(x.nome)}" aria-label="Nome do setor">${frBtns(x.frentes)}<button class="ico" data-mv="-1" aria-label="Subir">${ICO.up}</button><button class="ico" data-mv="1" aria-label="Descer">${ICO.down}</button><button class="ico" data-rmli aria-label="Remover">${ICO.del}</button></div>`).join('')}</div>
   <div class="li"><input id="newSet" placeholder="Nome do novo setor" aria-label="Nome do novo setor">${frBtns()}<button class="btn sm" data-act="addSet">${ICO.plus}Adicionar</button></div>
@@ -2976,6 +2982,7 @@ function rConfig(){const el=$('p-config'),s=ST();
 async function saveSettings(mut,msg){const s=ST();mut(s);try{await DB.saveSettings(s);S.settings=s;render();toast(msg||'Configurações salvas')}catch(e){toast(e.message||errMsg(e),true)}}
 async function act(a){try{
  if(a==='addSet'){const n=$('newSet').value.trim();if(!n)return;const fr=[...$('newSet').closest('.li').querySelectorAll('[data-frt][aria-pressed="true"]')].map(b=>b.dataset.frt);if(!fr.length)return toast('Escolha Qualidade, Operações ou as duas.',true);const div=document.createElement('div');div.className='li';div.dataset.id='s'+uid();div.innerHTML=`<input value="${esc(n)}" aria-label="Nome do setor">${frBtns(fr)}<button class="ico" data-mv="-1" aria-label="Subir">${ICO.up}</button><button class="ico" data-mv="1" aria-label="Descer">${ICO.down}</button><button class="ico" data-rmli aria-label="Remover">${ICO.del}</button>`;$('setList').appendChild(div);$('newSet').value=''}
+ if(a==='saveCores'){const obj={};[...document.querySelectorAll('#corList .li')].forEach(li=>{const v=li.querySelector('input[type=color]').value.toLowerCase();if(v!==li.dataset.auto.toLowerCase())obj[li.dataset.id]=v});await saveSettings(s=>{s.coresColab=obj},'Cores salvas')}
  if(a==='saveSet'){const L=[...document.querySelectorAll('#setList .li')].map(li=>({id:li.dataset.id,nome:li.querySelector('input').value.trim(),frentes:[...li.querySelectorAll('[data-frt][aria-pressed="true"]')].map(b=>b.dataset.frt)})).filter(x=>x.nome);if(!L.length)return toast('Mantenha pelo menos um setor.',true);if(L.some(x=>!x.frentes.length))return toast('Cada setor precisa aparecer em Qualidade, Operações ou nas duas.',true);await saveSettings(s=>{s.setores=L},'Setores salvos')}
  if(a==='newWeek'){const v=$('nW').value;if(!v)return toast('Escolha uma data.',true);const id=mondayOf(pdate(v));if(S.weeks[id])return toast('Essa semana já existe.',true);await DB.createWeek(id,emptyWeek(id));S.weeks[id]=S.weeks[id]||emptyWeek(id);cfgYear=+id.slice(0,4);render();toast('Semana criada')}
  if(a==='exportJson'){const[ag,rg]=await Promise.all([DB.agendaBackup(),DB.regBackup()]);const b=new Blob([JSON.stringify({app:'central-igreen',versao:3,exportadoEm:new Date().toISOString(),settings:ST(),weeks:S.weeks,agenda:ag.itens,registros:rg.itens},null,2)],{type:'application/json'});const l=document.createElement('a');l.href=URL.createObjectURL(b);l.download=`backup-central-igreen-${today()}.json`;document.body.appendChild(l);l.click();l.remove();setTimeout(()=>URL.revokeObjectURL(l.href),1500)}
@@ -3123,6 +3130,7 @@ document.addEventListener('click',async e=>{
  if('udel' in d){const u=S.users.find(x=>x.id===ED.id);if(await confirmBox(`Excluir o usuário ${u.usuario}?`,'Ele não poderá mais entrar no sistema.','Excluir usuário',true)){try{await DB.deleteUser(u.id);closeEd();render();toast('Usuário excluído')}catch(err){toast(err.message||errMsg(err),true)}}return}
  if(d.mv){const li=t.closest('.li'),list=li.parentElement;if(d.mv==='-1'&&li.previousElementSibling)list.insertBefore(li,li.previousElementSibling);else if(d.mv==='1'&&li.nextElementSibling)list.insertBefore(li.nextElementSibling,li);return}
  if('rmli' in d){t.closest('.li').remove();return}
+ if('rmcor' in d){const li=t.closest('.li');li.querySelector('input[type=color]').value=li.dataset.auto;return}
  if(d.frt){t.setAttribute('aria-pressed',t.getAttribute('aria-pressed')==='true'?'false':'true');return}
  if(d.act){act(d.act);return}
 });
