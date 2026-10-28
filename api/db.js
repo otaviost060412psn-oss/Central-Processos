@@ -7,11 +7,17 @@ const check=(s,p)=>{if(!p||!p.includes(':'))return false;const [salt,h]=p.split(
 const uid=()=>crypto.randomUUID();
 const cookie=(req,name)=>(req.headers.cookie||'').split(';').map(x=>x.trim()).find(x=>x.startsWith(name+'='))?.slice(name.length+1);
 const norm=s=>String(s||'').trim().toLowerCase();
+/* limite de tentativas de login por IP: bloqueia o IP, não a conta, para não travar quem erra a própria senha mas dificultar varrer logins.
+   x-vercel-forwarded-for é definido pela borda da Vercel e não pode ser forjado pelo cliente (ao contrário de x-forwarded-for, cujo primeiro valor
+   vem do próprio requisitante); sem um IP confiável, não há como aplicar o limite com segurança, então a tentativa segue sem bloqueio */
+const LOGIN_MAX=10,LOGIN_JANELA=15*60*1000,LOGIN_BLOQUEIO=15*60*1000,IP_RE=/^[0-9a-fA-F:.]{3,45}$/;
+const ipDe=req=>{const v=req.headers['x-vercel-forwarded-for'];const ip=(Array.isArray(v)?v[0]:v)?.trim();return ip&&IP_RE.test(ip)?ip:null};
 const init=async()=>{
  await pool.query(`CREATE TABLE IF NOT EXISTS cp_users(id text PRIMARY KEY,nome text NOT NULL,usuario text UNIQUE NOT NULL,password_hash text NOT NULL,admin boolean NOT NULL DEFAULT false,criado bigint NOT NULL)`);
  await pool.query(`CREATE TABLE IF NOT EXISTS cp_sessions(token_hash text PRIMARY KEY,user_id text NOT NULL REFERENCES cp_users(id) ON DELETE CASCADE,expires timestamptz NOT NULL)`);
  await pool.query(`CREATE TABLE IF NOT EXISTS cp_weeks(id text PRIMARY KEY,data jsonb NOT NULL)`);
  await pool.query(`CREATE TABLE IF NOT EXISTS cp_settings(id int PRIMARY KEY DEFAULT 1,data jsonb NOT NULL)`);
+ await pool.query(`CREATE TABLE IF NOT EXISTS cp_login_bloqueios(ip text PRIMARY KEY,tentativas int NOT NULL,primeira timestamptz NOT NULL,bloqueado_ate timestamptz)`);
  await initAgenda();
  await initRegistros();
 };
@@ -277,8 +283,33 @@ export default async function handler(req,res){
   if(token){const q=await pool.query('SELECT u.* FROM cp_sessions s JOIN cp_users u ON u.id=s.user_id WHERE s.token_hash=$1 AND s.expires>now()',[crypto.createHash('sha256').update(token).digest('hex')]);u=q.rows[0]||null}
   if(action==='me')return res.json({user:u?publicUser(u):null});
   if(action==='login'){
-   const q=await pool.query('SELECT * FROM cp_users WHERE usuario=$1',[norm(b.usuario)]);const account=q.rows[0];
-   if(!account||!check(String(b.senha||''),account.password_hash))fail(401,'Usuário ou senha incorretos.');
+   const ip=ipDe(req);let account;
+   if(ip){
+    const client=await pool.connect();
+    try{
+     await client.query('BEGIN');
+     /* trava por hash do IP: serializa mesmo a 1ª tentativa de um IP ainda sem linha, antes de qualquer SELECT/INSERT */
+     await client.query('SELECT pg_advisory_xact_lock(hashtext($1))',['cp_login_bloqueios:'+ip]);
+     if(Math.random()<0.02)await client.query("DELETE FROM cp_login_bloqueios WHERE (bloqueado_ate IS NULL OR bloqueado_ate<now()) AND primeira<now()-interval '1 day'");
+     const qb=await client.query('SELECT * FROM cp_login_bloqueios WHERE ip=$1',[ip]);
+     const bloqueio=qb.rows[0],agora=new Date();
+     if(bloqueio?.bloqueado_ate&&new Date(bloqueio.bloqueado_ate)>agora)fail(429,'Muitas tentativas de login. Tente novamente em alguns minutos.');
+     const q=await client.query('SELECT * FROM cp_users WHERE usuario=$1',[norm(b.usuario)]);account=q.rows[0];
+     if(!account||!check(String(b.senha||''),account.password_hash)){
+      const janelaExpirada=!bloqueio||new Date(bloqueio.primeira).getTime()+LOGIN_JANELA<agora.getTime();
+      const tentativas=janelaExpirada?1:bloqueio.tentativas+1;
+      const bloqueadoAte=tentativas>=LOGIN_MAX?new Date(agora.getTime()+LOGIN_BLOQUEIO):null;
+      await client.query('INSERT INTO cp_login_bloqueios(ip,tentativas,primeira,bloqueado_ate) VALUES($1,$2,$3,$4) ON CONFLICT(ip) DO UPDATE SET tentativas=$2,primeira=$3,bloqueado_ate=$4',[ip,tentativas,janelaExpirada?agora:bloqueio.primeira,bloqueadoAte]);
+      await client.query('COMMIT');
+      fail(401,'Usuário ou senha incorretos.');
+     }
+     if(bloqueio)await client.query('DELETE FROM cp_login_bloqueios WHERE ip=$1',[ip]);
+     await client.query('COMMIT');
+    }catch(e){await client.query('ROLLBACK');throw e}finally{client.release()}
+   }else{
+    const q=await pool.query('SELECT * FROM cp_users WHERE usuario=$1',[norm(b.usuario)]);account=q.rows[0];
+    if(!account||!check(String(b.senha||''),account.password_hash))fail(401,'Usuário ou senha incorretos.');
+   }
    const secret=crypto.randomBytes(32).toString('hex'),days=b.keep?30:1;
    await pool.query('INSERT INTO cp_sessions(token_hash,user_id,expires) VALUES($1,$2,now()+($3 * interval \'1 day\'))',[crypto.createHash('sha256').update(secret).digest('hex'),account.id,days]);
    res.setHeader('Set-Cookie',`cp_session=${secret}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=${days*86400}`);
