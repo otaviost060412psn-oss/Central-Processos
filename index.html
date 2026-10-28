@@ -3126,13 +3126,13 @@ function rPcfg(){const all=ids().slice().reverse(),L=periodWeeks(pFrom,pTo),pend
   ${pend.length?`<div class="wa">${pend.length} ${pend.length===1?'semana com dados pendentes':'semanas com dados pendentes'}: ${pend.map(w=>wkTxt(w)).join(', ')}</div>`:'<div class="okk">Todas as semanas preenchidas</div>'}
   <div class="mu">${nf(Q.mon)} monitorias · ${PL} ${PL===1?'plano':'planos'} · ${PW} ${PW===1?'palavra':'palavras'}</div></div>`}
 /* "Apresentar" apresenta a área aberta: Visão Geral, Calibragem Semanal, Agenda e Demandas ou Análises */
-const PRES_MODO={inicio:'geral',cal:'cal',agenda:'ag',an:'an',pm:'pm'};
+const PRES_MODO={inicio:'geral',cal:'cal',agenda:'ag',an:'an',pm:'pm',mon:'mon'};
 const presModoDaPagina=()=>PRES_MODO[areaDe(page)]||null;
-let presModo='cal',pAg=null;
+let presModo='cal',pAg=null,pMo=null;
 function openPres(){const m=presModoDaPagina();if(!m||!isAdmin()||((m==='geral'||m==='cal')&&!Wk()))return;closeMenu();presModo=m;
- $('pcfgT').textContent={geral:'Apresentar a Visão Geral',cal:'Apresentar a Calibragem Semanal',ag:'Apresentar a Agenda e Demandas',an:'Apresentar as Análises',pm:'Apresentar os Projetos'}[m];
- $('pcfgSub').textContent=m==='ag'?'Escolha o período. As demandas em aberto aparecem como estão hoje.':m==='pm'?'Escolha o período dos concluídos. Os projetos em aberto aparecem como estão hoje.':m==='an'?'A apresentação mostra a situação de hoje: diagnósticos, Jornada, Perguntas-chave e Por setor (Calibragem das últimas semanas encerradas).':'Escolha o período. Ele sempre é formado por semanas inteiras.';
- if(m==='ag'||m==='pm'){const[de,ate]=exRange('mes');pAg={de,ate,short:'mes'};rPcfgAg()}else if(m==='an')rPcfgAn();else{pFrom=pTo=sel;pShort=null;rPcfg()}
+ $('pcfgT').textContent={geral:'Apresentar a Visão Geral',cal:'Apresentar a Calibragem Semanal',ag:'Apresentar a Agenda e Demandas',an:'Apresentar as Análises',pm:'Apresentar os Projetos',mon:'Apresentar as Monitorias'}[m];
+ $('pcfgSub').textContent=m==='ag'?'Escolha o período. As demandas em aberto aparecem como estão hoje.':m==='pm'?'Escolha o período dos concluídos. Os projetos em aberto aparecem como estão hoje.':m==='an'?'A apresentação mostra a situação de hoje: diagnósticos, Jornada, Perguntas-chave e Por setor (Calibragem das últimas semanas encerradas).':m==='mon'?'Escolha o mês. Entram as monitorias das vagas desse mês, de todos os setores.':'Escolha o período. Ele sempre é formado por semanas inteiras.';
+ if(m==='ag'||m==='pm'){const[de,ate]=exRange('mes');pAg={de,ate,short:'mes'};rPcfgAg()}else if(m==='an')rPcfgAn();else if(m==='mon'){pMo=MO.mes||today().slice(0,7);rPcfgMon()}else{pFrom=pTo=sel;pShort=null;rPcfg()}
  $('pcfgMb').classList.add('show');setTimeout(()=>$('pcfgGo').focus(),30)}
 const pAgResumo=()=>{const{de,ate}=pAg,d=de&&ate?Math.round((Date.parse(ate)-Date.parse(de))/864e5)+1:0;
  return `<div class="k">Período</div><div class="big">${d>0?`${d} ${d===1?'dia':'dias'}`:'—'}</div><div>${d>0?`${dfmt(de)} a ${dfmt(ate)}`:'Preencha as duas datas'}</div><div class="mu">${presModo==='pm'?'Projetos em aberto como estão hoje, concluídos no período e planejamento futuro':'Equipe toda: demandas em aberto, concluídas no período e agenda do período'}</div>`};
@@ -3142,12 +3142,17 @@ function rPcfgAg(){const{de,ate}=pAg;
   <div class="pc-r">${pAgResumo()}</div>`}
 function rPcfgAn(){$('pcfgBody').innerHTML=`<div class="pc-l"><p class="muted">Números dos diagnósticos, a Jornada do Cliente com a cor do problema ativo mais grave em cada etapa e a lista dos problemas ativos, do mais grave para o menos grave.</p></div>
   <div class="pc-r"><div class="k">Situação em</div><div class="big">${dfmt(today())}</div></div>`}
+function rPcfgMon(){const hoje=today().slice(0,7);if(pMo>hoje)pMo=hoje;
+ $('pcfgBody').innerHTML=`<div class="pc-l"><div class="momes"><button class="ico" data-pmomes="-1" aria-label="Mês anterior">${ICO.l}</button><b>${esc(dgMesNome(pMo))}</b><button class="ico" data-pmomes="1" aria-label="Próximo mês"${pMo>=hoje?' aria-disabled="true"':''}>${ICO.r}</button></div>
+  <p class="muted">Um slide com todos os setores; depois, para cada setor, os agentes (média, monitorias e zeradas) e os 5 critérios mais errados.</p></div>
+  <div class="pc-r"><div class="k">Mês de referência</div><div class="big">${esc(dgMesNome(pMo))}</div><div class="mu">Monitorias de todos os setores</div></div>`}
 function closePcfg(){$('pcfgMb').classList.remove('show')}
-$('pcfgMb').addEventListener('click',e=>{const g=e.target.closest('[data-pagds]');if(g&&pAg){const r=exRange(g.dataset.pagds);if(r){[pAg.de,pAg.ate]=r;pAg.short=g.dataset.pagds;rPcfgAg()}return}
+$('pcfgMb').addEventListener('click',e=>{const pm=e.target.closest('[data-pmomes]');if(pm){if(pm.getAttribute('aria-disabled')!=='true'&&pMo){pMo=moMesSoma(pMo,+pm.dataset.pmomes);rPcfgMon()}return}
+ const g=e.target.closest('[data-pagds]');if(g&&pAg){const r=exRange(g.dataset.pagds);if(r){[pAg.de,pAg.ate]=r;pAg.short=g.dataset.pagds;rPcfgAg()}return}
  const b=e.target.closest('[data-pshort]');if(!b)return;const r=shortRange(b.dataset.pshort);if(!r)return;[pFrom,pTo]=r;pShort=b.dataset.pshort;rPcfg()});
 $('pcfgMb').addEventListener('change',e=>{if(e.target.id==='pAgDe'||e.target.id==='pAgAte'){pAg[e.target.id==='pAgDe'?'de':'ate']=e.target.value;pAg.short=null;
   $('pcfgMb').querySelectorAll('[data-pagds]').forEach(b=>b.classList.remove('on'));const r=$('pcfgMb').querySelector('.pc-r');if(r)r.innerHTML=pAgResumo();return}
- if(presModo==='ag'||presModo==='an'||presModo==='pm')return;
+ if(presModo==='ag'||presModo==='an'||presModo==='pm'||presModo==='mon')return;
  if(e.target.id==='pFrom')pFrom=e.target.value;if(e.target.id==='pTo')pTo=e.target.value;if(pFrom>pTo)[pFrom,pTo]=[pTo,pFrom];pShort=null;rPcfg()});
 $('pcfgNo').onclick=closePcfg;
 $('pcfgGo').onclick=()=>presIr(false);
@@ -3287,12 +3292,35 @@ function buildSlidesPm(P,de,ate){PWL=[];const hoje=today(),rod=`${dfmt(de)} a ${
  presLista(s,'Projetos','Concluídos no período','',rod,Co,6,'<th>Projeto</th><th>Concluído em</th><th>Resultado</th>',x=>`<tr><td><span class="nm">${esc(presCorta(x.data.nome,60))}</span>${x.data.resultado?`<span class="sub2">${esc(presCorta(x.data.resultado,90))}</span>`:''}</td><td>${dfmt(x.data.concluidoEm)}</td><td><span class="chip ${PRES_VCHIP[x.data.validacao]||'s'}">${esc(PJ_VAL[x.data.validacao]||'Não avaliado')}</span></td></tr>`,'Nenhum projeto concluído no período.');
  presLista(s,'Planejamento Futuro','O que ainda não é agora','Ideias, planejados e pausados; reavaliação vencida primeiro.',rod,Fu,7,'<th>Iniciativa</th><th>Status</th><th>Previsão</th><th>Reavaliar em</th>',x=>{const v=x.data.reavaliar&&x.data.reavaliar<=hoje;return `<tr><td><span class="nm">${esc(presCorta(x.data.nome,55))}</span>${x.data.motivoAguardar?`<span class="sub2">${esc(presCorta(x.data.motivoAguardar,80))}</span>`:''}</td><td>${st(x)}</td><td>${x.data.previsao?esc(dgMesNome(x.data.previsao)):'—'}</td><td>${x.data.reavaliar?`<span class="chip ${v?'w':'s'}">${dfmt(x.data.reavaliar)}</span>`:'—'}</td></tr>`},'Nada no planejamento futuro.');
  presMontar(s)}
-/* busca os dados da área (Agenda, Análises e Projetos), monta os slides e apresenta ou baixa */
+/* Monitorias do mês: A agentes, M monitorias (só as do mês de referência) */
+function buildSlidesMon(A,M,mes){PWL=[];const rod=`Mês de referência: ${dgMesNome(mes)}`,media=moMedia,zer=L=>L.filter(x=>x.data.zerada).length,dist=L=>new Set(L.map(x=>x.data.agente)).size;
+ /* setores das monitorias; um setor que saiu da lista mas teve monitoria no mês também entra */
+ const SS=monSetores().map(s=>({id:s.id,nome:s.nome}));[...new Set(M.map(x=>x.data.setor))].filter(id=>!SS.some(s=>s.id===id)).forEach(id=>{const s=SET().find(y=>y.id===id);SS.push({id,nome:s?s.nome:'Setor excluído'})});
+ const R=SS.map(x=>({...x,M:M.filter(y=>y.data.setor===x.id)})),zc=n=>n>0?`<span class="chip w">${nf(n)}</span>`:nf(n);
+ const s=[presCapa('Monitorias<br>de Qualidade','MONITORIAS • QUALIDADE','Mês de referência',esc(dgMesNome(mes)))];
+ s.push({t:'Visão geral',h:presLado('Monitorias','Visão geral',M.length?`<b>${nf(M.length)}</b> ${M.length===1?'monitoria':'monitorias'} no mês, média geral de <b>${pct(media(M))}</b>.`:'Nenhuma monitoria no mês.',rod)+`<div class="body"><table class="stbl"><thead><tr><th>Setor</th><th class="n">Monitorias</th><th class="n">Média</th><th class="n">Zeradas</th><th class="n">Agentes monitorados</th></tr></thead><tbody>${R.map(r=>`<tr><td><span class="nm">${esc(r.nome)}</span></td>${r.M.length?`<td class="n">${nf(r.M.length)}</td><td class="n">${pct(media(r.M))}</td><td class="n">${zc(zer(r.M))}</td><td class="n">${nf(dist(r.M))}</td>`:'<td colspan="4" class="n"><span class="chip s">Sem monitoria no mês</span></td>'}</tr>`).join('')}</tbody><tfoot><tr><td>Total</td><td class="n">${nf(M.length)}</td><td class="n">${pct(media(M))}</td><td class="n">${nf(zer(M))}</td><td class="n">${nf(dist(M))}</td></tr></tfoot></table></div>`});
+ R.forEach(r=>{const d=r.M.length?`Média da equipe <b>${pct(media(r.M))}</b> · ${nf(r.M.length)} ${r.M.length===1?'monitoria':'monitorias'} · ${nf(zer(r.M))} ${zer(r.M)===1?'zerada':'zeradas'}.`:'Nenhuma monitoria no mês.';
+  /* agentes ativos do setor e quem teve monitoria nele no mês (inativo, excluído ou que mudou de setor) */
+  const G=A.filter(a=>a.data.setor===r.id&&a.data.ativo!==false).map(a=>({id:a.id,nome:a.data.nome}));
+  r.M.forEach(x=>{if(!G.some(g=>g.id===x.data.agente)){const a=A.find(y=>y.id===x.data.agente);G.push({id:x.data.agente,nome:a?a.data.nome:x.data.agenteNome||'Agente excluído'})}});
+  G.forEach(g=>g.nome=String(g.nome??''));G.sort((a,b)=>a.nome.localeCompare(b.nome));
+  /* o presLista põe o nome escapado também no título do slide; o título é lido como texto, então volta o nome puro */
+  const i0=s.length;
+  presLista(s,esc(r.nome),'Agentes',d,rod,G,8,'<th>Agente</th><th class="n">Monitorias</th><th class="n">Média</th><th class="n">Zeradas</th>',g=>{const X=r.M.filter(x=>x.data.agente===g.id);return `<tr><td><span class="nm">${esc(g.nome)}</span></td>${X.length?`<td class="n">${nf(X.length)}</td><td class="n">${pct(media(X))}</td><td class="n">${zc(zer(X))}</td>`:'<td colspan="3" class="n"><span class="chip s">Sem monitoria no mês</span></td>'}</tr>`},'Nenhum agente neste setor.');
+  s.slice(i0).forEach(x=>x.t=r.nome+x.t.slice(esc(r.nome).length));
+  /* em quantas monitorias cada critério foi marcado como erro (o nome vem guardado na própria monitoria) */
+  const C=new Map();r.M.forEach(x=>(x.data.erros||[]).forEach(c=>{const k=c.id||c.nome,o=C.get(k)||{nome:String(c.nome??''),zera:!!c.zera,n:0};o.n++;C.set(k,o)}));
+  const T=[...C.values()].sort((a,b)=>b.n-a.n||a.nome.localeCompare(b.nome)).slice(0,5);
+  /* setor sem monitoria no mês fica só com o slide dos agentes */
+  if(r.M.length)s.push({t:`${r.nome} · Critérios mais errados`,h:presLado(esc(r.nome),'Critérios mais errados','Os 5 critérios que mais apareceram como erro nas monitorias do mês.',rod)+`<div class="body">${T.length?`<table class="stbl"><thead><tr><th>Critério</th><th class="n">Vezes</th><th class="n">% das monitorias</th></tr></thead><tbody>${T.map(c=>`<tr><td><span class="nm">${esc(presCorta(c.nome,70))}</span>${c.zera?' <span class="chip w">zera</span>':''}</td><td class="n">${nf(c.n)}</td><td class="n">${pct(c.n/r.M.length*100)}</td></tr>`).join('')}</tbody></table>`:'<div class="smiss">Nenhum critério errado no mês.</div>'}</div>`})});
+ presMontar(s)}
+/* busca os dados da área (Agenda, Análises, Projetos e Monitorias), monta os slides e apresenta ou baixa */
 let presTok=0;
 async function presIr(baixar){const m=presModo,tk=++presTok,pg=page;
  if(m==='geral'||m==='cal'){closePcfg();const L=periodWeeks(pFrom,pTo),LL=[...L,...(prevPeriod(L)||[])];
   if(!maPronto(LL.map(w=>w.inicio))){const tk=++presTok,pg=page,ok=await maGarantir(LL);if(tk!==presTok||page!==pg||!meId)return;if(!ok)toast('Não foi possível ler as monitorias: os números automáticos podem estar incompletos.',true)}baixar?downloadPres(L,m):startPres(L,m);return}
- let de,ate;if(m==='ag'||m==='pm'){({de,ate}=pAg);if(!de||!ate||![de,ate].every(d=>/^\d{4}-\d{2}-\d{2}$/.test(d)&&d>='2000-01-01'&&d<='2100-12-31'))return toast('Confira as datas do período.',true);
+ let de,ate;const mes=pMo;if(m==='mon'&&!(mes&&/^\d{4}-(0[1-9]|1[0-2])$/.test(mes)))return toast('Confira o mês.',true);
+ if(m==='ag'||m==='pm'){({de,ate}=pAg);if(!de||!ate||![de,ate].every(d=>/^\d{4}-\d{2}-\d{2}$/.test(d)&&d>='2000-01-01'&&d<='2100-12-31'))return toast('Confira as datas do período.',true);
   if(de>ate)[de,ate]=[ate,de];
   /* na Agenda o período vira várias consultas; nos Projetos ele só filtra os concluídos */
   const anos=m==='pm'?5:1;if((Date.parse(ate)-Date.parse(de))/864e5>366*anos)return toast(`Escolha um período de até ${anos===1?'1 ano':anos+' anos'}.`,true)}
@@ -3302,12 +3330,14 @@ async function presIr(baixar){const m=presModo,tk=++presTok,pg=page;
    for(let d=de;d<=ate;d=exSoma(d,31)){const f=[exSoma(d,30),ate].sort()[0];lim(await DB.agendaList({pessoa:'*',encerradas:true,desde:new Date(d+'T00:00:00').getTime(),ate:new Date(f+'T23:59:59.999').getTime()})).forEach(x=>C.set(x.id,x))}
    buildSlidesAg({abertas:lim(ab),concl:[...C.values()],agenda:lim(agd).filter(x=>x.tipo==='agenda')},de,ate)}
   else if(m==='pm')buildSlidesPm(lim(await DB.regList('projeto')),de,ate);
+  else if(m==='mon'){const[ra,rm]=await Promise.all([DB.regList('monit_agente'),DB.regList('monitoria',{de:moDatas(mes)[0],ate:moDatas(moMesSoma(mes,1))[1]})]);
+   buildSlidesMon(lim(ra),lim(rm).filter(x=>moMesRef(x)===mes),mes)}
   else{const[re,rd]=await Promise.all([DB.regList('jornada_etapa'),DB.regList('diagnostico'),anGarantir()]);buildSlidesAn(lim(re),lim(rd))}
  }catch(e){if(tk===presTok)toast(e.message||'Não foi possível preparar a apresentação.',true);return}
  if(tk!==presTok||page!==pg||!meId||!isAdmin())return;
  if(m==='an'){if(!pqPronto())toast('Perguntas-chave e Por setor ficaram de fora: os dados não terminaram de carregar.',true);else if(JR.limitado||DG.limitado||PJ.limitado)limitado=true}
  if(limitado)toast('Atenção: havia registros demais e parte deles ficou de fora da apresentação.',true);
- if(baixar)m==='ag'?presBaixar(`Agenda e Demandas · ${dfmt(de)} a ${dfmt(ate)}`,`apresentacao-agenda-${de}-a-${ate}.html`):m==='pm'?presBaixar(`Projetos · ${dfmt(de)} a ${dfmt(ate)}`,`apresentacao-projetos-${de}-a-${ate}.html`):presBaixar(`Análises · ${dfmt(today())}`,`apresentacao-analises-${today()}.html`);
+ if(baixar)m==='ag'?presBaixar(`Agenda e Demandas · ${dfmt(de)} a ${dfmt(ate)}`,`apresentacao-agenda-${de}-a-${ate}.html`):m==='pm'?presBaixar(`Projetos · ${dfmt(de)} a ${dfmt(ate)}`,`apresentacao-projetos-${de}-a-${ate}.html`):m==='mon'?presBaixar(`Monitorias · ${dgMesNome(mes)}`,`apresentacao-monitorias-${mes}.html`):presBaixar(`Análises · ${dfmt(today())}`,`apresentacao-analises-${today()}.html`);
  else presAbrir()}
 function show(i,back){si=Math.max(0,Math.min(slides.length-1,i));document.querySelectorAll('.sl').forEach((el,k)=>{el.classList.remove('on','bk');if(k===si){void el.offsetWidth;el.classList.add('on');if(back)el.classList.add('bk')}});
  document.querySelectorAll('#psegs i').forEach((el,k)=>el.classList.toggle('on',k<=si));$('pwhere').textContent=slides[si].t;$('pcount').textContent=`${si+1} / ${slides.length}`;$('pprev').disabled=si===0;$('pnext').disabled=si===slides.length-1}
