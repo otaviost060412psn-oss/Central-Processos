@@ -2733,7 +2733,7 @@ document.addEventListener('click',e=>{const t=e.target.closest&&e.target.closest
 
 /* ---------- calibragem preenchida pelas monitorias ----------
    para cada setor e semana (segunda a domingo), as monitorias registradas viram: monitorias, qualidade (média das notas, zeradas
-   valendo 0), zeradas, agentes diferentes e responsáveis (todos os avaliadores). Nada é gravado na semana: o que for digitado à mão
+   valendo 0), zeradas, agentes diferentes e responsáveis (todos os avaliadores). Só ao fechar a semana uma foto é gravada nela (maCongelado); fora isso o que for digitado à mão
    vale no lugar do automático; o automático só preenche os campos vazios. As monitorias são lidas por mês e guardadas aqui */
 const MA={dono:null,meses:{},memo:new Map()};
 const MA_CAMPOS=['monitorias','qualidade','zeradas','agentes'];
@@ -2749,7 +2749,9 @@ const maPronto=ids=>MA.dono===meId&&maMesesDe(ids).every(m=>MA.meses[m]&&MA.mese
 const maGarantir=async L=>{const ids=L.filter(Boolean).map(w=>w.inicio);await Promise.all(maMesesDe(ids).map(maCarregarMes));return maPronto(ids)};
 /* esquece o que foi lido (depois de registrar, corrigir ou excluir uma monitoria) */
 const maLimpar=()=>{MA.meses={};MA.memo.clear()};
-function maAuto(w,setor){if(!w||!w.inicio||!meId)return null;
+/* semana fechada usa a foto tirada ao fechar (maCongelado); sem foto (fechada antes disso) segue calculando */
+function maAuto(w,setor){if(w&&w.fechada&&w.maCongelado)return w.maCongelado[setor]||null;return maAutoVivo(w,setor)}
+function maAutoVivo(w,setor){if(!w||!w.inicio||!meId)return null;
  if(!maPronto([w.inicio])){maMesesDe([w.inicio]).forEach(m=>{const e=MA.dono===meId&&MA.meses[m];if(!e||(!e.itens&&!e.prom&&Date.now()-(e.erro||0)>30000))maCarregarMes(m)});return null}
  const mk=w.inicio+'|'+setor;if(MA.memo.has(mk))return MA.memo.get(mk);
  const fim=addDays(w.inicio,6),L=maMesesDe([w.inicio]).flatMap(m=>MA.meses[m].itens).filter(x=>x.data.setor===setor&&x.data.data>=w.inicio&&x.data.data<=fim);
@@ -2918,9 +2920,9 @@ function edPatch(){const w=Wk(),{f,i}=ED,id=steps(f)[i];let ok=true;const vals={
   else if(t==='num'&&isN(v)&&v<0){ok=false;box.classList.add('bad');m.textContent='Use um número positivo.'}
   else{box.classList.remove('bad');m.textContent=m.dataset.h;vals[inp.dataset.k]=v}});
  if(!ok)return null;const now=Date.now();
- if(id==='sla'){if((w.sla??null)===vals.sla)return {};return {sla:vals.sla===null?undefined:vals.sla,slaBy:who(),slaAt:now}}
+ if(id==='sla'){if((w.sla??null)===vals.sla)return {};return {sla:vals.sla,slaBy:who(),slaAt:now}}
  const r=((f==='q'?w.q:w.o)[id])||{},b=`${f}.${id}.`,patch={};let changed=false;
- for(const[k,v]of Object.entries(vals)){if((r[k]??null)!==v){changed=true;patch[b+k]=v===null?undefined:v}}
+ for(const[k,v]of Object.entries(vals)){if((r[k]??null)!==v){changed=true;patch[b+k]=v}}
  if(changed){patch[b+'by']=who();patch[b+'at']=now}return patch}
 async function save(patch){const w=Wk();if(!Object.keys(patch).length)return true;for(const[k,v]of Object.entries(patch))setPath(w,k,v);try{await DB.update(sel,patch);return true}catch(e){toast(e.message||'Não foi possível salvar.',true);return false}}
 function rEdPlan(){const w=Wk(),{id,p}=ED,ro=!canEdit(w);
@@ -2962,7 +2964,9 @@ async function toggleWeek(id){const w=S.weeks[id];if(!w||!isAdmin())return;const
  if(!w.fechada){const falta=[!sq.complete&&'Qualidade',!so.complete&&'Operações'].filter(Boolean);
   if(!await confirmBox(`Fechar a semana de ${wkTxt(w)}?`,`${falta.length?`${falta.join(' e ')} ainda ${falta.length>1?'estão pendentes':'está pendente'}. `:''}Depois de fechada, só administradores poderão alterar os números.`,'Fechar semana'))return}
  else if(!await confirmBox(`Reabrir a semana de ${wkTxt(w)}?`,'O time volta a poder lançar e corrigir os dados desta semana.','Reabrir semana'))return;
- try{await DB.update(id,{fechada:!w.fechada});w.fechada=!w.fechada;render();toast(w.fechada?'Semana fechada':'Semana reaberta')}catch(e){toast(e.message||errMsg(e),true)}}
+ let foto=null;if(!w.fechada){if(!await maGarantir([w])||maMesesDe([w.inicio]).some(m=>MA.meses[m].erro)){toast('Não foi possível carregar as monitorias desta semana. Tente fechar de novo.',true);return}
+  foto={};SETF('q').forEach(s=>{const au=maAutoVivo(w,s.id);if(au)foto[s.id]=au})}
+ try{await DB.update(id,{fechada:!w.fechada,maCongelado:foto});w.fechada=!w.fechada;w.maCongelado=foto;MA.memo.clear();render();toast(w.fechada?'Semana fechada':'Semana reaberta')}catch(e){toast(e.message||errMsg(e),true)}}
 async function deleteWeek(id){const x=S.weeks[id];if(!x)return;if(ids().length<2){toast('É preciso manter pelo menos uma semana.',true);return}
  if(!await confirmBox(`Excluir a semana de ${wkTxt(x)}?`,'Todos os dados desta semana serão apagados: números de Qualidade e Operações, planos de ação e palavras. Não dá para desfazer.','Excluir semana',true))return;
  try{await DB.deleteWeek(id);delete S.weeks[id];if(sel===id){const L=ids();sel=L.filter(k=>k<id).at(-1)||L[0]}render();toast('Semana excluída')}catch(e){toast(e.message||errMsg(e),true)}}
