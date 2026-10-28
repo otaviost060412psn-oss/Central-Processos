@@ -2474,12 +2474,13 @@ function rMon(){if(MON.dono!==meId)monCarregar();if(MO.dono!==meId||(MO.mesLido!
    return `<button class="panel mocard mosetor" data-mosetor="${esc(s.id)}"><b>${esc(s.nome)}</b><span class="mopct">${moPct(moMedia(M))}</span><small class="muted">${M.length} ${M.length===1?'monitoria':'monitorias'} no mês · ${A.length} ${A.length===1?'agente':'agentes'}</small>${cfg?'':'<small class="pjfalta">Sem critérios cadastrados</small>'}</button>`}).join('')}</div>`}
  const html=`<header class="phead"><div><p class="kick">Monitorias</p><h1>Monitorias de qualidade</h1><p class="sub">Escolha o setor, depois o agente: registre uma nova monitoria ou veja o histórico.</p></div><div class="tools">${moPlanilha()}</div></header>${MON.limitado||MO.limitado?'<div class="banner"><span class="dot wa"></span><div>Há muitos registros: parte deles não está sendo exibida.</div></div>':''}${moMesBarra()}${h}`;
  if(html===MO.html)return;MO.html=html;$('p-monitorias').innerHTML=html}
-function moSetor(L){const s=monSetores().find(x=>x.id===MO.setor),cfg=monCfgDe(s.id),M=L.filter(x=>x.data.setor===s.id);
- /* agentes ativos e também os inativos que tiveram monitoria no mês */
- const A=monAgentesDe(s.id).filter(a=>a.data.ativo!==false||M.some(x=>x.data.agente===a.id));
+/* agentes ativos e também os inativos que tiveram monitoria no mês (M: monitorias do setor no mês) */
+function moAgentesSetor(setor,M){const A=monAgentesDe(setor).filter(a=>a.data.ativo!==false||M.some(x=>x.data.agente===a.id));
  /* quem teve monitoria neste setor no mês mas foi excluído ou mudou de setor também aparece, para nada ficar invisível */
  [...new Set(M.map(x=>x.data.agente))].filter(id=>!A.some(a=>a.id===id)).forEach(id=>{const ag=moAgente(id);if(ag)A.push({...ag,fora:true})});
- return `<div class="mobar"><button class="btn ghost sm" data-mosetor="">${ICO.l}Setores</button><h2>${esc(s.nome)}</h2></div>
+ return A}
+function moSetor(L){const s=monSetores().find(x=>x.id===MO.setor),cfg=monCfgDe(s.id),M=L.filter(x=>x.data.setor===s.id),A=moAgentesSetor(s.id,M);
+ return `<div class="mobar"><button class="btn ghost sm" data-mosetor="">${ICO.l}Setores</button><h2>${esc(s.nome)}</h2><button class="btn sm" data-moexp${MO.exportando?' aria-disabled="true"':''}><svg class="i" viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>${MO.exportando?'Gerando…':'Baixar planilha do setor'}</button></div>
  <div class="panel momedia"><div><p class="kick">Média da equipe — ${esc(dgMesNome(MO.mes))}</p><b>${moPct(moMedia(M))}</b></div><span class="muted">${M.length} ${M.length===1?'monitoria':'monitorias'} no mês</span></div>
  ${cfg?'':'<div class="banner"><span class="dot wa"></span><div>Este setor ainda não tem critérios de monitoria. Um administrador cadastra em Configurações › Critérios de monitoria.</div></div>'}
  ${A.length?`<p class="kick mocont">${A.length} ${A.length===1?'agente':'agentes'}</p><div class="mogrid">${A.map(a=>{const Ma=M.filter(x=>x.data.agente===a.id);
@@ -2553,8 +2554,33 @@ async function moExcluir(btn){const ed=ED,{id,x}=ed;
  btn.setAttribute('aria-disabled','true');
  try{await DB.regDelete('monitoria',id);maLimpar();if(ED===ed)closeEd();toast('Monitoria excluída')}catch(e){btn.removeAttribute('aria-disabled');moErro(e,ed)}
  moCarregar()}
+/* planilha do setor no mês da tela: aba Resumo e uma aba por agente com as monitorias, na ordem das vagas */
+async function moExportar(){const s=monSetores().find(x=>x.id===MO.setor),L=moDoMes();if(!s||!L||MO.exportando)return;
+ const mes=MO.mes,lim=MO.limitado,M=L.filter(x=>x.data.setor===s.id),A=moAgentesSetor(s.id,M),VL=monVagasLista(monVagas(s.id));
+ MO.exportando=true;rMon();
+ try{
+  if(!window.XLSX)try{await loadScript('https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js')}catch(e){throw new Error('Não foi possível gerar o Excel sem internet.')}
+  const wb=XLSX.utils.book_new(),add=(n,rows)=>XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows),n),num=v=>isN(v)?+v.toFixed(2):'';
+  /* nome de aba: até 31 caracteres, sem : \ / ? * [ ], sem apóstrofo nas pontas, sem repetir e sem o nome reservado History */
+  const usadas=new Set(['resumo','critérios','history']),aba=nome=>{const b=String(nome).replace(/[:\\\/?*\[\]]/g,' ').trim().slice(0,31).replace(/^'+|'+$/g,'').trim()||'Agente';let n=b,i=2;while(usadas.has(n.toLowerCase())){const suf=` (${i++})`;n=b.slice(0,31-suf.length)+suf}usadas.add(n.toLowerCase());return n};
+  const ordem=x=>{const i=VL.findIndex(v=>monVagaIgual({...v,mes},x.data.vaga));return i<0?VL.length:i};
+  const Ma=a=>M.filter(x=>x.data.agente===a.id).sort((x,y)=>ordem(x)-ordem(y)||x.data.data.localeCompare(y.data.data)||x.criado-y.criado);
+  const sit=a=>a.fora?(a.excluido?'Agente excluído':'Não está mais neste setor'):a.data.ativo===false?'Inativo':'';
+  add('Resumo',[['Setor',s.nome],['Mês',dgMesNome(mes)],['Média da equipe (%)',num(moMedia(M))],['Monitorias',M.length],[],['Agente','Monitorias','Média (%)','Zeradas','Situação'],
+   ...A.map(a=>{const X=Ma(a);return [a.data.nome,X.length,num(moMedia(X)),X.filter(x=>x.data.zerada).length,sit(a)]})]);
+  /* critérios ativos do setor: no modo acertos o peso é o que o critério vale; nos demais, o que se perde ao errar */
+  const cfg=monCfgDe(s.id),cd=cfg?cfg.data:{criterios:[]};
+  add('Critérios',[['Critério','Descrição',cd.modo==='acertos'?'Pontos que vale':'Pontos perdidos'],...cd.criterios.filter(c=>c.ativo!==false).map(c=>[c.nome,c.descricao||'',c.zera?'Zera a nota':+c.peso||0])]);
+  A.forEach(a=>add(aba(a.data.nome),[['Vaga','Data','Protocolo','Nota (%)','Zerada','Pontos perdidos','Critérios com erro','Observação','Avaliado por','Alterado por'],
+   ...Ma(a).map(x=>{const d=x.data;return [monVagaRot(d.vaga),dfmt(d.data),d.protocolo||'',num(d.nota),d.zerada?(d.zeradaManual?'Sim (manual)':'Sim'):'Não',d.perdidos||0,d.erros.map(c=>c.nome+(c.zera?' (zera)':'')).join('; '),d.observacao||'',moAvaliador(x.criado_por),x.atualizado!==x.criado?moAvaliador(x.atualizado_por):'']})]));
+  const arq=String(s.nome).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'setor';
+  XLSX.writeFile(wb,`monitorias-${arq}-${mes}.xlsx`);
+  toast(lim?'Planilha gerada, mas há muitos registros: parte deles pode ter ficado de fora.':'Planilha gerada',lim);
+ }catch(e){toast(e.message||'Não foi possível exportar.',true)}
+ finally{MO.exportando=false;if(page==='monitorias')rMon()}}
 document.addEventListener('click',e=>{const t=e.target.closest&&e.target.closest('button');if(!t||t.getAttribute('aria-disabled')==='true')return;const d=t.dataset;
- if(d.mosetor!==undefined){MO.setor=d.mosetor||null;MO.hist=null;rMon();scrollTo({top:0})}
+ if('moexp' in d)moExportar();
+ else if(d.mosetor!==undefined){MO.setor=d.mosetor||null;MO.hist=null;rMon();scrollTo({top:0})}
  else if(d.mohist){MO.hist=d.mohist;rMon();scrollTo({top:0})}
  else if(d.monova)openMo(d.monova,null,d.movaga||null);
  else if(d.moeditar){const x=(MO.itens||[]).find(y=>y.id===d.moeditar);if(x)openMo(x.data.agente,x.id)}
