@@ -1086,7 +1086,7 @@ const FR={q:'Qualidade',o:'Operações'};
 
 const DEFAULTS={colaboradores:[],
  setores:[{id:'licenciado',nome:'Suporte ao licenciado'},{id:'cliente',nome:'Suporte ao cliente'},{id:'retencao',nome:'Retenção'},{id:'inadimplencia',nome:'Inadimplência'}],
- colabMigrado:true,coresColab:{},enumsPersonalizados:{}};
+ colabMigrado:true,coresColab:{}};
 const emptyWeek=id=>({inicio:id,fim:addDays(id,4),fechada:false,q:{},o:{},planos:{},palavras:{},criadaEm:Date.now()});
 const errMsg=e=>{const c=(e&&e.code)||'';if(/wrong-password|invalid-credential|user-not-found|invalid-login|invalid-email/.test(c))return 'Usuário ou senha incorretos.';if(/too-many-requests/.test(c))return 'Muitas tentativas. Aguarde alguns minutos e tente de novo.';if(/network/.test(c))return 'Sem conexão com a internet. Verifique e tente de novo.';if(/permission-denied/.test(c))return 'Você não tem permissão para essa ação.';if(/email-already-in-use/.test(c))return 'Esse usuário já existe ou já existiu. Escolha outro nome, ou exclua a conta antiga em Authentication, no Console do Firebase.';if(/weak-password/.test(c))return 'A senha precisa ter pelo menos 6 caracteres.';if(/requires-recent-login/.test(c))return 'Por segurança, saia e entre de novo antes de trocar a senha.';return (e&&e.message)||'Algo deu errado. Tente de novo.'};
 
@@ -1198,15 +1198,6 @@ const DB=NeonDB;
 let S={settings:null,weeks:{},users:[]},meId=null,sel=null,page='inicio',chartSel={q:'qualidade',o:'trat'},wordEdit=false,pIdx=0,cfgView=null,booted=false,pickY=null,pickM=null,cfgYear=null,ED=null,openPl=new Set(),migrating=false;
 const ST=()=>Object.assign(clone(DEFAULTS),S.settings||{});
 const SET=()=>ST().setores;
-/* listas do sistema (status, gravidade...): admin pode renomear e reordenar, nunca adicionar/remover opções;
-   a chave interna, a classe de cor e o peso numérico (quando existem) nunca mudam */
-const ENUM=id=>ST().enumsPersonalizados[id];
-const enumRot=(v,l)=>Array.isArray(v)?[l,...v.slice(1)]:l;
-const enumGet=(base,cfg,key)=>{if(!Object.hasOwn(base,key))return undefined;const it=(Array.isArray(cfg)?cfg:[]).find(x=>x&&x.k===key);return it&&it.l?enumRot(base[key],it.l):base[key]};
-const enumV=(base,cfg)=>{const L=Array.isArray(cfg)?cfg:[],usados=new Set();
- const ord=L.filter(x=>x&&typeof x.k==='string'&&Object.hasOwn(base,x.k)&&!usados.has(x.k)&&usados.add(x.k)).map(x=>[x.k,enumGet(base,cfg,x.k)]);
- return[...ord,...Object.keys(base).filter(k=>!usados.has(k)).map(k=>[k,base[k]])]};
-const enumL=(base,cfg,key)=>{const v=enumGet(base,cfg,key);return Array.isArray(v)?v[0]:v};
 /* setor sem "frentes" (cadastrado antes da escolha existir) vale para as duas */
 const temFrente=(s,f)=>!Array.isArray(s.frentes)||s.frentes.includes(f);
 const SETF=f=>SET().filter(s=>temFrente(s,f));
@@ -1314,7 +1305,7 @@ document.addEventListener('click',e=>{
 const AG_ST={planejada:['Planejada',''],andamento:['Em andamento','wa'],concluida:['Concluída','ok'],cancelada:['Cancelada','cx']};
 const AG_ORD={andamento:0,planejada:1,concluida:2,cancelada:3};
 /* cancelar uma demanda = excluí-la de vez (decisão do responsável); por isso não há botão para "cancelada" */
-const AG_MOV={planejada:[['andamento','Iniciar'],['concluida','Concluir']],andamento:[['concluida','Concluir'],['planejada','Voltar para {st}']],concluida:[['planejada','Reabrir']]};
+const AG_MOV={planejada:[['andamento','Iniciar'],['concluida','Concluir']],andamento:[['concluida','Concluir'],['planejada','Voltar para planejada']],concluida:[['planejada','Reabrir']]};
 const DSEM=['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'],DSEML=['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
 const agVazio=dono=>({aba:'cal',mes:null,dia:null,itens:[],dem:[],enc:[],encDesloc:0,busca:'',buscaRes:null,limitado:false,encerradas:false,movendo:new Set(),pedido:null,chave:null,dono,ver:dono,excluidas:null,pesPedido:false,seq:0,html:null,adiado:false});
 let AG=agVazio(null);
@@ -1349,7 +1340,7 @@ const agAchar=id=>[AG.itens,AG.dem,AG.enc,AG.buscaRes||[]].reduce((r,L)=>r||L.fi
 const agEncMes=()=>{const h=new Date(),d=new Date(h.getFullYear(),h.getMonth()+AG.encDesloc,1),f=new Date(d.getFullYear(),d.getMonth()+1,1);return{mes:ymd(d).slice(0,7),desde:d.getTime(),ate:f.getTime()-1,nome:`${MESL[d.getMonth()].toLowerCase()} de ${d.getFullYear()}`}};
 const agChave=()=>`${AG.ver}|${AG.mes}|${agEncMes().mes}|${AG.busca}`;
 const agDataEnc=x=>x.encerrado?dfmt(ymd(new Date(x.encerrado))):'';
-const agChip=x=>{const s=enumGet(AG_ST,ENUM('agStatus'),x.status)||enumGet(AG_ST,ENUM('agStatus'),'planejada');return `<span class="chip ${s[1]==='cx'?'ln':s[1]}">${esc(s[0])}</span>`};
+const agChip=x=>{const s=AG_ST[x.status]||AG_ST.planejada;return `<span class="chip ${s[1]==='cx'?'ln':s[1]}">${s[0]}</span>`};
 async function agCarregar(quieto){
  if(!AG.mes)return;
  /* só a resposta mais recente, do mesmo mês e da mesma conta, é aceita */
@@ -1392,7 +1383,7 @@ function agDem(pronto){
  /* cartões abertos podem ser arrastados entre as colunas; os botões fazem o mesmo no celular e no teclado */
  /* demanda sendo gravada: botões travados e sem arrastar até a resposta (o estado faz parte do HTML, então o cache funciona) */
  const card=x=>{const mov=AG.movendo.has(x.id),trava=mov?' aria-disabled="true"':'',ab=agAberta(x),p=agPc(x);return `<div class="panel agc${ab?'':' fim'}${p.c}"${p.s}${ab&&!mov?` draggable="true" data-agcard="${esc(x.id)}"`:''}>${p.n}<div class="agch">${agChip(x)}${agAtrasada(x)?'<span class="chip er">Atrasada</span>':''}<span class="chip ln">${x.dia?'Prazo '+esc(dfmt(x.dia)):'Sem prazo'}</span></div><h3>${esc(x.titulo)}</h3>${x.descricao?`<p>${esc(x.descricao)}</p>`:''}<small class="muted">${ab?`Criado em ${tsTxt(x.criado)}`:x.encerrado?`Concluída em ${esc(agDataEnc(x))}`:'Concluída'}</small>
- <div class="agca">${(AG_MOV[x.status]||[]).map(([st,l])=>`<button class="btn sm${st==='concluida'?' pri':''}" data-agmover="${esc(x.id)}" data-agpara="${st}"${trava}>${esc(l.includes('{st}')?l.replace('{st}',enumL(AG_ST,ENUM('agStatus'),st).toLowerCase()):l)}</button>`).join('')}</div>
+ <div class="agca">${(AG_MOV[x.status]||[]).map(([st,l])=>`<button class="btn sm${st==='concluida'?' pri':''}" data-agmover="${esc(x.id)}" data-agpara="${st}"${trava}>${l}</button>`).join('')}</div>
  <div class="agca"><button class="btn sm ghost" data-agabrir="${esc(x.id)}"${trava}>${ICO.edit}Editar</button>${ab?`<button class="btn sm ghost dan" data-agcancelar="${esc(x.id)}"${trava}>${ICO.x}Cancelar</button>`:`<button class="btn sm ghost dan" data-agexcluir="${esc(x.id)}"${trava}>${ICO.del}Excluir</button>`}</div></div>`};
  const col=(st,titulo)=>{const L=A.filter(x=>x.status===st);return `<section class="agcol" data-agcol="${st}" aria-label="${titulo}"><h2>${titulo} <span class="muted">(${L.length})</span></h2>${L.length?L.map(card).join(''):'<p class="muted">Nenhuma demanda aqui.</p>'}</section>`};
  /* concluídas: as do mês escolhido (setas), ou o resultado da busca em todos os meses */
@@ -1403,7 +1394,7 @@ function agDem(pronto){
  ${AG.encerradas?`<div class="panel agencp"><div class="agnav">${AG.busca?'<b>Busca</b>':`<button class="ico" data-agencmes="-1" aria-label="Mês anterior">${ICO.l}</button><b>Concluídas em ${em.nome}</b><button class="ico" data-agencmes="1" aria-label="Próximo mês"${AG.encDesloc>=0?' aria-disabled="true"':''}>${ICO.r}</button>`}</div>
  <div class="agbusca"><input id="agbusca" type="search" maxlength="100" placeholder="Buscar em todas as concluídas" aria-label="Buscar em todas as demandas concluídas" value="${esc(AG.buscaTxt??AG.busca)}" autocomplete="off"><button class="btn sm" data-agbuscar>Buscar</button>${AG.busca?'<button class="btn sm ghost" data-aglimpar>Limpar busca</button>':''}</div>${lista}</div>`:''}</div>`;
  if(!pronto&&!A.length)return '<div class="panel"><p class="muted" role="status">Carregando…</p></div>';
- return `<div class="agquadro">${col('planejada',esc(enumL(AG_ST,ENUM('agStatus'),'planejada')))}${col('andamento',esc(enumL(AG_ST,ENUM('agStatus'),'andamento')))}</div>`+enc;
+ return `<div class="agquadro">${col('planejada','Planejada')}${col('andamento','Em andamento')}</div>`+enc;
 }
 /* mudança rápida de status (botão ou arrastar); usa a mesma gravação da edição, com controle de versão */
 async function moverAg(id,status){const x=agAchar(id),mv=AG.movendo,ver=AG.ver;
@@ -1449,7 +1440,7 @@ function openAg(id,tipo){
 function rEdAg(){const{id,x}=ED,dem=x.tipo==='demanda';if(ED.rendered)return;ED.rendered=true;
  /* só o administrador escolhe o responsável, e só ao criar: depois o responsável não muda */
  const resp=!id&&isAdmin()?`<div class="f"><label for="ag_resp">Responsável</label><select id="ag_resp">${S.users.slice().sort(agNomeOrd).map(u=>`<option value="${esc(u.id)}"${u.id===x.resp?' selected':''}>${esc(u.nome||u.usuario)}${u.id===meId?' (você)':''}</option>`).join('')}</select></div>`:'';
- const campos=dem?`<div class="g2"><div class="f"><label for="ag_status">Status</label><select id="ag_status">${enumV(AG_ST,ENUM('agStatus')).filter(([v])=>v!=='cancelada').map(([v,t])=>`<option value="${v}" ${x.status===v?'selected':''}>${esc(t[0])}</option>`).join('')}</select></div><div class="f"><label for="ag_dia">Prazo (opcional)</label><input id="ag_dia" type="date" value="${esc(x.dia||'')}"><span class="msg"></span></div></div>`
+ const campos=dem?`<div class="g2"><div class="f"><label for="ag_status">Status</label><select id="ag_status">${Object.entries(AG_ST).filter(([v])=>v!=='cancelada').map(([v,t])=>`<option value="${v}" ${x.status===v?'selected':''}>${t[0]}</option>`).join('')}</select></div><div class="f"><label for="ag_dia">Prazo (opcional)</label><input id="ag_dia" type="date" value="${esc(x.dia||'')}"><span class="msg"></span></div></div>`
   :`<div class="f"><label for="ag_dia">Data</label><input id="ag_dia" type="date" value="${esc(x.dia||'')}"><span class="msg"></span></div>
  <div class="g2"><div class="f"><label for="ag_hora_ini">Início (opcional)</label><input id="ag_hora_ini" type="time" value="${esc(x.hora_ini||'')}"></div><div class="f"><label for="ag_hora_fim">Fim (opcional)</label><input id="ag_hora_fim" type="time" value="${esc(x.hora_fim||'')}"><span class="msg"></span></div></div>`;
  $('ed').innerHTML=`<div class="edh"><div class="row"><span>${dem?'Demandas':'Agenda'}</span><button class="ico" data-edclose aria-label="Fechar">${ICO.x}</button></div><div><div class="k">${id?'Editar':dem?'Nova demanda':'Nova atividade'}</div><h3>${id?esc(x.titulo):dem?'Nova demanda':'Nova atividade'}</h3></div></div>
@@ -2957,7 +2948,7 @@ function rPalavra(w){const L=pessoasDaSemana(w);
  <div class="pwl">${L.map((x,i)=>`<button data-pwi="${i}" class="${i===pIdx?'on':''}"><span class="k">${i+1}</span>${esc(x.nome)}${x.palavra?'':' <span class="none" style="margin-left:auto;font-size:12px">sem palavra</span>'}</button>`).join('')}</div></div>`}
 
 /* ---------- configurações ---------- */
-const CFGT=[['usuarios','Usuários','users','Quem acessa o sistema e quem é administrador'],['corescol','Cores da agenda','cal','A cor de cada pessoa na agenda da equipe toda'],['listas','Listas do sistema','edit','Renomear e reordenar status, gravidades e outras listas fixas'],['setores','Setores','build','Equipes e setores do sistema'],['semanas','Semanas','cal','Criar, fechar, reabrir e excluir semanas'],['colaboradores','Colaboradores','person','Cadastro permanente para a Palavra da Semana'],['jornada','Jornada do Cliente','target','Etapas da jornada e caminhos fora da ordem'],['monitcrit','Critérios de monitoria','target','Pontos, critérios e regras de cada setor, e o link da planilha'],['monitag','Agentes monitorados','person','Quem é monitorado em cada setor'],['backup','Backup','save','Baixar ou restaurar uma cópia dos dados'],['exportacao','Exportar dados','save','Baixar em Excel os dados das áreas que você escolher']];
+const CFGT=[['usuarios','Usuários','users','Quem acessa o sistema e quem é administrador'],['corescol','Cores da agenda','cal','A cor de cada pessoa na agenda da equipe toda'],['setores','Setores','build','Equipes e setores do sistema'],['semanas','Semanas','cal','Criar, fechar, reabrir e excluir semanas'],['colaboradores','Colaboradores','person','Cadastro permanente para a Palavra da Semana'],['jornada','Jornada do Cliente','target','Etapas da jornada e caminhos fora da ordem'],['monitcrit','Critérios de monitoria','target','Pontos, critérios e regras de cada setor, e o link da planilha'],['monitag','Agentes monitorados','person','Quem é monitorado em cada setor'],['backup','Backup','save','Baixar ou restaurar uma cópia dos dados'],['exportacao','Exportar dados','save','Baixar em Excel os dados das áreas que você escolher']];
 function rConfig(){const el=$('p-config'),s=ST();
  if(!cfgView){el.innerHTML=`<header class="phead"><div><p class="kick">Área do administrador</p><h1>Configurações</h1><p class="sub">Escolha o que você quer alterar.</p></div></header><div class="tiles">${CFGT.map(([k,n,i,d])=>`<button class="tile" data-cfg="${k}"><span class="ti">${ICO[i]}</span><b>${n}</b><span>${d}</span></button>`).join('')}</div>`;return}
  const T=CFGT.find(t=>t[0]===cfgView)||CFGT[0];let h='',sub=T[3];
@@ -2968,9 +2959,6 @@ function rConfig(){const el=$('p-config'),s=ST();
   <div class="list" id="corList">${S.users.slice().sort(agNomeOrd).map(u=>{const i=S.users.findIndex(x=>x.id===u.id),auto=AG_CORES[i%AG_CORES.length],atual=agCor(u.id);
    return `<div class="li" data-id="${u.id}" data-auto="${esc(auto)}"><b style="flex:1">${esc(u.nome||u.usuario)}</b><input type="color" value="${esc(atual)}" aria-label="Cor de ${esc(u.nome||u.usuario)}"><button class="btn sm ghost" data-rmcor>Usar automática</button></div>`}).join('')}</div>
   <div><button class="btn pri" data-act="saveCores">Salvar cores</button></div></div>`}
- if(cfgView==='listas'){sub='Mude o texto e a ordem. As opções em si (quantas existem) não mudam aqui.';
-  const bloco=(id,nome,base)=>`<div class="panel cfgp" style="margin-bottom:18px"><h3>${esc(nome)}</h3><div class="list" data-enum="${id}">${enumV(base,ENUM(id)).map(([k,v])=>`<div class="li" data-id="${esc(k)}"><input value="${esc(Array.isArray(v)?v[0]:v)}" maxlength="100" aria-label="Texto de ${esc(nome)}"><button class="ico" data-mv="-1" aria-label="Subir">${ICO.up}</button><button class="ico" data-mv="1" aria-label="Descer">${ICO.down}</button></div>`).join('')}</div><div><button class="btn sm ghost" data-act="enumPadrao|${id}">Restaurar padrão</button></div></div>`;
-  h=bloco('agStatus','Status de Demanda (Agenda e Demandas)',AG_ST)+`<div><button class="btn pri" data-act="saveEnums">Salvar listas</button></div>`}
  if(cfgView==='setores')h=`<div class="panel cfgp"><p class="muted">Em cada setor, marque onde ele aparece: Qualidade, Operações ou nas duas. Renomear não apaga os dados já lançados. Um setor removido, ou desmarcado de uma frente, some das próximas telas, mas os números antigos continuam guardados.</p>
   <div class="list" id="setList">${s.setores.map((x,i)=>`<div class="li" data-id="${x.id}"><input value="${esc(x.nome)}" aria-label="Nome do setor">${frBtns(x.frentes)}<button class="ico" data-mv="-1" aria-label="Subir">${ICO.up}</button><button class="ico" data-mv="1" aria-label="Descer">${ICO.down}</button><button class="ico" data-rmli aria-label="Remover">${ICO.del}</button></div>`).join('')}</div>
   <div class="li"><input id="newSet" placeholder="Nome do novo setor" aria-label="Nome do novo setor">${frBtns()}<button class="btn sm" data-act="addSet">${ICO.plus}Adicionar</button></div>
@@ -2994,8 +2982,6 @@ function rConfig(){const el=$('p-config'),s=ST();
 async function saveSettings(mut,msg){const s=ST();mut(s);try{await DB.saveSettings(s);S.settings=s;render();toast(msg||'Configurações salvas')}catch(e){toast(e.message||errMsg(e),true)}}
 async function act(a){try{
  if(a==='addSet'){const n=$('newSet').value.trim();if(!n)return;const fr=[...$('newSet').closest('.li').querySelectorAll('[data-frt][aria-pressed="true"]')].map(b=>b.dataset.frt);if(!fr.length)return toast('Escolha Qualidade, Operações ou as duas.',true);const div=document.createElement('div');div.className='li';div.dataset.id='s'+uid();div.innerHTML=`<input value="${esc(n)}" aria-label="Nome do setor">${frBtns(fr)}<button class="ico" data-mv="-1" aria-label="Subir">${ICO.up}</button><button class="ico" data-mv="1" aria-label="Descer">${ICO.down}</button><button class="ico" data-rmli aria-label="Remover">${ICO.del}</button>`;$('setList').appendChild(div);$('newSet').value=''}
- if(a==='saveEnums'){const cfg={};[...document.querySelectorAll('[data-enum]')].forEach(list=>{cfg[list.dataset.enum]=[...list.querySelectorAll('.li')].map(li=>{const v=li.querySelector('input').value.trim();return v?{k:li.dataset.id,l:v}:{k:li.dataset.id}})});await saveSettings(s=>{s.enumsPersonalizados=cfg},'Listas salvas')}
- if(a.startsWith('enumPadrao|')){const id=a.split('|')[1];await saveSettings(s=>{if(s.enumsPersonalizados)delete s.enumsPersonalizados[id]},'Lista restaurada')}
  if(a==='saveCores'){const obj={};[...document.querySelectorAll('#corList .li')].forEach(li=>{const v=li.querySelector('input[type=color]').value.toLowerCase();if(v!==li.dataset.auto.toLowerCase())obj[li.dataset.id]=v});await saveSettings(s=>{s.coresColab=obj},'Cores salvas')}
  if(a==='saveSet'){const L=[...document.querySelectorAll('#setList .li')].map(li=>({id:li.dataset.id,nome:li.querySelector('input').value.trim(),frentes:[...li.querySelectorAll('[data-frt][aria-pressed="true"]')].map(b=>b.dataset.frt)})).filter(x=>x.nome);if(!L.length)return toast('Mantenha pelo menos um setor.',true);if(L.some(x=>!x.frentes.length))return toast('Cada setor precisa aparecer em Qualidade, Operações ou nas duas.',true);await saveSettings(s=>{s.setores=L},'Setores salvos')}
  if(a==='newWeek'){const v=$('nW').value;if(!v)return toast('Escolha uma data.',true);const id=mondayOf(pdate(v));if(S.weeks[id])return toast('Essa semana já existe.',true);await DB.createWeek(id,emptyWeek(id));S.weeks[id]=S.weeks[id]||emptyWeek(id);cfgYear=+id.slice(0,4);render();toast('Semana criada')}
@@ -3260,7 +3246,7 @@ async function exportXlsx(){if(!isAdmin()||!EX||EX.ocupado)return;const X=EX,E={
    for(let de=E.aDe;de<=E.aAte;de=exSoma(de,31)){const ate=[exSoma(de,30),E.aAte].sort()[0];junta(await DB.agendaList({pessoa:'*',encerradas:true,desde:new Date(de+'T00:00:00').getTime(),ate:new Date(ate+'T23:59:59.999').getTime()}))}
    if(E.semPrazo){const r=await DB.agendaList({pessoa:'*',demandas:'abertas'});if(r.limitado)limitado=true;(r.itens||[]).filter(x=>!x.dia).forEach(x=>M.set(x.id,x))}
    const ord=x=>x.dia||(x.encerrado?ymd(new Date(x.encerrado)):'9999');
-   add('Agenda e Demandas',[['Tipo','Título','Descrição','Responsável','Data ou prazo','Início','Fim','Status','Concluída em','Criada em'],...[...M.values()].sort((a,b)=>ord(a).localeCompare(ord(b))||a.criado-b.criado).map(x=>[x.tipo==='demanda'?'Demanda':'Agenda',x.titulo||'',x.descricao||'',(x.resp_nome||'')+(x.conta_excluida?' (conta excluída)':''),dfmt(x.dia||''),x.hora_ini||'',x.hora_fim||'',x.tipo==='demanda'?(enumGet(AG_ST,ENUM('agStatus'),x.status)||[x.status||''])[0]:'',dia(x.encerrado),dia(x.criado)])],entre(E.aDe,E.aAte));
+   add('Agenda e Demandas',[['Tipo','Título','Descrição','Responsável','Data ou prazo','Início','Fim','Status','Concluída em','Criada em'],...[...M.values()].sort((a,b)=>ord(a).localeCompare(ord(b))||a.criado-b.criado).map(x=>[x.tipo==='demanda'?'Demanda':'Agenda',x.titulo||'',x.descricao||'',(x.resp_nome||'')+(x.conta_excluida?' (conta excluída)':''),dfmt(x.dia||''),x.hora_ini||'',x.hora_fim||'',x.tipo==='demanda'?(AG_ST[x.status]||[x.status||''])[0]:'',dia(x.encerrado),dia(x.criado)])],entre(E.aDe,E.aAte));
   }
   if(E.an){const[re,rf,rd]=await Promise.all([DB.regList('jornada_etapa'),DB.regList('jornada_fluxo'),DB.regList('diagnostico')]);if(re.limitado||rf.limitado||rd.limitado)limitado=true;
    const ET=re.itens||[],nome=id=>{const e=ET.find(y=>y.id===id);return e?e.data.nome:'Etapa excluída'},lista=a=>(Array.isArray(a)?a:[]).filter(s=>typeof s==='string'&&s.trim()).join(', ');
