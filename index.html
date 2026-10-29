@@ -3644,12 +3644,12 @@ async function onData(d){
  if(isAdmin()&&!(S.settings&&S.settings.colabMigrado)&&!migrating){migrating=true;try{for(const[id,w]of Object.entries(S.weeks)){if(w.palavras&&Object.keys(w.palavras).length){await DB.update(id,{palavras:{}});w.palavras={}}}const st=ST();st.colaboradores=(S.settings&&S.settings.colaboradores)||[];st.colabMigrado=true;['pessoas','metaQualidade','regraQualidade','limiteDias','horasDia'].forEach(k=>delete st[k]);await DB.saveSettings(st);S.settings=st}catch(e){toast(e.message||errMsg(e),true)}migrating=false}
  if(!sel||!S.weeks[sel]){const p=prevOf(cur);sel=new Date().getDay()===1&&p?p.inicio:cur}
  if(page==='agenda')agCarregar(true);
- if(page==='an-jornada'||(page==='config'&&cfgView==='jornada'))jrCarregar();
- if(page==='config'&&(cfgView==='monitcrit'||cfgView==='monitag'))monCarregar();
- if(page==='monitorias'){monCarregar();moCarregar()}
+ if((page==='an-jornada'||(page==='config'&&cfgView==='jornada'))&&JR.dono!==meId)jrCarregar();
+ if(page==='config'&&(cfgView==='monitcrit'||cfgView==='monitag')&&MON.dono!==meId)monCarregar();
+ if(page==='monitorias'){if(MON.dono!==meId)monCarregar();moCarregar()}
  if((page==='qualidade'||page==='inicio')&&sel)maMesesDe([sel]).forEach(maCarregarMes);
- if(page==='an-diag'||page==='an-jornada')dgCarregar();if(page==='an-diag')jrCarregar();
- if(page==='pm-proj'||page==='pm-fut'||page==='an-diag'||page==='an-perg'||page==='an-setor')pjCarregar();if(page==='pm-proj'||page==='pm-fut'||page==='an-perg'||page==='an-setor'){jrCarregar();dgCarregar()}
+ if((page==='an-diag'||page==='an-jornada')&&DG.dono!==meId)dgCarregar();if(page==='an-diag'&&JR.dono!==meId)jrCarregar();
+ if((page==='pm-proj'||page==='pm-fut'||page==='an-diag'||page==='an-perg'||page==='an-setor')&&PJ.dono!==meId)pjCarregar();if(page==='pm-proj'||page==='pm-fut'||page==='an-perg'||page==='an-setor'){if(JR.dono!==meId)jrCarregar();if(DG.dono!==meId)dgCarregar()}
  render();
 }
 async function boot(){
