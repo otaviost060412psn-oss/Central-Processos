@@ -1165,7 +1165,7 @@ const NeonDB={
  watch(cb){this.cb=cb;this.refresh();clearInterval(this.timer);this.timer=setInterval(()=>{if(this.cb&&document.visibilityState==='visible')this.refresh()},10000)},
  async refresh(){try{const d=await this.req('snapshot');if(this.cb)this.cb(d)}catch(e){console.error(e);toast(e.message,true)}},
  isAdm(){return !!this.user?.admin},
- async mutate(action,data){await this.req(action,data);await this.refresh()},
+ async mutate(action,data){await this.req(action,data);this.refresh()},
  async update(id,patch){await this.mutate('update',{id,patch})},
  async createWeek(id,data){await this.mutate('createWeek',{id,data})},
  async deleteWeek(id){await this.mutate('deleteWeek',{id})},
