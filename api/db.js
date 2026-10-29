@@ -428,6 +428,16 @@ export default async function handler(req,res){
     if(typeof st.coresColab!=='object'||Array.isArray(st.coresColab))fail(400,'Cores inválidas.');
     for(const v of Object.values(st.coresColab))if(typeof v!=='string'||!/^#[0-9a-fA-F]{6}$/.test(v))fail(400,'Cor inválida.');
    }
+   if(st.enumsPersonalizados!=null){
+    if(typeof st.enumsPersonalizados!=='object'||Array.isArray(st.enumsPersonalizados))fail(400,'Listas inválidas.');
+    for(const L of Object.values(st.enumsPersonalizados)){
+     if(!Array.isArray(L)||L.length>50)fail(400,'Lista inválida.');
+     for(const it of L){
+      if(!it||typeof it!=='object'||typeof it.k!=='string'||it.k.length>50)fail(400,'Item de lista inválido.');
+      if(it.l!=null&&(typeof it.l!=='string'||!it.l.trim()||it.l.length>100))fail(400,'Texto de lista inválido.');
+     }
+    }
+   }
    await pool.query('INSERT INTO cp_settings(id,data) VALUES(1,$1) ON CONFLICT(id) DO UPDATE SET data=$1',[JSON.stringify(st)]);
   }
   else if(action==='restore'){
