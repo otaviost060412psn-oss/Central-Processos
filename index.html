@@ -146,6 +146,9 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 .wbtn:hover,.wbtn[aria-expanded="true"]{background:var(--card2);border-color:var(--bd2)}
 .wbtn .ch{width:6px;height:6px;border-right:1.6px solid var(--mu);border-bottom:1.6px solid var(--mu);transform:translateY(-2px) rotate(45deg)}
 .wbtn .lk,.wpw .lk{width:6px;height:6px;border-radius:50%;background:var(--wa);flex:none}
+.wbtn .lk.ok,.wpw .lk.ok,.wpl .lk.ok{background:var(--ok)}
+.wbtn .lk.nt,.wpw .lk.nt,.wpl .lk.nt{background:var(--mu2)}
+.wbtn .lk.er,.wpw .lk.er,.wpl .lk.er{background:var(--er)}
 #wp{position:absolute;top:calc(100% + 8px);right:0;z-index:40;width:min(320px,calc(100vw - 24px));background:var(--card);border:1px solid var(--bd2);border-radius:16px;padding:14px;box-shadow:0 18px 44px rgba(0,0,0,.5)}
 .wpy{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
 .wpy b{font-size:15px;font-weight:600}
@@ -1211,6 +1214,9 @@ const isAdmin=()=>!!(me()&&me().admin);
 const nAdm=()=>S.users.filter(u=>u.admin).length;
 const canEdit=w=>!!w&&(!w.fechada||isAdmin());
 const curWeek=()=>{const c=mondayOf(new Date());return S.weeks[c]?c:(ids().filter(x=>x<=c).at(-1)||ids().at(-1))};
+const wkEstado=id=>{const c=curWeek();return id>c?'fu':(id<c?'fn':'at')};
+const WK_LBL={at:'Semana atual',fu:'Semana futura',fn:'Semana finalizada'};
+const WK_LBL_CURTO={at:'Atual',fu:'Futura',fn:'Finalizada'};
 
 function calcQ(w){const rows=SETF('q').map(s=>({...s,...qEf(w,s.id)}));const val=rows.filter(r=>isN(r.monitorias)&&r.monitorias>0&&isN(r.qualidade));const sm=(a,k)=>a.reduce((t,x)=>t+(isN(x[k])?x[k]:0),0);
  let q=null;if(val.length)q=val.reduce((t,e)=>t+e.qualidade,0)/val.length;
@@ -2811,14 +2817,14 @@ async function maUsarAuto(btn){const w=Wk();if(!ED||ED.kind!=='row'||ED.f!=='q'|
 document.addEventListener('click',e=>{const t=e.target.closest&&e.target.closest('button[data-usarauto]');if(t&&t.getAttribute('aria-disabled')!=='true')maUsarAuto(t)});
 
 /* ---------- seletor de ano, mês e semana ---------- */
-function rWsel(){const w=Wk();$('wTxt').textContent=`${wkTxt(w)} ${w.inicio.slice(0,4)}`;const old=$('wBtn').querySelector('.lk');old&&old.remove();if(w.fechada){const s=document.createElement('span');s.className='lk';s.title='Semana fechada';$('wBtn').insertBefore(s,$('wBtn').querySelector('.ch'))}$('wNow').hidden=sel===curWeek();if(!$('wp').hidden)rWp()}
+function rWsel(){const w=Wk();$('wTxt').textContent=`${wkTxt(w)} ${w.inicio.slice(0,4)}`;const old=$('wBtn').querySelector('.lk');old&&old.remove();const est=wkEstado(sel),s=document.createElement('span');s.className=`lk ${{at:'ok',fu:'nt',fn:'er'}[est]}`;s.title=WK_LBL[est];$('wBtn').insertBefore(s,$('wBtn').querySelector('.ch'));$('wNow').hidden=sel===curWeek();if(!$('wp').hidden)rWp()}
 function rWp(){const L=ids(),ys=[...new Set(L.map(x=>+x.slice(0,4)))],yi=ys.indexOf(pickY);const ms=new Set(L.filter(x=>+x.slice(0,4)===pickY).map(x=>x.slice(0,7)));
  const ws=L.filter(x=>x.slice(0,7)===pickM),mm=+pickM.slice(5,7);
  $('wp').innerHTML=`<div class="wpy"><button data-wy="-1" aria-label="Ano anterior" ${yi<=0?'aria-disabled="true"':''}>${ICO.l}</button><b>${pickY}</b><button data-wy="1" aria-label="Próximo ano" ${yi>=ys.length-1?'aria-disabled="true"':''}>${ICO.r}</button></div>
  <div class="wpm">${MSH.map((m,i)=>{const k=`${pickY}-${pad(i+1)}`;return `<button data-wm="${k}" class="${k===pickM?'on':''}" ${ms.has(k)?'':'disabled'} aria-label="${MESL[i]} de ${pickY}">${m}</button>`}).join('')}</div>
  <div class="wph">Semanas de ${MESL[mm-1].toLowerCase()}</div>
- <div class="wpw">${ws.map(id=>{const x=S.weeks[id],a=pdate(x.inicio),b=pdate(x.fim);return `<button data-wsel="${esc(id)}" class="${id===sel?'on':''}" aria-pressed="${id===sel}" title="Semana de ${wkTxt(x)}${x.fechada?' · fechada':''}">${a.getDate()}–${b.getDate()}${x.fechada?'<span class="lk"></span>':''}</button>`}).join('')||'<span class="none">Nenhuma semana neste mês.</span>'}</div>
- <div class="wpl"><span><span class="lk" style="display:inline-block;margin-right:6px"></span>Semana fechada</span></div>`}
+ <div class="wpw">${ws.map(id=>{const x=S.weeks[id],a=pdate(x.inicio),b=pdate(x.fim),est=wkEstado(id),ecls={at:'ok',fu:'nt',fn:'er'}[est];return `<button data-wsel="${esc(id)}" class="${id===sel?'on':''}" aria-pressed="${id===sel}" title="Semana de ${wkTxt(x)} · ${WK_LBL[est]}">${a.getDate()}–${b.getDate()}<span class="lk ${ecls}"></span></button>`}).join('')||'<span class="none">Nenhuma semana neste mês.</span>'}</div>
+ <div class="wpl"><span><span class="lk ok" style="display:inline-block;margin-right:6px"></span>Atual</span><span><span class="lk nt" style="display:inline-block;margin-right:6px"></span>Futura</span><span><span class="lk er" style="display:inline-block;margin-right:6px"></span>Finalizada</span></div>`}
 function openWp(){pickY=+sel.slice(0,4);pickM=sel.slice(0,7);rWp();$('wp').hidden=false;$('wBtn').setAttribute('aria-expanded','true');const b=$('wp').querySelector('.wpw .on');b&&b.focus()}
 function closeWp(){$('wp').hidden=true;$('wBtn').setAttribute('aria-expanded','false')}
 function goWeek(id){sel=id;wordEdit=false;pIdx=0;closeEd();closeWp();render()}
@@ -2892,7 +2898,8 @@ async function vgGarantir(w){if(!w||!isAdmin())return false;VG.lido=0;vgCarregar
  return vgDados(w).pronto&&!vgErro(w)}
 function rInicio(w){vgCarregar(w);
  const sq=status(w,'q'),so=status(w,'o'),pend=[['Qualidade',sq],['Operações',so]].map(([n,s])=>s.complete?`${n} preenchida`:`${n} com ${s.sub}`).join(' · ');
- const card=`<div class="wst"><span class="dot ${w.fechada?'wa':'ok'}"></span><div class="tx"><b>${w.fechada?'Semana fechada':'Semana aberta para lançamentos'}</b><small>${w.fechada?(isAdmin()?'Só administradores podem alterar os números desta semana.':'Os números desta semana não podem mais ser alterados.'):pend}</small></div></div>`;
+ const est=wkEstado(w.inicio),ecls={at:'ok',fu:'cx',fn:'er'}[est];
+ const card=`<div class="wst"><span class="dot ${ecls}"></span><div class="tx"><b>${WK_LBL[est]}</b><small>${pend}</small></div></div>`;
  const col=f=>{const s=f==='q'?sq:so,pg=f==='q'?'qualidade':'operacoes';return `<div><div class="colh"><h2>${FR[f]}</h2><span class="chip ${s.cls}"><span class="dot ${s.cls}"></span>${s.label}${s.sub?' · '+s.sub:''}</span></div><div class="kpis">${f==='q'?kQ(w):kO(w)}</div><div class="mini"><span>${s.last?`Último lançamento: ${esc(s.by||'')} em ${tsTxt(s.last)}`:'Nenhum dado lançado nesta semana'}</span><span class="tools"><button class="btn sm ghost" data-go="${pg}">Abrir ${FR[f]}</button>${canEdit(w)?`<button class="btn sm" data-goedit="${f}">${ICO.edit}Ir para edição</button>`:''}</span></div></div>`};
  const D=vgDados(w),A=vgAtencao(w),falhou=vgErro(w);
  const faixa=`<div class="kpis vgk">${D.nums.map(([l,v,d,c,dc])=>kpi(esc(l),v===null?'<span class="none">…</span>':esc(v),c,d?`<span class="${dc||''}">${esc(d)}</span>`:'')).join('')}</div>`;
@@ -2967,7 +2974,8 @@ function rConfig(){const el=$('p-config'),s=ST();
   h=`<div class="panel cfgp" style="margin-bottom:18px"><div class="frow" style="align-items:end"><div class="f"><label for="nW">Criar semana a partir de</label><input id="nW" type="date" value="${addDays(ids().at(-1)||mondayOf(new Date()),7)}"><span class="msg">A semana começa na segunda-feira da data escolhida.</span></div><div style="padding-bottom:22px"><button class="btn pri" data-act="newWeek">${ICO.plus}Criar semana</button></div></div></div>
   <div class="seg" role="group" aria-label="Ano" style="margin-bottom:14px">${ys.slice().reverse().map(y=>`<button class="${y===cfgYear?'on':''}" data-cy="${y}">${y}</button>`).join('')}</div>
   <div class="panel" style="padding:0"><div class="wkl">${list.map((id,k)=>{const x=S.weeks[id],sq=status(x,'q'),so=status(x,'o'),mh=(k===0||list[k-1].slice(0,7)!==id.slice(0,7))?`<div class="wkg">${MESL[+id.slice(5,7)-1]}</div>`:'';
-   return `${mh}<div class="wkr"><span class="n">Semana de ${wkTxt(x)}<small>Qualidade ${sq.complete?'preenchida':sq.sub} · Operações ${so.complete?'preenchida':so.sub}</small></span><span class="chip ${x.fechada?'wa':'ok'}">${x.fechada?'Fechada':'Aberta'}</span><button class="btn sm ghost" data-wopen="${esc(id)}">Abrir</button><button class="ico" data-wdel="${esc(id)}" aria-label="Excluir semana de ${wkTxt(x)}" title="Excluir semana">${ICO.del}</button></div>`}).join('')}</div></div>
+   const est=wkEstado(id),ccls={at:'ok',fu:'ln',fn:'er'}[est];
+   return `${mh}<div class="wkr"><span class="n">Semana de ${wkTxt(x)}<small>Qualidade ${sq.complete?'preenchida':sq.sub} · Operações ${so.complete?'preenchida':so.sub}</small></span><span class="chip ${ccls}">${WK_LBL_CURTO[est]}</span><button class="btn sm ghost" data-wopen="${esc(id)}">Abrir</button><button class="ico" data-wdel="${esc(id)}" aria-label="Excluir semana de ${wkTxt(x)}" title="Excluir semana">${ICO.del}</button></div>`}).join('')}</div></div>
   <p class="muted" style="margin-top:14px">Excluir apaga todos os dados da semana: números, planos de ação e palavras.</p>`}
  if(cfgView==='colaboradores'){const C=COLS_(),na=C.filter(c=>c.ativo!==false).length;sub=`Os colaboradores ativos aparecem automaticamente na Palavra da Semana de cada semana. ${na} ${na===1?'ativo':'ativos'}${C.length>na?` · ${C.length-na} ${C.length-na===1?'inativo':'inativos'}`:''}.`;
   h=`<div class="ucards">${C.slice().sort((a,b)=>((b.ativo!==false)-(a.ativo!==false))||String(a.nome).localeCompare(b.nome)).map(c=>`<button class="uc ${c.ativo===false?'off':''}" data-copen="${esc(c.id)}"><span class="av">${esc((c.nome||'?')[0])}</span><span><b>${esc(c.nome)}</b><small>${nPal(c.id)} ${nPal(c.id)===1?'palavra registrada':'palavras registradas'}</small></span><span class="chip ${c.ativo===false?'ln':'ok'}">${c.ativo===false?'Inativo':'Ativo'}</span></button>`).join('')}<button class="uc add" data-copen="">${ICO.plus} Adicionar colaborador</button></div>`}
