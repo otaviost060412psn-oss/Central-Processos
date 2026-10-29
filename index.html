@@ -2849,7 +2849,6 @@ function vgAtencao(w){const A=[],go=(pg,t)=>`<button class="btn sm" data-go="${p
  if(!isN(w.sla))A.push(['SLA de resolução da semana não lançado','',go('operacoes')]);
  const mp=[...missingOf(w,'q').map(s=>s.nome+' (Qualidade)'),...missingOf(w,'o').map(s=>s.nome+' (Operações)')];
  if(mp.length)A.push([`${mp.length} ${mp.length===1?'plano de ação faltando':'planos de ação faltando'}`,nomes(mp),go('qualidade')]);
- const p=prevOf(w.inicio);if(p&&!p.fechada)A.push([`Semana anterior (${wkTxt(p)}) ainda aberta`,'',`<button class="btn sm" data-wopen="${esc(p.inicio)}">Ir para a semana</button>`]);
  const L=vgMon(w);if(L&&MON.agentes){const mes=w.inicio.slice(0,7),hj=today(),atual=mes===hj.slice(0,7),passado=mes<hj.slice(0,7),sem=[],vagas=[];
   monSetores().forEach(s=>{const Ag=monAgentesDe(s.id).filter(a=>a.data.ativo!==false),M=L.filter(x=>x.data.setor===s.id);
    const n=Ag.filter(a=>!M.some(x=>x.data.agente===a.id)).length;if(n)sem.push(`${s.nome} ${n}`);
@@ -2893,7 +2892,7 @@ async function vgGarantir(w){if(!w||!isAdmin())return false;VG.lido=0;vgCarregar
  return vgDados(w).pronto&&!vgErro(w)}
 function rInicio(w){vgCarregar(w);
  const sq=status(w,'q'),so=status(w,'o'),pend=[['Qualidade',sq],['Operações',so]].map(([n,s])=>s.complete?`${n} preenchida`:`${n} com ${s.sub}`).join(' · ');
- const card=`<div class="wst"><span class="dot ${w.fechada?'wa':'ok'}"></span><div class="tx"><b>${w.fechada?'Semana fechada':'Semana aberta para lançamentos'}</b><small>${w.fechada?(isAdmin()?'Só administradores podem alterar os números desta semana.':'Os números desta semana não podem mais ser alterados.'):pend}</small></div>${isAdmin()?(w.fechada?`<button class="btn sm" data-wlock="${esc(w.inicio)}">${ICO.unlock}Reabrir semana</button>`:`<button class="btn sm lk" data-wlock="${esc(w.inicio)}">${ICO.lock}Fechar semana</button>`):''}</div>`;
+ const card=`<div class="wst"><span class="dot ${w.fechada?'wa':'ok'}"></span><div class="tx"><b>${w.fechada?'Semana fechada':'Semana aberta para lançamentos'}</b><small>${w.fechada?(isAdmin()?'Só administradores podem alterar os números desta semana.':'Os números desta semana não podem mais ser alterados.'):pend}</small></div></div>`;
  const col=f=>{const s=f==='q'?sq:so,pg=f==='q'?'qualidade':'operacoes';return `<div><div class="colh"><h2>${FR[f]}</h2><span class="chip ${s.cls}"><span class="dot ${s.cls}"></span>${s.label}${s.sub?' · '+s.sub:''}</span></div><div class="kpis">${f==='q'?kQ(w):kO(w)}</div><div class="mini"><span>${s.last?`Último lançamento: ${esc(s.by||'')} em ${tsTxt(s.last)}`:'Nenhum dado lançado nesta semana'}</span><span class="tools"><button class="btn sm ghost" data-go="${pg}">Abrir ${FR[f]}</button>${canEdit(w)?`<button class="btn sm" data-goedit="${f}">${ICO.edit}Ir para edição</button>`:''}</span></div></div>`};
  const D=vgDados(w),A=vgAtencao(w),falhou=vgErro(w);
  const faixa=`<div class="kpis vgk">${D.nums.map(([l,v,d,c,dc])=>kpi(esc(l),v===null?'<span class="none">…</span>':esc(v),c,d?`<span class="${dc||''}">${esc(d)}</span>`:'')).join('')}</div>`;
@@ -2968,7 +2967,7 @@ function rConfig(){const el=$('p-config'),s=ST();
   h=`<div class="panel cfgp" style="margin-bottom:18px"><div class="frow" style="align-items:end"><div class="f"><label for="nW">Criar semana a partir de</label><input id="nW" type="date" value="${addDays(ids().at(-1)||mondayOf(new Date()),7)}"><span class="msg">A semana começa na segunda-feira da data escolhida.</span></div><div style="padding-bottom:22px"><button class="btn pri" data-act="newWeek">${ICO.plus}Criar semana</button></div></div></div>
   <div class="seg" role="group" aria-label="Ano" style="margin-bottom:14px">${ys.slice().reverse().map(y=>`<button class="${y===cfgYear?'on':''}" data-cy="${y}">${y}</button>`).join('')}</div>
   <div class="panel" style="padding:0"><div class="wkl">${list.map((id,k)=>{const x=S.weeks[id],sq=status(x,'q'),so=status(x,'o'),mh=(k===0||list[k-1].slice(0,7)!==id.slice(0,7))?`<div class="wkg">${MESL[+id.slice(5,7)-1]}</div>`:'';
-   return `${mh}<div class="wkr"><span class="n">Semana de ${wkTxt(x)}<small>Qualidade ${sq.complete?'preenchida':sq.sub} · Operações ${so.complete?'preenchida':so.sub}</small></span><span class="chip ${x.fechada?'wa':'ok'}">${x.fechada?'Fechada':'Aberta'}</span><button class="btn sm ghost" data-wopen="${esc(id)}">Abrir</button>${x.fechada?`<button class="btn sm" data-wlock="${esc(id)}">Reabrir</button>`:`<button class="btn sm lk" data-wlock="${esc(id)}">Fechar</button>`}<button class="ico" data-wdel="${esc(id)}" aria-label="Excluir semana de ${wkTxt(x)}" title="Excluir semana">${ICO.del}</button></div>`}).join('')}</div></div>
+   return `${mh}<div class="wkr"><span class="n">Semana de ${wkTxt(x)}<small>Qualidade ${sq.complete?'preenchida':sq.sub} · Operações ${so.complete?'preenchida':so.sub}</small></span><span class="chip ${x.fechada?'wa':'ok'}">${x.fechada?'Fechada':'Aberta'}</span><button class="btn sm ghost" data-wopen="${esc(id)}">Abrir</button><button class="ico" data-wdel="${esc(id)}" aria-label="Excluir semana de ${wkTxt(x)}" title="Excluir semana">${ICO.del}</button></div>`}).join('')}</div></div>
   <p class="muted" style="margin-top:14px">Excluir apaga todos os dados da semana: números, planos de ação e palavras.</p>`}
  if(cfgView==='colaboradores'){const C=COLS_(),na=C.filter(c=>c.ativo!==false).length;sub=`Os colaboradores ativos aparecem automaticamente na Palavra da Semana de cada semana. ${na} ${na===1?'ativo':'ativos'}${C.length>na?` · ${C.length-na} ${C.length-na===1?'inativo':'inativos'}`:''}.`;
   h=`<div class="ucards">${C.slice().sort((a,b)=>((b.ativo!==false)-(a.ativo!==false))||String(a.nome).localeCompare(b.nome)).map(c=>`<button class="uc ${c.ativo===false?'off':''}" data-copen="${esc(c.id)}"><span class="av">${esc((c.nome||'?')[0])}</span><span><b>${esc(c.nome)}</b><small>${nPal(c.id)} ${nPal(c.id)===1?'palavra registrada':'palavras registradas'}</small></span><span class="chip ${c.ativo===false?'ln':'ok'}">${c.ativo===false?'Inativo':'Ativo'}</span></button>`).join('')}<button class="uc add" data-copen="">${ICO.plus} Adicionar colaborador</button></div>`}
@@ -3072,14 +3071,7 @@ $('ed').addEventListener('input',e=>{const b=e.target.closest('.f.bad');if(b){b.
 $('ed').addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.matches('input')&&!e.target.closest('.pjhadd')){e.preventDefault();const b=$('ed').querySelector('[data-edsave="1"],[data-usave],[data-plsave],[data-csave],[data-jrsalvar],[data-dgsalvar],[data-pjsalvar],[data-masalvar],[data-mosalvar]');b&&b.click()}});
 $('edScrim').onclick=closeEd;
 
-/* ---------- semanas: fechar, reabrir, excluir ---------- */
-async function toggleWeek(id){const w=S.weeks[id];if(!w||!isAdmin())return;const sq=status(w,'q'),so=status(w,'o');
- if(!w.fechada){const falta=[!sq.complete&&'Qualidade',!so.complete&&'Operações'].filter(Boolean);
-  if(!await confirmBox(`Fechar a semana de ${wkTxt(w)}?`,`${falta.length?`${falta.join(' e ')} ainda ${falta.length>1?'estão pendentes':'está pendente'}. `:''}Depois de fechada, só administradores poderão alterar os números.`,'Fechar semana'))return}
- else if(!await confirmBox(`Reabrir a semana de ${wkTxt(w)}?`,'O time volta a poder lançar e corrigir os dados desta semana.','Reabrir semana'))return;
- let foto=null;if(!w.fechada){if(!await maGarantir([w])||maMesesDe([w.inicio]).some(m=>MA.meses[m].erro)){toast('Não foi possível carregar as monitorias desta semana. Tente fechar de novo.',true);return}
-  foto={};SETF('q').forEach(s=>{const au=maAutoVivo(w,s.id);if(au)foto[s.id]=au})}
- try{await DB.update(id,{fechada:!w.fechada,maCongelado:foto});w.fechada=!w.fechada;w.maCongelado=foto;MA.memo.clear();render();toast(w.fechada?'Semana fechada':'Semana reaberta')}catch(e){toast(e.message||errMsg(e),true)}}
+/* ---------- semanas: excluir ---------- */
 async function deleteWeek(id){const x=S.weeks[id];if(!x)return;if(ids().length<2){toast('É preciso manter pelo menos uma semana.',true);return}
  if(!await confirmBox(`Excluir a semana de ${wkTxt(x)}?`,'Todos os dados desta semana serão apagados: números de Qualidade e Operações, planos de ação e palavras. Não dá para desfazer.','Excluir semana',true))return;
  try{await DB.deleteWeek(id);delete S.weeks[id];if(sel===id){const L=ids();sel=L.filter(k=>k<id).at(-1)||L[0]}render();toast('Semana excluída')}catch(e){toast(e.message||errMsg(e),true)}}
@@ -3117,7 +3109,6 @@ document.addEventListener('click',async e=>{
  if(d.wsel){goWeek(d.wsel);$('wBtn').focus();return}
  if(d.wy){const ys=[...new Set(ids().map(x=>+x.slice(0,4)))],yi=ys.indexOf(pickY)+(+d.wy);if(yi<0||yi>=ys.length)return;pickY=ys[yi];const ms=ids().filter(x=>+x.slice(0,4)===pickY).map(x=>x.slice(0,7));if(!ms.includes(pickM))pickM=ms.at(-1);rWp();return}
  if(d.wm){pickM=d.wm;rWp();return}
- if(d.wlock){toggleWeek(d.wlock);return}
  if(d.wdel){deleteWeek(d.wdel);return}
  if(d.wopen){sel=d.wopen;page='inicio';cfgView=null;render();scrollTo({top:0});return}
  if(d.cy){cfgYear=+d.cy;render();return}
