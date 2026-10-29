@@ -1193,7 +1193,9 @@ const NeonDB={
  async agendaBackup(){return this.req('agendaBackup')},
  async agendaRestore(itens){return this.req('agendaRestore',{itens})},
  async regBackup(){return this.req('regBackup')},
- async regRestore(itens){return this.req('regRestore',{itens})}
+ async regRestore(itens){return this.req('regRestore',{itens})},
+ async userBackup(){return this.req('userBackup')},
+ async userRestore(usuarios){return this.req('userRestore',{usuarios})}
 };
 
 const DB=NeonDB;
@@ -2983,7 +2985,7 @@ function rConfig(){const el=$('p-config'),s=ST();
  if(cfgView==='jornada')h=rCfgJornada();
  if(cfgView==='monitcrit')h=rCfgMonCrit();
  if(cfgView==='monitag')h=rCfgMonAg();
- if(cfgView==='backup')h=`<div class="panel cfgp"><h3>Baixar uma cópia</h3><p class="muted">Um arquivo com as configurações, todas as semanas, a agenda e os registros das demais áreas (Jornada, Diagnósticos, Projetos, Monitorias…). Os usuários e as senhas não entram no arquivo.</p><div><button class="btn pri" data-act="exportJson">${ICO.save}Baixar backup</button></div></div>
+ if(cfgView==='backup')h=`<div class="panel cfgp"><h3>Baixar uma cópia</h3><p class="muted">Um arquivo com as configurações, todas as semanas, a agenda e os registros das demais áreas (Jornada, Diagnósticos, Projetos, Monitorias…). As contas de usuário também entram (sem expor a senha em texto puro, mas com o suficiente para entrar com a mesma senha de origem). Guarde este arquivo com cuidado: ao restaurar em outro ambiente, as contas de lá passam a ser exatamente as deste arquivo — quem não estiver nele é excluído (exceto a conta de quem estiver restaurando).</p><div><button class="btn pri" data-act="exportJson">${ICO.save}Baixar backup</button></div></div>
   <div class="panel cfgp sec"><h3>Restaurar</h3><p class="muted">As semanas e configurações do arquivo substituem as que existem com o mesmo período. A agenda e os registros das demais áreas nunca são apagados: um registro existente só é atualizado se o do arquivo for mais recente. Também aceita o backup do sistema anterior (sem agenda/registros).</p><div><button class="btn" data-act="importJson">Escolher arquivo de backup</button><input type="file" id="impf" accept=".json,application/json" hidden></div></div>`;
  if(cfgView==='exportacao'){h=rCfgExport();sub='Escolha as áreas e o período de cada uma. Sai um arquivo Excel, com uma aba para cada parte.'}
  el.innerHTML=`<div class="cfg"><header class="phead"><div><button class="btn ghost sm" data-cfg="" style="margin:0 0 10px -10px">${ICO.l}Configurações</button><h1>${T[1]}</h1><p class="sub">${sub}</p></div></header>${h}</div>`}
@@ -2993,7 +2995,7 @@ async function act(a){try{
  if(a==='saveCores'){const obj={};[...document.querySelectorAll('#corList .li')].forEach(li=>{const v=li.querySelector('input[type=color]').value.toLowerCase();if(v!==li.dataset.auto.toLowerCase())obj[li.dataset.id]=v});await saveSettings(s=>{s.coresColab=obj},'Cores salvas')}
  if(a==='saveSet'){const L=[...document.querySelectorAll('#setList .li')].map(li=>({id:li.dataset.id,nome:li.querySelector('input').value.trim(),frentes:[...li.querySelectorAll('[data-frt][aria-pressed="true"]')].map(b=>b.dataset.frt)})).filter(x=>x.nome);if(!L.length)return toast('Mantenha pelo menos um setor.',true);if(L.some(x=>!x.frentes.length))return toast('Cada setor precisa aparecer em Qualidade, Operações ou nas duas.',true);await saveSettings(s=>{s.setores=L},'Setores salvos')}
  if(a==='newWeek'){const v=$('nW').value;if(!v)return toast('Escolha uma data.',true);const id=mondayOf(pdate(v));if(S.weeks[id])return toast('Essa semana já existe.',true);await DB.createWeek(id,emptyWeek(id));S.weeks[id]=S.weeks[id]||emptyWeek(id);cfgYear=+id.slice(0,4);render();toast('Semana criada')}
- if(a==='exportJson'){const[ag,rg]=await Promise.all([DB.agendaBackup(),DB.regBackup()]);const b=new Blob([JSON.stringify({app:'central-igreen',versao:3,exportadoEm:new Date().toISOString(),settings:ST(),weeks:S.weeks,agenda:ag.itens,registros:rg.itens},null,2)],{type:'application/json'});const l=document.createElement('a');l.href=URL.createObjectURL(b);l.download=`backup-central-igreen-${today()}.json`;document.body.appendChild(l);l.click();l.remove();setTimeout(()=>URL.revokeObjectURL(l.href),1500)}
+ if(a==='exportJson'){const[ag,rg,ub]=await Promise.all([DB.agendaBackup(),DB.regBackup(),DB.userBackup()]);const b=new Blob([JSON.stringify({app:'central-igreen',versao:4,exportadoEm:new Date().toISOString(),settings:ST(),weeks:S.weeks,agenda:ag.itens,registros:rg.itens,usuarios:ub.usuarios},null,2)],{type:'application/json'});const l=document.createElement('a');l.href=URL.createObjectURL(b);l.download=`backup-central-igreen-${today()}.json`;document.body.appendChild(l);l.click();l.remove();setTimeout(()=>URL.revokeObjectURL(l.href),1500)}
  if(a==='importJson')$('impf').click();
 }catch(e){toast(e.message||errMsg(e),true)}}
 
@@ -3143,13 +3145,14 @@ document.addEventListener('change',async e=>{const t=e.target;
  if(t.id==='pl_setor'&&ED&&ED.kind==='plan'){ED.p.setor=t.value;$('plh').textContent=setorNome(t.value);return}
  if(t.dataset&&t.dataset.wpal){const id=t.dataset.wpal,w=Wk(),cur=(((w.palavras||{})[id])||{}).palavra||'',v=t.value.trim();if(v===cur)return;const c=colab(id);await save({[`palavras.${id}`]:v?{palavra:v,nome:c?c.nome:'',colab:true,by:who(),at:Date.now()}:undefined});return}
  if(t.id==='impf'){const f=t.files[0];if(!f)return;try{const txt=await new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=()=>rej(new Error('Não foi possível ler o arquivo.'));r.readAsText(f)});let x;try{x=JSON.parse(txt)}catch(_){throw new Error('Esse arquivo não é um backup da Central.')}if(!x.weeks||typeof x.weeks!=='object')throw new Error('Esse arquivo não é um backup da Central.');
-  const ag=Array.isArray(x.agenda)?x.agenda:[],rg=Array.isArray(x.registros)?x.registros:[];
-  const partes=[`${Object.keys(x.weeks).length} semanas e as configurações`];if(ag.length)partes.push(`${ag.length} itens da agenda`);if(rg.length)partes.push(`${rg.length} registros de outras áreas (Jornada, Diagnósticos, Projetos, Monitorias…)`);
-  if(await confirmBox('Restaurar backup?',`${partes.join(', ')} do arquivo serão gravados.`,'Restaurar')){const st=x.settings?Object.fromEntries(Object.entries(x.settings).filter(([k])=>k in DEFAULTS||k==='setores')):null;const ok=new Set(((st&&st.colaboradores)||COLS_()).map(c=>c.id));const wk=clone(x.weeks);Object.values(wk).forEach(w=>{const p={};Object.entries(w.palavras||{}).forEach(([k,v])=>{if(ok.has(k))p[k]=v});w.palavras=p});if(st&&!st.colaboradores)st.colaboradores=COLS_();if(st)st.colabMigrado=true;await DB.restore({settings:st,weeks:wk});
+  const ag=Array.isArray(x.agenda)?x.agenda:[],rg=Array.isArray(x.registros)?x.registros:[],us=Array.isArray(x.usuarios)?x.usuarios:[];
+  const partes=[`${Object.keys(x.weeks).length} semanas e as configurações`];if(ag.length)partes.push(`${ag.length} itens da agenda`);if(rg.length)partes.push(`${rg.length} registros de outras áreas (Jornada, Diagnósticos, Projetos, Monitorias…)`);if(us.length)partes.push(`${us.length} contas de usuário (quem não estiver aqui será excluído, exceto a sua própria conta)`);
+  if(await confirmBox('Restaurar backup?',`${partes.join(', ')} do arquivo serão gravados.`,'Restaurar',us.length>0)){const st=x.settings?Object.fromEntries(Object.entries(x.settings).filter(([k])=>k in DEFAULTS||k==='setores')):null;const ok=new Set(((st&&st.colaboradores)||COLS_()).map(c=>c.id));const wk=clone(x.weeks);Object.values(wk).forEach(w=>{const p={};Object.entries(w.palavras||{}).forEach(([k,v])=>{if(ok.has(k))p[k]=v});w.palavras=p});if(st&&!st.colaboradores)st.colaboradores=COLS_();if(st)st.colabMigrado=true;await DB.restore({settings:st,weeks:wk});
    const lote=async(arr,tamanho,fn)=>{let novos=0,atualizados=0,ignorados=0;for(let i=0;i<arr.length;i+=tamanho){const r=await fn(arr.slice(i,i+tamanho));novos+=r.novos;atualizados+=r.atualizados;ignorados+=r.ignorados}return{novos,atualizados,ignorados}};
    if(ag.length)await lote(ag,100,itens=>DB.agendaRestore(itens));
    if(rg.length)await lote(rg,200,itens=>DB.regRestore(itens));
-   toast('Backup restaurado')}}catch(err){toast(err.message,true)}t.value='';return}
+   if(us.length)await DB.userRestore(us);
+   toast('Backup restaurado. Recarregando…');setTimeout(()=>location.reload(),1200)}}catch(err){toast(err.message,true)}t.value='';return}
 });
 document.addEventListener('focusout',()=>{setTimeout(()=>{if(render.pending&&!(document.activeElement&&document.activeElement.closest&&document.activeElement.closest('.wd input')))render()},0)});
 $('wBtn').onclick=e=>{e.stopPropagation();$('wp').hidden?openWp():closeWp()};

@@ -604,6 +604,43 @@ export default async function handler(req,res){
     await client.query('COMMIT')}catch(e){await client.query('ROLLBACK');throw e}finally{client.release()}
    return res.json({ok:true,novos,atualizados,ignorados});
   }
+  else if(action==='userBackup'){
+   const q=await pool.query('SELECT id,nome,usuario,password_hash,admin,criado FROM cp_users ORDER BY criado');
+   return res.json({usuarios:q.rows.map(x=>({id:x.id,nome:x.nome,usuario:x.usuario,password_hash:x.password_hash,admin:x.admin,criado:Number(x.criado)}))});
+  }
+  else if(action==='userRestore'){
+   /* espelha as contas do arquivo: cria quem não existe, atualiza quem já existe (por usuário, mantendo o id atual) e exclui quem
+      sobrar fora do arquivo, exceto a própria conta de quem está restaurando (evita travar o próprio acesso). nunca deixa 0 admins. */
+   const HASH_RE=/^[0-9a-f]{32}:[0-9a-f]{128}$/i,ts=v=>Number.isSafeInteger(v)&&v>0&&v<=Date.now()+864e5;
+   const itens=b.usuarios;if(!Array.isArray(itens)||!itens.length||itens.length>500)fail(400,'Envie de 1 a 500 usuários por vez.');
+   const ids=new Set(),usuarios=new Set(),regs=itens.map((r,i)=>{try{
+    if(!r||typeof r!=='object'||Array.isArray(r))fail(400,'Formato inválido.');
+    if(!isUuid(r.id))fail(400,'Identificador inválido.');
+    if(ids.has(r.id))fail(400,'Identificador repetido no arquivo.');ids.add(r.id);
+    if(typeof r.nome!=='string'||!r.nome.trim()||r.nome.length>200)fail(400,'Nome inválido.');
+    if(typeof r.usuario!=='string'||!r.usuario.trim()||r.usuario.length>200)fail(400,'Usuário inválido.');
+    const usuario=norm(r.usuario);if(usuarios.has(usuario))fail(400,'Usuário repetido no arquivo.');usuarios.add(usuario);
+    if(!HASH_RE.test(r.password_hash||''))fail(400,'Senha inválida.');
+    if(typeof r.admin!=='boolean')fail(400,'Campo admin inválido.');
+    if(!ts(r.criado))fail(400,'Data de criação inválida.');
+    return {id:r.id,nome:r.nome,usuario,password_hash:r.password_hash,admin:r.admin,criado:r.criado};
+   }catch(e){fail(400,`Usuário ${i+1}: ${e.status?e.message:'formato inválido.'}`)}
+   });
+   const client=await pool.connect();
+   try{
+    await client.query('BEGIN');await client.query("SELECT pg_advisory_xact_lock(hashtext('cp_users:admin'))");
+    let novos=0,atualizados=0;
+    for(const r of regs){
+     const q=await client.query('INSERT INTO cp_users(id,nome,usuario,password_hash,admin,criado) VALUES($1,$2,$3,$4,$5,$6) ON CONFLICT(usuario) DO UPDATE SET nome=EXCLUDED.nome,password_hash=EXCLUDED.password_hash,admin=EXCLUDED.admin RETURNING (xmax=0) AS novo',[r.id,r.nome,r.usuario,r.password_hash,r.admin,r.criado]);
+     if(q.rows[0].novo)novos++;else atualizados++;
+    }
+    const excluidos=(await client.query('DELETE FROM cp_users WHERE usuario<>ALL($1) AND id<>$2',[[...usuarios],u.id])).rowCount;
+    const c=await client.query('SELECT count(*)::int AS n FROM cp_users WHERE admin');
+    if(c.rows[0].n<1)fail(400,'Essa restauração deixaria o sistema sem nenhum administrador.');
+    await client.query('COMMIT');
+    return res.json({ok:true,novos,atualizados,excluidos});
+   }catch(e){await client.query('ROLLBACK');throw e}finally{client.release()}
+  }
   else fail(400,'Operação desconhecida');
   return res.json({ok:true});
  }catch(e){console.error('API error',e.code||e.message);return res.status(e.status|| (e.code==='23505'?409:500)).json({error:e.code==='23505'?'Esse usuário já existe.':e.status?e.message:'Erro no servidor. Verifique a configuração do banco.'})}
